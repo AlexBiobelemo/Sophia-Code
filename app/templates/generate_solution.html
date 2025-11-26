@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Generate Solution for "{{ problem.title }}"</h1>
+    <p><strong>Problem Description:</strong> {{ problem.description }}</p>
+
+    <form id="gen-solution-form" action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.problem.label(class="form-label") }}
+            {{ form.problem(class="form-select", readonly=true, disabled=true) }} {# Problem is pre-selected and not editable #}
+        </div>
+        <div class="mb-3">
+            {{ form.language.label(class="form-label") }}
+            {{ form.language(class="form-select") }}
+            {% for error in form.language.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+            Generate Solution
+        </button>
+    </form>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('gen-solution-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            if (!form || !submitButton) return;
+
+            form.addEventListener('submit', function() {
+                if (window.setLoadingState) {
+                    window.setLoadingState(submitButton, true, 'Generating Solution...');
+                }
+                if (window.startAiAnimation) {
+                    window.startAiAnimation();
+                }
+
+                // Safety: re-enable after 120s in case of navigation issues or unhandled errors
+                setTimeout(() => {
+                    if (window.setLoadingState) {
+                        window.setLoadingState(submitButton, false);
+                    }
+                    if (window.stopAiAnimation) {
+                        window.stopAiAnimation();
+                    }
+                }, 120000);
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header"><strong>Account Settings</strong></div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.username.label(class="form-label") }}
+            {{ form.username(class="form-control") }}
+            {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+            {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Avatar</label>
+            <div class="d-flex align-items-center gap-3">
+              {% set avatar = current_user.avatar_filename %}
+              {% if avatar %}
+                <img src="{{ url_for('static', filename='uploads/avatars/' + avatar) }}?v={{ range(1,999999)|random }}" class="rounded-circle" width="48" height="48" alt="avatar">
+              {% else %}
+                <i class="bi bi-person-circle fs-2"></i>
+              {% endif %}
+              {{ form.avatar(class="form-control") }}
+            </div>
+            {% for e in form.avatar.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <hr />
+          <div class="mb-3">
+            {{ form.current_password.label(class="form-label") }}
+            {{ form.current_password(class="form-control") }}
+            {% for e in form.current_password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.new_password.label(class="form-label") }}
+            {{ form.new_password(class="form-control") }}
+            <div class="form-text">Minimum 8 chars, include upper, lower, digit, and symbol.</div>
+            {% for e in form.new_password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.new_password2.label(class="form-label") }}
+            {{ form.new_password2(class="form-control") }}
+            {% for e in form.new_password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="d-flex gap-2">
+            {{ form.submit(class="btn btn-primary") }}
+            <a class="btn btn-secondary" href="{{ url_for('main.user_profile') }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const submitButton = document.getElementById('submit-button');
+
+        if (form && submitButton) {
+            form.addEventListener('submit', () => {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+            });
+        }
+    });
+</script>
+{% endblock %}

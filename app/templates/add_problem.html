@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Add New Leetcode Problem</h1>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.title.label(class="form-label") }}
+            {{ form.title(size=64, class="form-control") }}
+            {% for error in form.title.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(rows=10, class="form-control") }}
+            {% for error in form.description.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.difficulty.label(class="form-label") }}
+            {{ form.difficulty(class="form-select") }}
+            {% for error in form.difficulty.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.tags.label(class="form-label") }}
+            {{ form.tags(size=64, class="form-control") }}
+            <div class="form-text">{{ form.tags.description }}</div>
+            {% for error in form.tags.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        <div class="mb-3">
+            {{ form.leetcode_url.label(class="form-label") }}
+            {{ form.leetcode_url(size=64, class="form-control") }}
+            {% for error in form.leetcode_url.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+            const submitButton = document.getElementById('submit-button');
+
+            if (form && submitButton) {
+                form.addEventListener('submit', () => {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+                });
+            }
+        });
+    </script>
+{% endblock %}

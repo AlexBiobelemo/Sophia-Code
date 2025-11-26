@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>{{ problem.title }} <span class="badge bg-secondary">{{ problem.difficulty }}</span></h1>
+    {% if problem.leetcode_url %}
+        <p><a href="{{ problem.leetcode_url }}" target="_blank">View on LeetCode</a></p>
+    {% endif %}
+    <p><strong>Description:</strong></p>
+    <div class="card mb-3">
+        <div class="card-body">
+            <p class="card-text">{{ problem.description }}</p>
+        </div>
+    </div>
+    <p><strong>Tags:</strong> {{ problem.tags }}</p>
+    <p><small class="text-muted">Added by {{ problem.author.username }} on {{ problem.timestamp.strftime('%Y-%m-%d') }}</small></p>
+
+    <hr>
+
+    <h2>Solutions</h2>
+    <a href="{{ url_for('main.generate_solution', problem_id=problem.id) }}" class="btn btn-success mb-3">Generate New Solution</a>
+
+    {% if solutions %}
+        {% for solution in solutions %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    Solution in {{ solution.language }} by {{ solution.contributor.username }}
+                    {% if solution.approved %}
+                        <span class="badge bg-success float-end">Approved</span>
+                    {% else %}
+                        <span class="badge bg-warning float-end">Pending Approval</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Classification: {{ solution.classification }}</h5>
+                    <a href="{{ url_for('main.view_solution', solution_id=solution.id) }}" class="btn btn-info btn-sm">View Solution Details</a>
+                    {% if current_user == problem.author and not solution.approved %}
+                        <a href="{{ url_for('main.approve_solution', solution_id=solution.id) }}" class="btn btn-warning btn-sm">Approve/Reject</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No approved solutions yet. Be the first to <a href="{{ url_for('main.generate_solution', problem_id=problem.id) }}">generate one</a>!</p>
+    {% endif %}
+{% endblock %}

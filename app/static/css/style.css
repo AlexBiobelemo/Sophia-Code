@@ -1,0 +1,158 @@
+/* Consistent card heights or spacing */
+.card.h-100 {
+    height: 100%;
+}
+
+/* Basic styling for the chart containers if needed */
+canvas {
+    max-width: 100%;
+    max-height: 100px; /* Smaller height for micro-charts */
+    height: auto;
+}
+
+/* Styles for smaller text in statistics cards */
+.card-body.p-2 .card-title {
+    font-size: 0.75rem; /* Smaller title for micro-charts */
+}
+
+.card-body.p-2 .card-text {
+    font-size: 1.25rem !important; /* Smaller number for micro-charts */
+}
+
+/* Adjustments for language distribution cards */
+#language-charts-container .col-md-2 {
+    flex: 0 0 16.666667%; /* Bootstrap default for col-md-2 */
+    max-width: 16.666667%;
+}
+
+#language-charts-container .card-body {
+    padding: 0.5rem; /* Smaller padding */
+}
+
+#language-charts-container .card-title {
+    font-size: 0.8rem; /* Smaller language title */
+    margin-bottom: 0.25rem;
+}
+
+#language-charts-container .card-text {
+    font-size: 0.7rem; /* Smaller snippet count text */
+}
+
+
+/* Marquee Styles */
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    height: 200px; /* Adjust height as needed */
+}
+
+.marquee-content {
+    display: flex;
+    animation: marquee 60s linear infinite;
+    will-change: transform;
+    width: 200%;
+}
+
+.marquee-item {
+    flex: 0 0 auto;
+    width: 150px; /* Adjust width of each chart item */
+    margin-right: 15px;
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+/* Page transition animations */
+#page-content {
+    position: relative;
+    transition: opacity 0.5s, transform 0.5s;
+}
+
+.fade-in {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.fade-out {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+/* Text animations */
+.char {
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+/* Particle background */
+#particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+}
+
+@keyframes twinkle {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.5;
+    }
+}
+
+.particle-star {
+    animation: twinkle 2s infinite;
+}
+.main-content {
+    position: relative;
+    z-index: 1;
+}
+
+#page-content {
+    transition-timing-function: ease-in-out;
+}
+
+.char {
+    transition-timing-function: ease-in-out;
+}
+
+/* Modal dropdown fix: allow dropdowns to overflow modal */
+.modal-body {
+    overflow: visible !important;
+}
+
+.modal-dialog {
+    overflow: visible !important;
+}
+
+.modal-content {
+    overflow: visible !important;
+}
+
+/* Ensure select elements are interactive in modals */
+.modal .form-select {
+    position: relative;
+    z-index: 1050;
+}
+
+/* Dropdown menu positioning in modals */
+.modal .dropdown-menu {
+    position: absolute;
+    z-index: 1060;
+}
+
+/* Custom styles for buttons on hover */
+button:hover, .btn:hover {
+    background-color: darkgreen !important;
+    border-color: darkgreen !important;
+}

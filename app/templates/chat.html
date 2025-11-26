@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <style>
+    /* User-only bubble for chat page */
+    .chatlog .bubble { font-size: 0.95rem; border: 1px solid var(--bs-border-color); }
+    .chatlog .bubble pre, .chatlog .bubble code { font-size: 0.9rem; }
+    .chatlog .msg-user .bubble { background-color: rgba(30,91,184,.15); border-color: rgba(30,91,184,.45); }
+  </style>
+  <div class="row g-3">
+    <div class="col-md-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Conversations</h5>
+        <button id="new-chat" class="btn btn-sm btn-outline-primary">New</button>
+      </div>
+      <ul id="chat-sessions" class="list-group">
+        {% for s in sessions %}
+          <li class="list-group-item d-flex justify-content-between align-items-center {% if s.id == active.id %}active{% endif %}" data-session-id="{{ s.id }}">
+            <span class="title">{{ s.title }}</span>
+            <button class="btn btn-sm btn-outline-danger delete-chat">&times;</button>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="col-md-9">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong id="chat-title">{{ active.title }}</strong>
+          <div class="d-flex align-items-center gap-2">
+            <button id="rename-chat" class="btn btn-sm btn-outline-secondary">Rename</button>
+            <small class="text-muted">Assistant is specialized for your snippets and solutions</small>
+          </div>
+        </div>
+        <div id="chat-log" class="card-body chatlog" style="height: 60vh; overflow:auto;">
+          {% for m in messages %}
+            <div class="mb-3">
+              <div class="fw-bold">{{ 'You' if m.role=='user' else 'Sophia' }}</div>
+              <div class="border rounded p-2 bg-body-secondary">{{ m.content }}</div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="card-footer">
+          <div class="input-group">
+            <input id="chat-input" class="form-control" placeholder="Ask about code, terms, or how to use your snippets..." value="{{ prefill }}" />
+            <button id="chat-send" class="btn btn-primary">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Run after external libs (DOMPurify, marked, Prism) are loaded
+    window.addEventListener('load', function(){
+      // Render preloaded history as Markdown for assistant messages
+      (function(){
+        const log = document.getElementById('chat-log');
+        if (log){
+          const blocks = log.querySelectorAll('.mb-3');
+          blocks.forEach(async (blk)=>{
+            const who = blk.querySelector('.fw-bold');
+            const body = blk.querySelector('.border');
+            if (!who || !body) return;
+          if (who.textContent.trim()==='Sophia'){
+            const rendered = DOMPurify.sanitize(marked.parse(body.textContent || ''));
+            body.className = 'resp-body p-2';
+            body.innerHTML = rendered;
+            if (window.Prism) { try { Prism.highlightAllUnder(body); } catch(_){} }
+              body.querySelectorAll('pre > code').forEach((codeEl)=>{
+                const pre = codeEl.parentElement;
+                pre.style.position = 'relative';
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-sm btn-outline-secondary';
+                btn.textContent = 'Copy';
+                btn.style.position = 'absolute';
+                btn.style.top = '6px';
+                btn.style.right = '6px';
+                btn.addEventListener('click', async ()=>{
+                  try { await navigator.clipboard.writeText(codeEl.innerText); btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1500);} catch(_){}
+                });
+                pre.appendChild(btn);
+              });
+              if (window.MathJax && window.MathJax.typesetPromise) { try { await MathJax.typesetPromise([blk]); } catch(_){} }
+              if (window.mermaid){
+                const mblocks = blk.querySelectorAll('pre > code.language-mermaid, pre > code.lang-mermaid');
+                for (const code of mblocks){
+                  const src = code.textContent; const div=document.createElement('div'); div.className='mermaid'; div.textContent=src; const pre=code.parentElement; pre.replaceWith(div);
+                }
+                try { await mermaid.run({ querySelector: '.mermaid' }); } catch(_){ }
+              }
+          } else {
+            // Style user messages as bubble
+            body.className = 'bubble border rounded p-2';
+          }
+        });
+        }
+      })();
+
+      (function(){
+        const sessionsEl = document.getElementById('chat-sessions');
+        const chatLog = document.getElementById('chat-log');
+        const input = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('chat-send');
+        const newBtn = document.getElementById('new-chat');
+        let activeLi = sessionsEl.querySelector('.list-group-item.active');
+        let sessionId = activeLi ? Number(activeLi.dataset.sessionId) : null;
+        let abortCtrl = null;
+
+      function addCopyButtons(container){
+        container.querySelectorAll('pre > code').forEach((codeEl)=>{
+          const pre = codeEl.parentElement;
+          pre.style.position = 'relative';
+          const btn = document.createElement('button');
+          btn.className = 'btn btn-sm btn-outline-secondary';
+          btn.textContent = 'Copy';
+          btn.style.position = 'absolute';
+          btn.style.top = '6px';
+          btn.style.right = '6px';
+          btn.addEventListener('click', async ()=>{
+            try { await navigator.clipboard.writeText(codeEl.innerText); btn.textContent = 'Copied!'; setTimeout(()=>btn.textContent='Copy', 1500);} catch(_){ btn.textContent='Error'; setTimeout(()=>btn.textContent='Copy',1500);} 
+          });
+          pre.appendChild(btn);
+        });
+      }
+      async function renderMermaid(container){
+        if (!window.mermaid) return;
+        const blocks = container.querySelectorAll('pre > code.language-mermaid, pre > code.lang-mermaid');
+        for (const code of blocks){
+          const src = code.textContent;
+          const div = document.createElement('div');
+          div.className = 'mermaid';
+          div.textContent = src;
+          const pre = code.parentElement;
+          pre.replaceWith(div);
+        }
+        try { await mermaid.run({ querySelector: '.mermaid' }); } catch(_){ }
+      }
+      function append(role, content) {
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-3';
+        if (role === 'assistant') {
+          const rendered = DOMPurify.sanitize(marked.parse(content || ''));
+          wrap.innerHTML = `<div class=\"fw-bold\">Sophia</div><div class=\"p-2\">${rendered}</div>`;
+          chatLog.appendChild(wrap);
+          if (window.Prism) { try { Prism.highlightAllUnder(wrap); } catch(_){} }
+          addCopyButtons(wrap);
+          if (window.MathJax && window.MathJax.typesetPromise) { try { MathJax.typesetPromise([wrap]); } catch(_){} }
+          renderMermaid(wrap);
+        } else {
+          wrap.classList.add('msg-user');
+          wrap.innerHTML = `<div class=\"fw-bold\">You</div><div class=\"bubble border rounded p-2\">${DOMPurify.sanitize(content)}</div>`;
+          chatLog.appendChild(wrap);
+        }
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      async function send() {
+        const msg = input.value.trim();
+        if (!msg) return;
+        append('user', msg);
+        input.value = '';
+        sendBtn.disabled = true;
+        // streaming assistant container
+        const wrap = document.createElement('div');
+        wrap.className = 'mb-3';
+        wrap.innerHTML = `<div class=\"fw-bold\">Sophia</div><div class=\"p-2\"><div class=\"d-flex align-items-center gap-2 mb-2\"><div class=\"spinner-border spinner-border-sm\" role=\"status\"><span class=\"visually-hidden\">Loading...</span></div><span>Thinking...</span></div><div class=\"stream-out\"></div></div>`;
+        const out = wrap.querySelector('.stream-out');
+        chatLog.appendChild(wrap);
+        chatLog.scrollTop = chatLog.scrollHeight;
+        try {
+          abortCtrl = new AbortController();
+          const res = await fetch("{{ url_for('main.api_chat_stream') }}", { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ session_id: sessionId, message: msg }), signal: abortCtrl.signal });
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+          let lastRender = 0;
+          const spinner = wrap.querySelector('.spinner-border');
+          const label = wrap.querySelector('.d-flex span');
+          while (true){
+            const {done, value} = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, {stream:true});
+            buf += chunk;
+            const now = performance.now();
+            if (now - lastRender > 120){
+              if (spinner) spinner.style.display='none'; if (label) label.textContent='';
+              out.innerHTML = DOMPurify.sanitize(marked.parse(buf));
+              lastRender = now;
+              chatLog.scrollTop = chatLog.scrollHeight;
+            }
+          }
+          out.innerHTML = DOMPurify.sanitize(marked.parse(buf));
+          if (window.Prism) { try { Prism.highlightAllUnder(wrap); } catch(_){} }
+          addCopyButtons(wrap);
+          if (window.MathJax && window.MathJax.typesetPromise) { try { MathJax.typesetPromise([wrap]); } catch(_){} }
+          renderMermaid(wrap);
+        } catch(e) {
+          const err = document.createElement('div'); err.className='text-danger'; err.textContent='Network error'; out.replaceWith(err);
+        } finally { sendBtn.disabled = false; }
+      }
+
+      sendBtn.addEventListener('click', send);
+      input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+      // Stop generating
+      const stopBtn = document.createElement('button');
+      stopBtn.className = 'btn btn-sm btn-outline-warning ms-2';
+      stopBtn.textContent = 'Stop';
+      stopBtn.addEventListener('click', ()=>{ if (abortCtrl) { try { abortCtrl.abort(); } catch(_){} } });
+      document.getElementById('chat-send').insertAdjacentElement('afterend', stopBtn);
+
+      newBtn.addEventListener('click', async ()=>{
+        const res = await fetch("{{ url_for('main.api_chat_new') }}", { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title: 'New Chat' })});
+        const data = await res.json();
+        sessionId = data.session_id;
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center active';
+        li.dataset.sessionId = sessionId;
+        li.innerHTML = `<span class=\"title\">${data.title}</span><button class=\"btn btn-sm btn-outline-danger delete-chat\">&times;</button>`;
+        sessionsEl.querySelectorAll('.list-group-item').forEach(el=>el.classList.remove('active'));
+        sessionsEl.prepend(li);
+        chatLog.innerHTML = '';
+        document.getElementById('chat-title').textContent = data.title;
+      });
+
+      sessionsEl.addEventListener('click', async (e)=>{
+        const del = e.target.closest('.delete-chat');
+        const li = e.target.closest('.list-group-item');
+        if (!li) return;
+        if (del) {
+          const sid = Number(li.dataset.sessionId);
+          if (!confirm('Delete this conversation?')) return;
+          await fetch(`{{ url_for('main.api_chat_delete', session_id=0) }}`.replace('/0','/'+sid), { method:'POST' });
+          li.remove();
+          if (sid===sessionId) { const first = sessionsEl.querySelector('.list-group-item'); if (first) first.click(); else { sessionId=null; chatLog.innerHTML=''; } }
+          return;
+        }
+        sessionsEl.querySelectorAll('.list-group-item').forEach(el=>el.classList.remove('active'));
+        li.classList.add('active');
+        sessionId = Number(li.dataset.sessionId);
+        const res = await fetch(`{{ url_for('main.api_chat_session', session_id=0) }}`.replace('/0','/'+sessionId));
+        const msgs = await res.json();
+        chatLog.innerHTML = '';
+        msgs.forEach(m => append(m.role, m.content));
+      });
+
+      // Rename active chat
+      document.getElementById('rename-chat').addEventListener('click', async ()=>{
+        const title = prompt('Rename chat to:');
+        if (!title) return;
+        const res = await fetch(`{{ url_for('main.api_chat_rename', session_id=0) }}`.replace('/0','/'+sessionId), { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ title })});
+        const data = await res.json();
+        if (data && data.ok) {
+          document.getElementById('chat-title').textContent = data.title;
+          const li = sessionsEl.querySelector(`.list-group-item[data-session-id="${sessionId}"] .title`);
+          if (li) li.textContent = data.title;
+        }
+      });
+
+      // Auto-ask if prefill present
+      {% if prefill %}
+        setTimeout(()=>{ send(); }, 200);
+      {% endif %}
+      })();
+    });
+  </script>
+{% endblock %}

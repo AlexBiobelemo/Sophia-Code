@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2 class="mb-4">Search Results (Solutions) for: <em class="text-body-secondary">"{{ query }}"</em></h2>
+
+  {% if results %}
+    {% for sol in results %}
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>{{ (hi_title.get(sol.id) if hi_title else (sol.problem.title if sol.problem else 'Solution')) | safe }} <small class="text-muted">({{ sol.language }})</small></span>
+          {% set badges = (highlights.get(sol.id) if highlights else []) %}
+          <span>
+            {% for b in badges %}
+              <span class="badge bg-secondary ms-1">{{ b }}</span>
+            {% endfor %}
+          </span>
+        </div>
+        <div class="card-body">
+          <p class="card-text">{% if hi_text and hi_text.get(sol.id) %}{{ hi_text.get(sol.id) | safe }}{% else %}{{ sol.explanation | striptags | truncate(180) or sol.classification or 'No explanation provided.' }}{% endif %}</p>
+          <a href="{{ url_for('main.view_solution', solution_id=sol.id) }}" class="btn btn-primary">Open Solution</a>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="text-center py-5">
+      <h3 class="text-muted">No results found.</h3>
+      <p>Try a different query or refine with operators like tag:, lang:, in:, before:/after:.</p>
+    </div>
+  {% endif %}
+{% endblock %}

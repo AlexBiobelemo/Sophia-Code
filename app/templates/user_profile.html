@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2 class="mb-4">My Profile</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>{{ current_user.username }}</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Email:</strong> {{ current_user.email }}</p>
+            <p><strong>Total Points:</strong> <span class="badge bg-info text-dark">{{ total_points }}</span></p>
+        </div>
+    </div>
+
+    <h3 class="mb-3">My Badges</h3>
+    {% if user_badges %}
+        <div class="row">
+            {% for user_badge in user_badges %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            {% if user_badge.badge.image_url %}
+                                <img src="{{ user_badge.badge.image_url }}" alt="{{ user_badge.badge.name }}" class="img-fluid mb-2" style="max-height: 80px;">
+                            {% else %}
+                                <i class="bi bi-award fs-1 text-warning"></i>
+                            {% endif %}
+                            <h5 class="card-title mt-2">{{ user_badge.badge.name }}</h5>
+                            <p class="card-text text-muted">{{ user_badge.badge.description }}</p>
+                            <small class="text-muted">Earned on: {{ user_badge.timestamp.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">You haven't earned any badges yet. Keep contributing to earn some!</p>
+    {% endif %}
+
+    <h3 class="mb-3 mt-4">My Statistics</h3>
+    <div class="row mb-4">
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body p-2">
+                    <small class="card-title text-muted">Total Snippets</small>
+                    <p class="card-text fs-5 mb-0">{{ total_snippets }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body p-2">
+                    <small class="card-title text-muted">Total Collections</small>
+                    <p class="card-text fs-5 mb-0">{{ total_collections }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body p-2">
+                    <small class="card-title text-muted">Avg Snippet Length</small>
+                    <p class="card-text fs-5 mb-0">{{ average_snippet_length }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card text-center h-100">
+                <div class="card-body p-2">
+                    <small class="card-title text-muted">Total Tokens</small>
+                    <p class="card-text fs-5 mb-0">{{ total_tokens }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h4 class="mb-3">Snippet Language Distribution</h4>
+    {% if language_stats %}
+        <div class="marquee-container">
+            <div class="marquee-content" id="language-charts-container">
+                {% for stat in language_stats %}
+                    <div class="marquee-item">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">{{ stat.language }}</h5>
+                                <canvas id="chart-{{ stat.language | lower | replace(' ', '-') }}" width="100" height="100"></canvas>
+                                <p class="card-text mt-2">{{ stat.count }} snippets</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% for stat in language_stats %}
+                    <div class="marquee-item">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">{{ stat.language }}</h5>
+                                <canvas id="chart-{{ stat.language | lower | replace(' ', '-') }}-clone" width="100" height="100"></canvas>
+                                <p class="card-text mt-2">{{ stat.count }} snippets</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <p class="text-muted">No snippets available to display language distribution.</p>
+    {% endif %}
+
+    <h4 class="mb-3 mt-4">Monthly Activity</h4>
+    <div class="card mb-4">
+        <div class="card-body">
+            <canvas id="activity-barchart" height="100"></canvas>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back to Home</a>
+    </div>
+
+    <div id="language-stats-data" data-stats="{{ language_stats | safe }}" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script>
+        // Define the custom Chart.js plugin globally
+        const centerTextPlugin = {
+            id: 'centerText',
+            beforeDraw: function(chart, args, options) {
+                const width = chart.width,
+                    height = chart.height,
+                    ctx = chart.ctx;
+                ctx.restore();
+                ctx.fillStyle = 'white';
+                const fontSize = (height / 114).toFixed(2);
+                ctx.font = `${fontSize}em sans-serif`;
+                ctx.textBaseline = "middle";
+                const text = `${options.percentage}%`;
+                const textX = Math.round((width - ctx.measureText(text).width) / 2);
+                const textY = height / 2;
+                ctx.fillText(text, textX, textY);
+                ctx.save();
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const languageStatsElement = document.getElementById('language-stats-data');
+            const languageStats = JSON.parse(languageStatsElement.dataset.stats.replace(/'/g, '"'));
+
+            const backgroundColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                '#E7E9ED', '#8AC926', '#F4A261', '#2A9D8F', '#E9C46A', '#A8DADC'
+            ];
+            const hoverBackgroundColors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+                '#E7E9ED', '#8AC926', '#F4A261', '#2A9D8F', '#E9C46A', '#A8DADC'
+            ];
+
+            languageStats.forEach((stat, index) => {
+                const chartIdBase = `chart-${stat.language.toLowerCase().replace(' ', '-')}`;
+                const originalCtx = document.getElementById(chartIdBase).getContext('2d');
+                const cloneCtx = document.getElementById(`${chartIdBase}-clone`).getContext('2d');
+                const total = languageStats.reduce((sum, s) => sum + s.count, 0);
+                const percentage = (stat.count / total * 100).toFixed(1);
+
+                const chartConfig = {
+                    type: 'doughnut',
+                    data: {
+                        labels: [stat.language, 'Other'],
+                        datasets: [{
+                            data: [stat.count, total - stat.count],
+                            backgroundColor: [
+                                backgroundColors[index % backgroundColors.length],
+                                '#e0e0e0' // Grey for 'Other'
+                            ],
+                            hoverBackgroundColor: [
+                                hoverBackgroundColors[index % hoverBackgroundColors.length],
+                                '#c0c0c0'
+                            ],
+                            borderWidth: 1
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%', // Make it a donut chart
+                        plugins: {
+                            legend: {
+                                display: false // Hide legend as we'll show percentage in text
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        if (label === stat.language) {
+                                            return `${label}: ${stat.count} (${percentage}%)`;
+                                        }
+                                        return ''; // Hide tooltip for 'Other' segment
+                                    }
+                                }
+                            },
+                            centerText: { // Pass options to the plugin
+                                percentage: percentage
+                            }
+                        },
+                        elements: {
+                            arc: {
+                                borderWidth: 0
+                            }
+                        }
+                    },
+                    plugins: [centerTextPlugin] // Use the globally defined plugin
+                };
+
+                new Chart(originalCtx, chartConfig);
+                new Chart(cloneCtx, chartConfig);
+            });
+
+            fetch('/api/user_activity')
+                .then(response => response.json())
+                .then(activityData => {
+                    const activityChartCtx = document.getElementById('activity-barchart').getContext('2d');
+                    const labels = activityData.map(d => d.month);
+                    const counts = activityData.map(d => d.count);
+
+                    new Chart(activityChartCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Snippets per Month',
+                                data: counts,
+                                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+        });
+    </script>
+{% endblock %}

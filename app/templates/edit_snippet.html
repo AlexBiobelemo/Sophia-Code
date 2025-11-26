@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Edit Snippet</h2>
+                <form method="POST" action="" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            {{ form.title.label(class="form-label") }}
+                            {{ form.title(class="form-control" + (" is-invalid" if form.title.errors else "")) }}
+                            {% for error in form.title.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.language.label(class="form-label") }}
+                            {{ form.language(class="form-select", id="language-select") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.collection.label(class="form-label") }}
+                        {{ form.collection(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows=3) }}
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            {{ form.code.label(class="form-label") }}
+                            <div class="btn-group mb-1" role="group">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" id="format-btn"><i class="bi bi-magic me-1"></i>Format</button>
+                                <button class="btn btn-sm btn-outline-secondary" type="button" id="copy-btn" title="Copy"><i class="bi bi-clipboard"></i></button>
+                            </div>
+                        </div>
+                        {{ form.code(class="form-control" + (" is-invalid" if form.code.errors else ""), rows=10, id="code-textarea") }}
+                        {% for error in form.code.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.tags.label(class="form-label") }}
+                        <div class="input-group">
+                            {{ form.tags(class="form-control", id="tags-input") }}
+                            <button class="btn btn-outline-secondary" type="button" id="suggest-tags-btn">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                Suggest Tags
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border rounded p-3 mb-3 bg-body-secondary">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <strong>AI Feedback & Refinement</strong>
+                            <small class="text-muted">Paste runtime error/logs below to improve the code</small>
+                        </div>
+                        <textarea class="form-control mb-2" id="runtime-error-textarea" rows="4" placeholder="Paste error output or failing test logs here..."></textarea>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-outline-primary" type="button" id="refine-btn">
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                                Refine with Error
+                            </button>
+                        </div>
+                        <div class="form-text">This will regenerate the code and update the description based on the error.</div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary" id="save-changes-btn">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get references to all the elements we need
+    const suggestBtn = document.getElementById('suggest-tags-btn');
+    const formatBtn = document.getElementById('format-btn');
+    const codeTextarea = document.getElementById('code-textarea');
+    const tagsInput = document.getElementById('tags-input');
+    const langSelect = document.getElementById('language-select');
+    const refineBtn = document.getElementById('refine-btn');
+    const runtimeErrorTextarea = document.getElementById('runtime-error-textarea');
+    const saveChangesBtn = document.getElementById('save-changes-btn'); // New reference for submit button
+
+    // --- Suggest Tags Logic ---
+    suggestBtn.addEventListener('click', async () => {
+        const code = codeTextarea.value;
+        if (!code) {
+            alert('Please enter some code before suggesting tags.');
+            return;
+        }
+        if (window.setLoadingState) {
+            window.setLoadingState(suggestBtn, true, 'Suggesting Tags...');
+        }
+        if (window.startAiAnimation) {
+            window.startAiAnimation();
+        }
+        try {
+            const response = await fetch("{{ url_for('main.suggest_tags') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code })
+            });
+            const data = await response.json();
+            if (data.tags) {
+                tagsInput.value = data.tags;
+            } else {
+                alert('Could not fetch tag suggestions.');
+            }
+        } catch (error) {
+            console.error('Error fetching tags:', error);
+            alert('An error occurred while suggesting tags. Please try again.');
+        } finally {
+            if (window.setLoadingState) {
+                window.setLoadingState(suggestBtn, false);
+            }
+            if (window.stopAiAnimation) {
+                window.stopAiAnimation();
+            }
+        }
+    });
+
+    // --- Refine with Error Logic ---
+    refineBtn.addEventListener('click', async () => {
+        const code = codeTextarea.value.trim();
+        const errorText = runtimeErrorTextarea.value.trim();
+        const language = langSelect.value;
+        if (!code) { alert('Please ensure code is present.'); return; }
+        if (!errorText) { alert('Please paste the runtime error/output.'); return; }
+
+        if (window.setLoadingState) {
+            window.setLoadingState(refineBtn, true, 'Refining Code...');
+        }
+        if (window.startAiAnimation) {
+            window.startAiAnimation();
+        }
+        try {
+            const res = await fetch("{{ url_for('main.refine') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code, error: errorText, language: language })
+            });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+            } else if (data.code) {
+                codeTextarea.value = data.code;
+                const desc = document.querySelector('[name="description"]');
+                if (desc) {
+                    const newExpl = (data.explanation || '').trim();
+                    const hdr = '\n\n---\n\n### Updated AI Explanation\n';
+                    desc.value = (desc.value || '').trim() + (newExpl ? hdr + newExpl : '');
+                }
+                runtimeErrorTextarea.value = '';
+            } else {
+                alert('Failed to refine code.');
+            }
+        } catch (e) {
+            console.error('Refine error', e);
+            alert('An error occurred during code refinement. Please try again.');
+        } finally {
+            if (window.setLoadingState) {
+                window.setLoadingState(refineBtn, false);
+            }
+            if (window.stopAiAnimation) {
+                window.stopAiAnimation();
+            }
+        }
+    });
+
+    // --- Copy Code ---
+    const copyBtn = document.getElementById('copy-btn');
+    copyBtn.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(codeTextarea.value || '');
+              copyBtn.innerHTML = '<i class="bi bi-clipboard-check"></i>'; setTimeout(()=>copyBtn.innerHTML='<i class="bi bi-clipboard"></i>', 1200);
+        } catch(_){}
+    });
+
+    // --- Format Code Logic (AI-powered) ---
+    formatBtn.addEventListener('click', async () => {
+        const code = codeTextarea.value;
+        const language = langSelect.value;
+        
+        if (!code) {
+            alert('Please enter some code before formatting.');
+            return;
+        }
+        
+        if (window.setLoadingState) {
+            window.setLoadingState(formatBtn, true, 'Formatting Code...');
+        }
+        if (window.startAiAnimation) {
+            window.startAiAnimation();
+        }
+        
+        try {
+            const response = await fetch("{{ url_for('main.format_code') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code, language: language })
+            });
+            const data = await response.json();
+            if (data.code) {
+                codeTextarea.value = data.code;
+            } else if (data.error) {
+                alert('Could not format code: ' + data.error);
+            } else {
+                alert('Failed to format code.');
+            }
+        } catch (error) {
+            console.error('Error formatting code:', error);
+            alert('An error occurred while formatting code. Please try again.');
+        } finally {
+            if (window.setLoadingState) {
+                window.setLoadingState(formatBtn, false);
+            }
+            if (window.stopAiAnimation) {
+                window.stopAiAnimation();
+            }
+        }
+    });
+
+    // --- Logic to handle saved explanation from view page ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const descriptionTextarea = document.querySelector('[name="description"]');
+        if (!descriptionTextarea) return;
+
+        // New structured transfer (preferred)
+        const transferRaw = localStorage.getItem('explanation_transfer');
+        if (transferRaw) {
+            try {
+                const transfer = JSON.parse(transferRaw);
+                const mode = (transfer.mode || 'append').toLowerCase();
+                const html = transfer.html || '';
+                if (mode === 'replace') {
+                    descriptionTextarea.value = html;
+                } else {
+                    const existingDescription = (descriptionTextarea.value || '').trim();
+                    const separator = '\n\n---\n\n### AI Explanation\n';
+                    descriptionTextarea.value = existingDescription + separator + html;
+                }
+            } catch (e) {
+                console.warn('Failed to parse explanation_transfer; falling back.', e);
+            } finally {
+                localStorage.removeItem('explanation_transfer');
+            }
+        }
+
+        // Back-compat: prior "append" only flow
+        const legacyAppend = localStorage.getItem('add_to_description');
+        if (legacyAppend) {
+            const existingDescription = (descriptionTextarea.value || '').trim();
+            const separator = '\n\n---\n\n### AI Explanation\n';
+            descriptionTextarea.value = existingDescription + separator + legacyAppend;
+            localStorage.removeItem('add_to_description');
+        }
+
+        // Back-compat: possible legacy replace key
+        const legacyReplace = localStorage.getItem('replace_description');
+        if (legacyReplace) {
+            descriptionTextarea.value = legacyReplace;
+            localStorage.removeItem('replace_description');
+        }
+    });
+    
+    // Draft autosave for edit form (non-destructive: only for convenience during editing)
+    (() => {
+        const KEY = 'draft_edit_snippet_' + {{ snippet.id }};
+        const form = document.querySelector('form');
+        if (!form) return;
+        // restore
+        try {
+            const raw = localStorage.getItem(KEY);
+            if (raw) {
+                const d = JSON.parse(raw);
+                if (d.title) form.querySelector('[name="title"]').value = d.title;
+                if (d.language) form.querySelector('[name="language"]').value = d.language;
+                if (d.description) form.querySelector('[name="description"]').value = d.description;
+                if (d.code) form.querySelector('[name="code"]').value = d.code;
+                if (d.tags) form.querySelector('[name="tags"]').value = d.tags;
+                if (d.collection) form.querySelector('[name="collection"]').value = d.collection;
+            }
+        } catch (_) {}
+        const save = () => {
+            const d = {
+                title: form.querySelector('[name="title"]').value,
+                language: form.querySelector('[name="language"]').value,
+                description: form.querySelector('[name="description"]').value,
+                code: form.querySelector('[name="code"]').value,
+                tags: form.querySelector('[name="tags"]').value,
+                collection: form.querySelector('[name="collection"]').value,
+            };
+            try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (_) {}
+        };
+        form.addEventListener('input', save);
+        form.addEventListener('submit', () => { try { localStorage.removeItem(KEY); } catch (_) {} });
+    })();
+
+    // Loading state for submit button (using global setLoadingState)
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const submitButton = document.getElementById('save-changes-btn'); 
+
+        if (form && submitButton && window.setLoadingState) {
+            form.addEventListener('submit', () => {
+                window.setLoadingState(submitButton, true, 'Saving...');
+            });
+        }
+    });
+</script>
+{% endblock %}

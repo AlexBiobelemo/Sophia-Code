@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">History: {{ snippet.title }}</h2>
+    <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-outline-secondary">Back</a>
+  </div>
+
+  {% if versions %}
+    <ul class="list-group">
+      {% for v in versions %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <div><strong>{{ v.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</strong></div>
+            <div class="text-muted small">
+              {{ v.language }}{% if v.tags %} • {{ v.tags }}{% endif %}
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#v{{ v.id }}" aria-expanded="false" aria-controls="v{{ v.id }}">Preview</button>
+            <form method="post" action="{{ url_for('main.revert_snippet', snippet_id=snippet.id, version_id=v.id) }}" onsubmit="return confirm('Revert to this version?');">
+              <button class="btn btn-sm btn-danger" type="submit">Revert</button>
+            </form>
+          </div>
+        </li>
+        <li class="list-group-item collapse" id="v{{ v.id }}">
+          <h6 class="mb-1">{{ v.title }}</h6>
+          {% set prism_lang = v.language or 'clike' %}
+          <pre class="mb-0"><code class="language-{{ prism_lang }}">{{ v.code }}</code></pre>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="text-muted">No history yet.</p>
+  {% endif %}
+{% endblock %}

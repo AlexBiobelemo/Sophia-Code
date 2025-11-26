@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Export Snippets</h1>
+  <p>Export all your saved snippets to a single markdown file, or select one or more collections.</p>
+
+  <div class="row g-4 mt-2">
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Export All</h5>
+          <p class="card-text">Download every snippet you own. You can choose the sort order.</p>
+          <div class="d-flex gap-2">
+            <select id="all-sort" class="form-select w-auto">
+              <option value="date_desc">Newest First</option>
+              <option value="date_asc">Oldest First</option>
+              <option value="alpha">Alphabetical</option>
+            </select>
+            <button id="download-all-btn" class="btn btn-primary">Download All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">Export by Collection</h5>
+          <p class="card-text">Select one or more collections to include. Optionally include sub-collections.</p>
+          <div class="mb-2">
+            <label for="collections-select" class="form-label">Collections</label>
+            <select id="collections-select" class="form-select" multiple size="8">
+              {% for c in collections %}
+                <option value="{{ c.id }}">{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" value="1" id="include-sub">
+            <label class="form-check-label" for="include-sub">Include sub-collections</label>
+          </div>
+          <div class="d-flex gap-2">
+            <select id="col-sort" class="form-select w-auto">
+              <option value="date_desc">Newest First</option>
+              <option value="date_asc">Oldest First</option>
+              <option value="alpha">Alphabetical</option>
+            </select>
+            <button id="download-collections-btn" class="btn btn-success">Download Selected</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const dlAllBtn = document.getElementById('download-all-btn');
+      const allSort = document.getElementById('all-sort');
+      const dlColBtn = document.getElementById('download-collections-btn');
+      const colSort = document.getElementById('col-sort');
+      const includeSub = document.getElementById('include-sub');
+      const collectionsSel = document.getElementById('collections-select');
+
+      dlAllBtn.addEventListener('click', function() {
+        const sort = allSort.value;
+        window.location.href = `/export/download?sort=${encodeURIComponent(sort)}`;
+      });
+
+      dlColBtn.addEventListener('click', function() {
+        const selected = Array.from(collectionsSel.selectedOptions).map(o => o.value).filter(Boolean);
+        if (!selected.length) {
+          alert('Please select at least one collection.');
+          return;
+        }
+        const sort = colSort.value;
+        const qs = new URLSearchParams({
+          collections: selected.join(','),
+          include_sub: includeSub.checked ? '1' : '0',
+          sort,
+        });
+        window.location.href = `/export/download?${qs.toString()}`;
+      });
+    });
+  </script>
+{% endblock %}

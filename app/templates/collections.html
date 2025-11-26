@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <h3>Create New Collection</h3>
+        <div class="card">
+            <div class="card-body">
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.parent_collection.label(class="form-label") }}
+                        {{ form.parent_collection(class="form-select" + (" is-invalid" if form.parent_collection.errors else "")) }}
+                        {% for error in form.parent_collection.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const form = document.querySelector('.card-body form'); // Select the form within the card-body for creating collections
+                const submitButton = document.getElementById('submit-button'); // ID from forms.py
+
+                if (form && submitButton) {
+                    form.addEventListener('submit', () => {
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating...';
+                    });
+                }
+            });
+        </script>
+    </div>
+
+    <div class="col-md-8">
+        <h3>My Solutions <span class="badge bg-primary rounded-pill">{{ total_snippets_count }} problems solved</span></h3>
+        {% if collections %}
+            <ul class="list-group">
+                {% for item in collections %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center" data-collection-id="{{ item.collection.id }}">
+                        <a href="{{ url_for('main.view_collection', collection_id=item.collection.id) }}" class="text-decoration-none flex-grow-1">
+                            {{ item.collection.name }}
+                            <span class="badge bg-secondary rounded-pill">{{ item.snippet_count }}</span>
+                        </a>
+                        <div class="collection-actions">
+                            <button class="btn btn-sm btn-outline-secondary move-up-btn">
+                                <i class="bi bi-arrow-up"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary move-down-btn">
+                                <i class="bi bi-arrow-down"></i>
+                            </button>
+                            <a href="{{ url_for('main.rename_collection', collection_id=item.collection.id) }}" class="btn btn-secondary btn-sm">Rename</a>
+                            <form action="{{ url_for('main.delete_collection', collection_id=item.collection.id) }}" method="POST" class="d-inline">
+                                <input type="submit" value="Delete" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this collection? Snippets will not be deleted.');">
+                            </form>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">You haven't created any collections yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const collectionList = document.querySelector('.list-group');
+
+        if (collectionList) {
+            collectionList.addEventListener('click', async (event) => {
+                const target = event.target.closest('button');
+                if (!target) return;
+
+                const listItem = target.closest('.list-group-item');
+                if (!listItem) return;
+
+                const collectionId = listItem.dataset.collectionId;
+                const currentOrder = Array.from(collectionList.children).map(item => item.dataset.collectionId);
+                let newOrder = [...currentOrder];
+                const currentIndex = newOrder.indexOf(collectionId);
+
+                if (target.classList.contains('move-up-btn') && currentIndex > 0) {
+                    [newOrder[currentIndex], newOrder[currentIndex - 1]] = [newOrder[currentIndex - 1], newOrder[currentIndex]];
+                } else if (target.classList.contains('move-down-btn') && currentIndex < newOrder.length - 1) {
+                    [newOrder[currentIndex], newOrder[currentIndex + 1]] = [newOrder[currentIndex + 1], newOrder[currentIndex]];
+                } else {
+                    return; // No change or invalid move
+                }
+
+                // Update DOM to reflect new order
+                const fragment = document.createDocumentFragment();
+                newOrder.forEach(id => {
+                    const item = collectionList.querySelector(`[data-collection-id="${id}"]`);
+                    if (item) fragment.appendChild(item);
+                });
+                collectionList.appendChild(fragment);
+
+                // Update button disabled states
+                updateButtonStates();
+
+                // Send new order to backend
+                try {
+                    const response = await fetch("{{ url_for('main.reorder_collections') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ collection_ids: newOrder.map(Number) })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        flashMessage('Collections reordered successfully!', 'success');
+                    } else {
+                        flashMessage(data.message || 'Failed to reorder collections.', 'danger');
+                        // Optionally, revert DOM if backend failed
+                    }
+                } catch (error) {
+                    console.error('Error reordering collections:', error);
+                    flashMessage('An error occurred while reordering collections.', 'danger');
+                    // Optionally, revert DOM if network error
+                }
+            });
+
+            function updateButtonStates() {
+                const items = Array.from(collectionList.children);
+                items.forEach((item, index) => {
+                    const moveUpBtn = item.querySelector('.move-up-btn');
+                    const moveDownBtn = item.querySelector('.move-down-btn');
+
+                    if (moveUpBtn) moveUpBtn.disabled = index === 0;
+                    if (moveDownBtn) moveDownBtn.disabled = index === items.length - 1;
+                });
+            }
+
+            function flashMessage(message, category) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${category} alert-dismissible fade show mt-3`;
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                document.querySelector('.col-md-8').prepend(alertDiv);
+                setTimeout(() => alertDiv.remove(), 3000); // Remove after 3 seconds
+            }
+
+            updateButtonStates(); // Initial state setup
+        }
+    });
+</script>
+{% endblock %}

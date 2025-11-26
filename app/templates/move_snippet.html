@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="text-center">Move or Copy Snippet: <span class="text-body-secondary">{{ snippet.title }}</span></h2>
+        <div class="card">
+            <div class="card-body">
+                <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.target_collection.label(class="form-label") }}
+                        {{ form.target_collection(class="form-select" + (" is-invalid" if form.target_collection.errors else "")) }}
+                        {% for error in form.target_collection.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.action.label(class="form-label") }}
+                        {{ form.action(class="form-select" + (" is-invalid" if form.action.errors else "")) }}
+                        {% for error in form.action.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-secondary">Cancel</a>
+                        {{ form.submit(class="btn btn-primary", value="Perform Action") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const submitButton = document.getElementById('submit-button');
+
+        if (form && submitButton) {
+            form.addEventListener('submit', () => {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+            });
+        }
+    });
+</script>
+{% endblock %}

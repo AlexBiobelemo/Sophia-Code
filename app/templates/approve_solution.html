@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Approve Solution for "{{ solution.problem.title }}"</h1>
+    <p><strong>Solution by:</strong> {{ solution.contributor.username }}</p>
+    <p><strong>Language:</strong> {{ solution.language }}</p>
+    <p><strong>Classification:</strong> {{ solution.classification }}</p>
+
+    <hr>
+
+    <h2>Solution Code</h2>
+    <pre><code class="language-{{ solution.language }}">{{ solution.solution_code }}</code></pre>
+
+    <h2>Explanation</h2>
+    <div class="card mb-3">
+        <div class="card-body">
+            {{ solution.explanation | markdown }}
+        </div>
+    </div>
+
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3 form-check">
+            {{ form.approve(class="form-check-input") }}
+            {{ form.approve.label(class="form-check-label") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+    <a href="{{ url_for('main.view_solution', solution_id=solution.id) }}" class="btn btn-secondary mt-3">Cancel</a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+            const submitButton = document.getElementById('submit-button');
+
+            if (form && submitButton) {
+                form.addEventListener('submit', () => {
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
+                });
+            }
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
+{% endblock %}

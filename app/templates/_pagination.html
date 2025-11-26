@@ -1,0 +1,14 @@
+<nav aria-label="Snippet navigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for(endpoint, page=pagination.prev_num, **(kwargs or {})) }}">
+                <span aria-hidden="true">&laquo;</span> Previous
+            </a>
+        </li>
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for(endpoint, page=pagination.next_num, **(kwargs or {})) }}">
+                Next <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>

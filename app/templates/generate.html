@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">AI Code Generation</h2>
+                <p class="text-center text-muted mb-2">Describe the function or code block you need, and the AI will generate it for you.</p>
+                <p class="text-center small text-warning mb-4">Tip: Very long requests can take time. Keep prompts concise for faster results.</p>
+                <form id="ai-generate-form" method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.prompt.label(class="form-label") }}
+                        {{ form.prompt(class="form-control", rows=5) }}
+                        {% for error in form.prompt.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
+                            Generate
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const form = document.getElementById('ai-generate-form');
+                        const submitButton = form.querySelector('button[type="submit"]');
+
+                        if (!form || !submitButton) return;
+
+                        form.addEventListener('submit', function() {
+                            if (window.setLoadingState) {
+                                window.setLoadingState(submitButton, true, 'Generating...');
+                            }
+                            if (window.startAiAnimation) {
+                                window.startAiAnimation();
+                            }
+
+                            // Safety: re-enable after 90s in case of navigation issues or unhandled errors
+                            setTimeout(() => {
+                                if (window.setLoadingState) {
+                                    window.setLoadingState(submitButton, false);
+                                }
+                                if (window.stopAiAnimation) {
+                                    window.stopAiAnimation();
+                                }
+                            }, 90000);
+                        });
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

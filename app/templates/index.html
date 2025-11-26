@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if current_user.is_anonymous %}
+        <div class="px-4 py-5 my-5 text-center">
+            <h1 class="display-5 fw-bold text-body-emphasis">Sophia</h1>
+            <div class="col-lg-6 mx-auto">
+                <p class="lead mb-4">Your personal, AI-powered knowledge base. Login to manage your code snippets.</p>
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-lg px-4 gap-3">Login</a>
+                    <a href="{{ url_for('main.register') }}" class="btn btn-outline-secondary btn-lg px-4">Register</a>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <form id="bulk-actions-form" method="POST" action="">
+            {{ form.csrf_token }}
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="filters-bar">
+                <h2 class="me-auto mb-0">Your Snippets</h2>
+                {% if selected_language %}<span class="badge bg-secondary">Language: {{ selected_language }}</span>{% endif %}
+                {% if selected_tag %}<span class="badge bg-secondary">Tag: {{ selected_tag }}</span>{% endif %}
+                {% if text_query %}<span class="badge bg-secondary">Text: {{ text_query }}</span>{% endif %}
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.index') }}">Reset</a>
+                <a class="btn btn-sm btn-outline-success" href="{{ url_for('main.export_current_filtered', language=selected_language or None, tag=selected_tag or None, sort=selected_sort or None, q=text_query or None) }}">Export Current</a>
+            </div>
+
+            <div class="d-flex align-items-center mb-3">
+                <div class="form-check me-3">
+                    <input class="form-check-input" type="checkbox" id="select-all-snippets">
+                    <label class="form-check-label" for="select-all-snippets">Select All</label>
+                </div>
+
+                <div class="dropdown me-2">
+                    <button class="btn btn-sm btn-info dropdown-toggle" type="button" id="bulk-actions-dropdown" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                        Bulk Actions
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="bulk-actions-dropdown">
+                        <li><button class="dropdown-item" type="button" id="bulk-delete-btn">Delete Selected</button></li>
+                        <li><button class="dropdown-item" type="button" id="bulk-copy-btn" data-action="copy">Copy Selected</button></li>
+                        <li><button class="dropdown-item" type="button" id="bulk-move-btn" data-action="move">Move Selected</button></li>
+                    </ul>
+                </div>
+            </div>
+
+            <ul class="nav nav-pills mb-3">
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                        Language{% if selected_language %}: {{ selected_language }}{% endif %}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('main.index', tag=selected_tag or None, sort=selected_sort or None, q=text_query or None) }}">Any</a></li>
+                        {% for lang in languages %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.index', language=lang, tag=selected_tag or None, sort=selected_sort or None, q=text_query or None) }}">{{ lang }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                        Tags{% if selected_tag %}: {{ selected_tag }}{% endif %}
+                    </a>
+                    <div class="dropdown-menu p-3" style="min-width: 300px;">
+                        <a class="dropdown-item mb-2" href="{{ url_for('main.index', language=selected_language or None, sort=selected_sort or None, q=text_query or None) }}">Any</a>
+                        <div class="input-group input-group-sm mb-2">
+                            <input id="tag-search" type="text" class="form-control" placeholder="Search tag..." value="">
+                            <button id="tag-clear" class="btn btn-outline-secondary" type="button">Clear</button>
+                        </div>
+                        <div id="tag-results" class="list-group list-group-flush" style="max-height: 240px; overflow:auto"></div>
+                    </div>
+                </li>
+                <li class="nav-item dropdown me-2">
+                    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                        Sort: {% if selected_sort == 'alpha' %}A→Z{% elif selected_sort == 'date_asc' %}Oldest{% else %}Newest{% endif %}
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('main.index', language=selected_language or None, tag=selected_tag or None, sort='alpha', q=text_query or None) }}">Alphabetical (A→Z)</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.index', language=selected_language or None, tag=selected_tag or None, sort='date_desc', q=text_query or None) }}">Date Modified (Newest)</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('main.index', language=selected_language or None, tag=selected_tag or None, sort='date_asc', q=text_query or None) }}">Date Modified (Oldest)</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item ms-auto">
+                    <form class="d-flex" method="get" action="{{ url_for('main.index') }}">
+                        <input type="hidden" name="language" value="{{ selected_language }}" />
+                        <input type="hidden" name="tag" value="{{ selected_tag }}" />
+                        <input type="hidden" name="sort" value="{{ selected_sort }}" />
+                        <div class="input-group input-group-sm">
+                            <input name="q" class="form-control" placeholder="Filter text..." value="{{ text_query or '' }}" />
+                            <button class="btn btn-outline-primary" type="submit">Apply</button>
+                        </div>
+                    </form>
+                </li>
+            </ul>
+
+            {% if snippets and snippets.items %}
+                <div id="snippets-container">
+                    {% include '_snippets_list.html' with context %}
+                </div>
+                {% if snippets.has_next %}
+                    <link rel="prefetch" href="{{ url_for('main.index', page=snippets.next_num, language=selected_language or None, tag=selected_tag or None, sort=selected_sort or None, q=text_query or None, partial=1) }}" as="fetch" />
+                {% endif %}
+                <div id="scroll-sentinel" class="text-center text-muted small py-3">Loading more…</div>
+            {% else %}
+                <div class="text-center py-5">
+                    <h3 class="text-muted">No snippets match your filters.</h3>
+                    <p>Try resetting or changing filters.</p>
+                    <a href="{{ url_for('main.create_snippet') }}" class="btn btn-success">Create New Snippet</a>
+                </div>
+            {% endif %}
+        </form>
+
+        <!-- Modal Backdrop -->
+        <div id="modalBackdrop" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1040; display: none;"></div>
+
+        <!-- Bulk Copy/Move Panel -->
+        <div id="bulkCopyMovePanel"
+            class="card shadow"
+            style="position: fixed;
+                    top: 10%; /* Fixed at 10% from the top */
+                    left: 50%; /* Center horizontally */
+                    transform: translateX(-50%); /* Adjust for horizontal centering only */
+                    max-width: 500px;
+                    width: 90%;
+                    z-index: 1050;
+                    display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0" id="bulkCopyMovePanelLabel">Select Target Collection</h5>
+                <button type="button" class="btn-close" id="bulkCopyMovePanelClose" aria-label="Close"></button>
+            </div>
+            <div class="card-body">
+                <form id="bulk-copy-move-form" action="" method="POST">
+                    <div class="mb-3">
+                        <label for="target_collection" class="form-label">Collection</label>
+                        <select class="form-select" id="target_collection" name="target_collection">
+                            <option value="0">--- No Collection ---</option>
+                            {% for collection in current_user.collections.all() %}
+                                <option value="{{ collection.id }}">{{ collection.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" name="action" id="bulk-action-type">
+                    <input type="hidden" name="snippet_ids" id="bulk-snippet-ids">
+                    <button type="submit" class="btn btn-primary" id="confirm-bulk-action-btn">Confirm</button>
+                </form>
+            </div>
+        </div>
+                   
+    {% endif %}
+
+    {% if snippets and snippets.pages > 1 %}
+        {% with pagination=snippets, endpoint='main.index', kwargs={'language': selected_language or None, 'tag': selected_tag or None, 'sort': selected_sort or None, 'q': text_query or None} %}
+            {% include '_pagination.html' %}
+        {% endwith %}
+    {% endif %}
+
+    <script>
+        // Global variables for JavaScript to access Jinja2/Flask URLs and data
+        window.SOPHIA_CONFIG = {
+            bulkDeleteUrl: {{ url_for('main.bulk_delete_snippets') | tojson }},
+            bulkCopyMoveUrl: {{ url_for('main.bulk_copy_move_snippets') | tojson }},
+            apiTagsUrl: {{ url_for('main.api_tags') | tojson }},
+            indexUrl: {{ url_for('main.index') | tojson }},
+            selectedLanguage: {{ (selected_language or '') | tojson }},
+            selectedTag: {{ (selected_tag or '') | tojson }},
+            selectedSort: {{ (selected_sort or '') | tojson }},
+            textQuery: {{ (text_query or '') | tojson }},
+            snippetsNextNum: {{ (snippets.next_num if snippets and snippets.has_next else 'null') | tojson }},
+            snippetsHasNext: {{ ('true' if snippets and snippets.has_next else 'false') | tojson }}
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/bulk_actions.js') }}"></script>
+{% endblock %}
