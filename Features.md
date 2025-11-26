@@ -7,11 +7,13 @@
 **Technical Implementation:** Flask-Login for session management, SQLAlchemy for user data persistence, password hashing using Werkzeug.
 
 #### Demo: Profile Management (GIF/Video)
-<div>
-![Profile management GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Profile%20Management.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Profile%20Management.gif" alt="Profile management GIF" width="600">
 </div>
 <br>
-<video src="[https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Profile%20Management.mp4](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Profile%20Management.mp4)" controls loop muted width="600"></video>
+<div style="text-align: center;">
+<video src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Profile%20Management.mp4" controls loop muted width="600"></video>
+</div>
 
 ---
 
@@ -20,14 +22,16 @@
 **Technical Implementation:** SQLAlchemy models for `Snippet` and `Collection`, WTForms for input validation, Pygments for syntax highlighting in frontend.
 
 #### Demo: Snippet Management (GIF/Video)
-<div>
-![Code snippet management 1 GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%201.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%201.gif" alt="Code snippet management 1 GIF" width="600">
 </div>
-<div>
-![Code snippet management 2 GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%202.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%202.gif" alt="Code snippet management 2 GIF" width="600">
 </div>
 <br>
-<video src="[https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%201.mp4](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%201.mp4)" controls loop muted width="600"></video>
+<div style="text-align: center;">
+<video src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Snippet%20Management%201.mp4" controls loop muted width="600"></video>
+</div>
 
 ---
 
@@ -36,11 +40,13 @@
 **Technical Implementation:** `Collection` model with `parent_id` for nesting, drag-and-drop reordering implemented with JavaScript and a backend API endpoint.
 
 #### Demo: Collection Organization (GIF/Video)
-<div>
-![Collection Organization GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Coolection%20Organization.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Coolection%20Organization.gif" alt="Collection Organization GIF" width="600">
 </div>
 <br>
-<video src="[https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Coolection%20Organization.mp4](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Coolection%20Organization.mp4)" controls loop muted width="600"></video>
+<div style="text-align: center;">
+<video src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Coolection%20Organization.mp4" controls loop muted width="600"></video>
+</div>
 
 ---
 
@@ -55,11 +61,13 @@
 **Technical Implementation:** Google Gemini API integration (via `app/ai_services.py`), Celery for asynchronous task processing to avoid blocking the main Flask app during AI calls.
 
 #### Demo: Code Generation (GIF/Video)
-<div>
-![Code generation GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Generation-1.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Generation-1.gif" alt="Code generation GIF" width="600">
 </div>
 <br>
-<video src="[https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Generation.mp4](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Generation.mp4)" controls loop muted width="600"></video>
+<div style="text-align: center;">
+<video src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Generation.mp4" controls loop muted width="600"></video>
+</div>
 
 ---
 
@@ -68,11 +76,13 @@
 **Technical Implementation:** Google Gemini API (via `app/ai_services.py`).
 
 #### Demo: Code Formatting (GIF/Video)
-<div>
-![Code formatting GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Formatting.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Formatting.gif" alt="Code formatting GIF" width="600">
 </div>
 <br>
-<video src="[https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Formatting.mp4](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Formatting.mp4)" controls loop muted width="600"></video>
+<div style="text-align: center;">
+<video src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Code%20Formatting.mp4" controls loop muted width="600"></video>
+</div>
 
 ---
 
@@ -93,11 +103,13 @@
 **Technical Implementation:** Frontend JavaScript handles selection and sends bulk requests to a dedicated backend endpoint.
 
 #### Demo: Bulk Operations (GIF/Video)
-<div>
-![Bulk operations GIF](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Bulk%20Operations.gif)
+<div style="text-align: center;">
+<img src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Bulk%20Operations.gif" alt="Bulk operations GIF" width="600">
 </div>
 <br>
-<video src="[https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Bulk%20Operations.mp4](https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Bulk%20Operations.mp4)" controls loop muted width="600"></video>
+<div style="text-align: center;">
+<video src="https://raw.githubusercontent.com/AlexBiobelemo/Sophia---Organize-share-generate-code-snippets./main/Videos/Bulk%20Operations.mp4" controls loop muted width="600"></video>
+</div>
 
 ---
 
