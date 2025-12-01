@@ -29,7 +29,7 @@ Project Sophia addresses the common problem developers face in managing an ever-
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/AlexBiobelemo/Project-Sophia.git
+    git clone https://github.com/AlexBiobelemo/Sophia-Code
     cd Project-Sophia
     ```
 
@@ -73,3 +73,4 @@ The application will typically be available at `http://127.0.0.1:5000/`. Open th
 ## Contact/Acknowledgments
 - Developed by Alex Biobelemo
 - Inspired by personal needs for better code organization.
+
