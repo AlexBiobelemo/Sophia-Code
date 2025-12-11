@@ -1090,9 +1090,80 @@ def api_export_snippets():
             'language': snippet.language,
             'tags': snippet.tags,
             'collection': snippet.collection.name if snippet.collection else 'None',
-            'created_at': snippet.timestamp.isoformat()
         })
     return jsonify(snippets_data)
+
+
+@bp.route('/export/selected_snippets_zip')
+@login_required
+def export_selected_snippets_zip():
+    """Exports selected user snippets as individual Markdown files within a ZIP archive."""
+    snippet_ids_str = request.args.get('ids')
+    sort = request.args.get('sort') or 'date_desc'
+
+    if not snippet_ids_str:
+        flash('No snippets selected for export.', 'danger')
+        return redirect(url_for('main.export_snippets'))
+
+    try:
+        snippet_ids = [int(s_id) for s_id in snippet_ids_str.split(',') if s_id]
+    except ValueError:
+        flash('Invalid snippet IDs provided.', 'danger')
+        return redirect(url_for('main.export_snippets'))
+
+    sel = sa.select(Snippet).where(
+        Snippet.user_id == current_user.id,
+        Snippet.id.in_(snippet_ids)
+    )
+
+    # Apply ordering
+    if sort == 'alpha':
+        sel = sel.order_by(Snippet.title.asc())
+    elif sort == 'date_asc':
+        sel = sel.order_by(Snippet.timestamp.asc())
+    else:
+        sel = sel.order_by(Snippet.timestamp.desc())
+
+    snippets_to_export = db.session.execute(sel).scalars().all()
+
+    if not snippets_to_export:
+        flash('No matching snippets found or you do not have permission to download them.', 'danger')
+        return redirect(url_for('main.export_snippets'))
+
+    # Generate ZIP in-memory
+    from io import BytesIO
+    import zipfile
+
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for snippet in snippets_to_export:
+            # Construct content for each snippet file
+            content = f"## {snippet.title}\n"
+            content += f"**Language:** {snippet.language}\n"
+            if snippet.tags:
+                content += f"**Tags:** {snippet.tags}\n"
+            if snippet.description:
+                content += "\n### Description:\n"
+                content += f"{snippet.description}\n"
+            content += "\n### Code:\n"
+            content += f"```{snippet.language.lower() if snippet.language else ''}\n"
+            content += f"{snippet.code}\n"
+            content += "```\n"
+
+            # Clean filename
+            filename = f"{snippet.title.replace('/', '_').replace(' ', '_')}.md"
+            zipf.writestr(filename, content.encode('utf-8'))
+
+    zip_buffer.seek(0)
+    
+    return current_app.response_class(
+        zip_buffer.getvalue(),
+        headers={
+            'Content-Disposition': 'attachment;filename=sophia_selected_snippets.zip',
+            'Content-Type': 'application/zip'
+        },
+        mimetype='application/zip'
+    )
 
 
 # simple in-memory TTL cache for tag suggestions
