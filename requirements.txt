@@ -6,6 +6,7 @@ Flask_Migrate==4.1.0
 Flask_Migrate==4.0.5
 flask_sqlalchemy==3.1.1
 flask_wtf==1.2.2
+Flask-Moment==1.2.0
 numpy==2.3.5
 protobuf==6.33.1
 pytest==8.4.2

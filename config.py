@@ -14,6 +14,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    MINIMAX_API_KEY = os.environ.get('MINIMAX_API_KEY')
 
     POSTS_PER_PAGE = 10
 
