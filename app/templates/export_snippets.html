@@ -1,52 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <h1>Export Snippets</h1>
-  <p>Export all your saved snippets to a single markdown file, or select one or more collections.</p>
+<h1>Export Snippets</h1>
+<p>Export all your saved snippets to a single markdown file, or select one or more collections.</p>
 
-  <div class="row g-4 mt-2">
-    <div class="col-md-6">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title">Export All</h5>
-          <p class="card-text">Download every snippet you own. You can choose the sort order.</p>
-          <div class="d-flex gap-2">
-            <select id="all-sort" class="form-select w-auto">
-              <option value="date_desc">Newest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="alpha">Alphabetical</option>
-            </select>
-            <button id="download-all-btn" class="btn btn-primary">Download All</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-6">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title">Export by Collection</h5>
-          <p class="card-text">Select one or more collections to include. Optionally include sub-collections.</p>
-          <div class="mb-2">
-            <label for="collections-select" class="form-label">Collections</label>
-            <select id="collections-select" class="form-select" multiple size="8">
-              {% for c in collections %}
-                <option value="{{ c.id }}">{{ c.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="1" id="include-sub">
-            <label class="form-check-label" for="include-sub">Include sub-collections</label>
-          </div>
-          <div class="d-flex gap-2">
-            <select id="col-sort" class="form-select w-auto">
-              <option value="date_desc">Newest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="alpha">Alphabetical</option>
-            </select>
-            <button id="download-collections-btn" class="btn btn-success">Download Selected</button>
-          </div>
+<div class="row g-4 mt-2">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">Export All</h5>
+        <p class="card-text">Download every snippet you own. You can choose the sort order.</p>
+        <div class="d-flex gap-2">
+          <select id="all-sort" class="form-select w-auto">
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="alpha">Alphabetical</option>
+          </select>
+          <button id="download-all-btn" class="btn btn-primary">Download All</button>
         </div>
       </div>
     </div>
@@ -55,13 +25,46 @@
   <div class="col-md-6">
     <div class="card h-100">
       <div class="card-body">
+        <h5 class="card-title">Export by Collection</h5>
+        <p class="card-text">Select one or more collections to include. Optionally include sub-collections.</p>
+        <div class="mb-2">
+          <label for="collections-select" class="form-label">Collections</label>
+          <select id="collections-select" class="form-select" multiple size="8">
+            {% for c in collections %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" value="1" id="include-sub">
+          <label class="form-check-label" for="include-sub">Include sub-collections</label>
+        </div>
+        <div class="d-flex gap-2">
+          <select id="col-sort" class="form-select w-auto">
+            <option value="date_desc">Newest First</option>
+            <option value="date_asc">Oldest First</option>
+            <option value="alpha">Alphabetical</option>
+          </select>
+          <button id="download-collections-btn" class="btn btn-success">Download Selected</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-2">
+  <div class="col-12">
+    <div class="card h-100">
+      <div class="card-body">
         <h5 class="card-title">Export Individual Snippets</h5>
-        <p class="card-text">Select individual snippets or all snippets to export as separate files in a ZIP archive.</p>
+        <p class="card-text">Select individual snippets to export either as separate files in a ZIP archive or as a
+          single markdown file.</p>
         <div class="form-check mb-2">
           <input class="form-check-input" type="checkbox" id="select-all-snippets">
           <label class="form-check-label" for="select-all-snippets">Select All Snippets</label>
         </div>
-        <div id="individual-snippets-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
+        <div id="individual-snippets-list"
+          style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 0.5rem;">
           <!-- Snippet checkboxes will be loaded here by JavaScript -->
           <p class="text-muted text-center">Loading snippets...</p>
         </div>
@@ -72,19 +75,22 @@
             <option value="alpha">Alphabetical</option>
           </select>
           <button id="download-selected-snippets-btn" class="btn btn-primary" disabled>Download Selected as ZIP</button>
+          <button id="download-selected-snippets-direct-btn" class="btn btn-success" disabled>Download Selected
+            Directly</button>
         </div>
       </div>
     </div>
   </div>
-</div> <!-- Close row g-4 mt-2 -->
+</div>
 
 <script>
   // Configuration object for JavaScript, similar to window.SOPHIA_CONFIG
   window.SOPHIA_EXPORT_CONFIG = {
     apiExportSnippetsUrl: "{{ url_for('main.api_export_snippets') }}",
-    exportSelectedZipUrl: "{{ url_for('main.export_selected_snippets_zip') }}"
+    exportSelectedZipUrl: "{{ url_for('main.export_selected_snippets_zip') }}",
+    exportSelectedDirectUrl: "{{ url_for('main.download_selected_snippets') }}"
   };
 </script>
 
-  <script src="{{ url_for('static', filename='js/export_snippets.js') }}"></script>
+<script src="{{ url_for('static', filename='js/export_snippets.js') }}"></script>
 {% endblock %}

@@ -12,10 +12,11 @@ import json
 
 from app import db, ai_services
 from app.forms import (RegistrationForm, LoginForm, SnippetForm,
-                       AIGenerationForm, CollectionForm,
+                       AIGenerationForm, CollectionForm, NoteForm,
                        LeetcodeProblemForm, GenerateSolutionForm, ApproveSolutionForm,
-                       MoveSnippetForm, EditProfileForm, BulkActionForm)
-from app.models import User, Snippet, Collection, LeetcodeProblem, LeetcodeSolution, SnippetVersion, ChatSession, ChatMessage, Badge, UserBadge, Point
+                       MoveSnippetForm, EditProfileForm, BulkActionForm, SettingsForm)
+from app.models import User, Snippet, Collection, LeetcodeProblem, LeetcodeSolution, SnippetVersion, ChatSession, ChatMessage, Badge, UserBadge, Point, Note, MultiStepResult
+from app.utils.state_manager import StateManager, preserve_form_state, restore_form_state, preserve_search_state, restore_search_state
 from io import StringIO
 
 # Create the main Blueprint
@@ -71,6 +72,16 @@ def index():
 
     if current_user.is_authenticated:
         bulk_action_form = BulkActionForm() # Instantiate form
+        
+        # Preserve search state
+        preserve_search_state({
+            'language': language,
+            'tag': tag,
+            'sort': sort,
+            'q': text,
+            'page': page
+        })
+        
         # Base query scoped to current user
         q = current_user.snippets
 
@@ -119,7 +130,7 @@ def index():
         selected_tag=tag,
         selected_sort=sort,
         text_query=text,
-        form=bulk_action_form # Pass the form to the template
+        form=bulk_action_form
     )
 
 
@@ -197,6 +208,129 @@ def register():
     return render_template('register.html', title='Register', form=form)
 
 
+@bp.route('/notes')
+@login_required
+def notes():
+    page = request.args.get('page', 1, type=int)
+    q = request.args.get('q') or ''
+    
+    # Preserve search state
+    preserve_search_state({'q': q, 'page': page})
+    
+    user_notes = current_user.notes
+    if q:
+        user_notes = user_notes.filter(Note.title.ilike(f'%{q}%') | Note.content.ilike(f'%{q}%'))
+    user_notes = user_notes.order_by(Note.timestamp.desc()).paginate(
+        page=page, per_page=current_app.config['POSTS_PER_PAGE'], error_out=False
+    )
+    return render_template('notes.html', title='My Notes', notes=user_notes, query=q)
+
+
+
+@bp.route('/create_note', methods=['GET', 'POST'])
+@login_required
+def create_note():
+    """Handles creation of new notes."""
+    form = NoteForm()
+    if form.validate_on_submit():
+        note = Note(
+            title=form.title.data,
+            content=form.content.data,
+            author=current_user
+        )
+        db.session.add(note)
+        db.session.commit()
+        
+        # Award points for creating a note
+        current_app.award_points(current_user, 5, "Note Created")
+        
+        # Check badges
+        check_and_award_badges(current_user)
+            
+        flash('Your note has been saved!', 'success')
+        return redirect(url_for('main.notes'))
+    return render_template('create_note.html', title='Create Note', form=form)
+
+
+@bp.route('/note/<int:note_id>')
+@login_required
+def view_note(note_id):
+    """Displays a single note in detail."""
+    note = db.session.get(Note, note_id)
+    if note is None or note.author != current_user:
+        flash('Note not found or you do not have permission to view it.', 'danger')
+        return redirect(url_for('main.notes'))
+    return render_template('view_note.html', title=note.title, note=note)
+
+
+@bp.route('/note/<int:note_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_note(note_id):
+    """Handles editing an existing note."""
+    note = db.session.get(Note, note_id)
+    if note is None or note.author != current_user:
+        flash('Note not found or you do not have permission to edit it.', 'danger')
+        return redirect(url_for('main.notes'))
+
+    form = NoteForm(obj=note)
+    
+    # Restore form data if available
+    if request.method == 'GET':
+        saved_data = restore_form_state(f'edit_note_{note_id}')
+        if saved_data:
+            form.title.data = saved_data.get('title', note.title)
+            form.content.data = saved_data.get('content', note.content)
+    
+    if form.validate_on_submit():
+        note.title = form.title.data
+        note.content = form.content.data
+        db.session.commit()
+        # Clear saved form state after successful submission
+        StateManager.clear_state('form_data', f'edit_note_{note_id}')
+        flash('Your note has been updated!', 'success')
+        return redirect(url_for('main.view_note', note_id=note.id))
+    
+    # Preserve form data on POST with validation errors
+    if request.method == 'POST' and not form.validate_on_submit():
+        preserve_form_state({
+            'title': form.title.data,
+            'content': form.content.data
+        }, f'edit_note_{note_id}')
+    
+    return render_template('edit_note.html', title='Edit Note', form=form, note=note)
+
+
+@bp.route('/note/<int:note_id>/delete', methods=['POST'])
+@login_required
+def delete_note(note_id):
+    """Handles deleting a note."""
+    note = db.session.get(Note, note_id)
+    if note is None or note.author != current_user:
+        flash('Note not found or you do not have permission to delete it.', 'danger')
+        return redirect(url_for('main.notes'))
+
+    db.session.delete(note)
+    db.session.commit()
+    flash('Your note has been deleted.', 'success')
+    return redirect(url_for('main.notes'))
+
+
+@bp.route('/api/note/<int:note_id>/explain', methods=['POST'])
+@login_required
+def api_explain_note(note_id):
+    """API endpoint to get an AI explanation for a note's content."""
+    note = db.session.get(Note, note_id)
+    if note is None or note.author != current_user:
+        return jsonify({'error': 'Note not found or unauthorized.'}), 404
+
+    try:
+        explanation = ai_services.explain_code(note.content)
+        return jsonify({'explanation': explanation})
+    except Exception as e:
+        current_app.logger.error(f"AI explanation for note {note_id} failed: {e}")
+        return jsonify({'error': 'Failed to generate explanation.'}), 500
+
+
 @bp.route('/snippet/<int:snippet_id>')
 @login_required
 def view_snippet(snippet_id):
@@ -257,6 +391,15 @@ def create_snippet():
             language=form.language.data,
             collection_id=collection_id
         )
+        # Handle thinking_steps if provided from multi-step generation
+        thinking_steps = request.args.get('thinking_steps')
+        if thinking_steps:
+            try:
+                import json
+                snippet.thought_steps = json.loads(thinking_steps)
+            except (json.JSONDecodeError, TypeError):
+                # If invalid JSON, store as None or empty dict
+                snippet.thought_steps = None
         try:
             snippet.generate_and_set_embedding()
         except Exception as e:
@@ -276,6 +419,14 @@ def create_snippet():
         db.session.commit()
         current_app.award_points(current_user, 10, "Snippet Created") # Award points for creating a snippet
         check_and_award_badges(current_user) # Check and award badges
+        
+        # Trigger backup after snippet creation
+        try:
+            from database_backup import increment_snippet_save_counter
+            increment_snippet_save_counter()
+        except Exception as e:
+            current_app.logger.warning(f"Backup trigger failed (create_snippet): {e}")
+            
         flash('Your snippet has been saved!', 'success')
         return redirect(url_for('main.index'))
 
@@ -319,6 +470,14 @@ def edit_snippet(snippet_id):
         except Exception as e:
             current_app.logger.warning(f"embedding generation failed (edit_snippet): {e}")
         db.session.commit()
+        
+        # Trigger backup after snippet editing
+        try:
+            from database_backup import increment_snippet_save_counter
+            increment_snippet_save_counter()
+        except Exception as e:
+            current_app.logger.warning(f"Backup trigger failed (edit_snippet): {e}")
+            
         flash('Your snippet has been updated!', 'success')
         return redirect(url_for('main.view_snippet', snippet_id=snippet.id))
 
@@ -418,6 +577,13 @@ def delete_snippet(snippet_id):
 def generate():
     """Renders the AI code generation page and handles form submission."""
     form = AIGenerationForm()
+    
+    # Pre-fill prompt if provided via URL parameter (for retry functionality)
+    if request.method == 'GET':
+        prompt_param = request.args.get('prompt')
+        if prompt_param:
+            form.prompt.data = prompt_param
+    
     if form.validate_on_submit():
         prompt = form.prompt.data
         flash('Generating your code... please wait.', 'info')
@@ -447,16 +613,156 @@ def generate():
     return render_template('generate.html', title='AI Code Generation', form=form)
 
 
+@bp.route('/generate_multi_step', methods=['POST'])
+@login_required
+def generate_multi_step():
+    """Handle multi-step thinking AI code generation."""
+    try:
+        data = request.get_json(silent=True) or {}
+        prompt = data.get('prompt', '').strip()
+        test_cases = data.get('test_cases', '').strip()
+        
+        if not prompt:
+            return jsonify({'error': 'Prompt is required.'}), 400
+            
+        # Generate unique result ID
+        result_id = str(uuid.uuid4())
+        
+        # Create database record for multi-step result
+        multi_step_record = MultiStepResult(
+            result_id=result_id,
+            user_id=current_user.id,
+            prompt=prompt,
+            test_cases=test_cases,
+            status='processing'
+        )
+        db.session.add(multi_step_record)
+        db.session.commit()
+        
+        # Call the multi-step solver
+        result = ai_services.multi_step_complete_solver(prompt, test_cases)
+        
+        # Update the database record with results
+        if 'error' in result:
+            multi_step_record.status = 'error'
+            multi_step_record.error_message = result['error']
+            multi_step_record.completed_at = datetime.now(timezone.utc)
+        else:
+            multi_step_record.status = 'completed'
+            multi_step_record.layer1_architecture = result.get('layer1_architecture')
+            multi_step_record.layer2_coder = result.get('layer2_coder')
+            multi_step_record.layer3_tester = result.get('layer3_tester')
+            multi_step_record.layer4_refiner = result.get('layer4_refiner')
+            multi_step_record.final_code = result.get('final_code')
+            
+            # Ensure processing_time is always a valid float
+            processing_time = result.get('processing_time')
+            if processing_time is not None and isinstance(processing_time, (int, float)):
+                multi_step_record.processing_time = float(processing_time)
+            else:
+                multi_step_record.processing_time = None
+                
+            multi_step_record.completed_at = datetime.now(timezone.utc)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'result_id': result_id,
+            'message': 'Multi-step thinking completed successfully!'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Multi-step generation failed: {e}")
+        return jsonify({'error': f'Multi-step generation failed: {str(e)}'}), 500
+
+
+@bp.route('/get_multi_step_result/<result_id>')
+@login_required
+def get_multi_step_result(result_id):
+    """Retrieve multi-step thinking results."""
+    try:
+        # Query database for multi-step result
+        result_record = db.session.scalar(
+            sa.select(MultiStepResult).where(
+                MultiStepResult.result_id == result_id,
+                MultiStepResult.user_id == current_user.id
+            )
+        )
+        
+        if not result_record:
+            current_app.logger.warning(f"Result ID {result_id} not found in database")
+            return jsonify({'error': 'Result not found.'}), 404
+
+        # Clean up old results (keep only last 10 per user)
+        old_results = db.session.execute(
+            sa.select(MultiStepResult).where(
+                MultiStepResult.user_id == current_user.id
+            ).order_by(MultiStepResult.timestamp.desc()).offset(10)
+        ).scalars().all()
+        
+        for old_result in old_results:
+            db.session.delete(old_result)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'result': result_record.to_dict()
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to retrieve multi-step result: {e}")
+        return jsonify({'error': f'Failed to retrieve result: {str(e)}'}), 500
+
+
+@bp.route('/multi_step_results/<result_id>')
+@login_required
+def multi_step_results(result_id):
+    """Display multi-step thinking results in a formatted page."""
+    try:
+        # Query database for multi-step result
+        result_record = db.session.scalar(
+            sa.select(MultiStepResult).where(
+                MultiStepResult.result_id == result_id,
+                MultiStepResult.user_id == current_user.id
+            )
+        )
+        
+        if not result_record:
+            current_app.logger.warning(f"Result ID {result_id} not found in database")
+            flash('Results not found or expired.', 'warning')
+            return redirect(url_for('main.generate'))
+        
+        # Clean up old results (keep only last 10 per user)
+        old_results = db.session.execute(
+            sa.select(MultiStepResult).where(
+                MultiStepResult.user_id == current_user.id
+            ).order_by(MultiStepResult.timestamp.desc()).offset(10)
+        ).scalars().all()
+        
+        for old_result in old_results:
+            db.session.delete(old_result)
+        db.session.commit()
+        
+        return render_template('multi_step_results.html', title='Multi-Step Results', result=result_record)
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to display multi-step results: {e}")
+        flash('Error loading results.', 'danger')
+        return redirect(url_for('main.generate'))
+
+
 @bp.route('/explain', methods=['POST'])
 @login_required
 def explain():
-    """API endpoint to get an AI explanation for a code block."""
+    """API endpoint to get an AI explanation for a code block.
+    This specifically uses Gemini for the explain button on the view snippet page."""
     data = request.get_json()
     if not data or 'code' not in data:
         return jsonify({'error': 'Missing code in request.'}), 400
 
     code = data['code']
-    explanation = ai_services.explain_code(code)
+    explanation = ai_services.explain_code_for_view_snippet(code)
     return jsonify({'explanation': explanation})
 
 
@@ -521,6 +827,25 @@ def refine():
     return jsonify({'code': refined_code, 'explanation': explanation, 'meta': getattr(ai_services, 'LAST_META', {})})
 
 
+@bp.route('/intelligent_search')
+@login_required
+def intelligent_search():
+    """Renders the intelligent search page without requiring a search query."""
+    # Get languages for dropdown
+    languages = [row[0] for row in (
+        current_user.snippets.with_entities(Snippet.language)
+        .distinct().order_by(Snippet.language.asc()).all()
+    ) if row[0]]
+
+    # Get selected values from query parameters
+    selected_language = request.args.get('language') or ''
+    selected_tag = request.args.get('tag') or ''
+    selected_sort = request.args.get('sort') or 'date_desc'
+    text_query = request.args.get('q') or ''
+
+    return render_template('intelligent_search.html', title='Intelligent Search', results=[], highlights={}, query=text_query, languages=languages, selected_language=selected_language, selected_tag=selected_tag, selected_sort=selected_sort, text_query=text_query)
+
+
 @bp.route('/search')
 @login_required
 def search():
@@ -530,7 +855,7 @@ def search():
 
     q_text = (request.args.get('q') or '').strip()
     if not q_text:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.intelligent_search'))
 
     # Parse basic operators with a simple, dependency-free parser
     # Supports: tag:foo, lang:python, in:title|desc|code|tags, collection:Name,
@@ -662,7 +987,7 @@ def search():
 
     if not candidates:
         flash('No snippets found matching your search.', 'info')
-        return render_template('search_results.html', title='Search Results', results=[], query=q_text)
+        return render_template('intelligent_search.html', title='Intelligent Search', results=[], query=q_text, languages=[], selected_language='', selected_tag='', selected_sort='date_desc', text_query='')
 
     # Prepare semantic vector
     query_embedding = ai_services.generate_embedding(q_text, task_type="RETRIEVAL_QUERY")
@@ -758,7 +1083,7 @@ def search():
 
     # Build highlights and badges
     highlights = {}
-    hi_title, hi_desc = {}, {}
+    hi_title, hi_desc, hi_text = {}, {}, {}
     # Build a regex for terms and phrases
     terms = [t for t in parsed['include_terms']] + [p for p in parsed['phrases']]
     pat = None
@@ -790,8 +1115,21 @@ def search():
         highlights[sn.id] = badges
         hi_title[sn.id] = mark(sn.title or '')
         hi_desc[sn.id] = mark(sn.description or '')
+        hi_text[sn.id] = mark(sn.code or '')
 
-    return render_template('search_results.html', title='Search Results', results=results, highlights=highlights, query=q_text, hi_title=hi_title, hi_desc=hi_desc)
+    # Get languages for dropdown
+    languages = [row[0] for row in (
+        current_user.snippets.with_entities(Snippet.language)
+        .distinct().order_by(Snippet.language.asc()).all()
+    ) if row[0]]
+
+    # Get selected values from query parameters
+    selected_language = request.args.get('language') or ''
+    selected_tag = request.args.get('tag') or ''
+    selected_sort = request.args.get('sort') or 'date_desc'
+    text_query = request.args.get('q') or ''
+
+    return render_template('intelligent_search.html', title='Intelligent Search', results=results, highlights=highlights, query=q_text, hi_title=hi_title, hi_desc=hi_desc, hi_text=hi_text, languages=languages, selected_language=selected_language, selected_tag=selected_tag, selected_sort=selected_sort, text_query=text_query)
 
 
 @bp.route('/collections', methods=['GET', 'POST'])
@@ -809,6 +1147,7 @@ def collections():
         db.session.add(collection)
         db.session.commit()
         check_and_award_badges(current_user) # Check and award badges
+            
         flash('New collection created!', 'success')
         return redirect(url_for('main.collections'))
 
@@ -1049,7 +1388,7 @@ def approve_solution(solution_id):
     if solution is None:
         flash('Solution not found.', 'danger')
         return redirect(url_for('main.index'))
-    
+        
     # Only the problem author or an admin (if we implement roles) can approve
     if solution.problem.author != current_user:
         flash('You do not have permission to approve this solution.', 'danger')
@@ -1150,8 +1489,8 @@ def export_selected_snippets_zip():
             content += f"{snippet.code}\n"
             content += "```\n"
 
-            # Clean filename
-            filename = f"{snippet.title.replace('/', '_').replace(' ', '_')}.md"
+            # Clean filename - use spaces instead of underscores
+            filename = f"{snippet.title.replace('/', '_')}.md"
             zipf.writestr(filename, content.encode('utf-8'))
 
     zip_buffer.seek(0)
@@ -1391,10 +1730,23 @@ def download_selected_snippets():
                 yield "```\n"
                 yield "\n---"  # Separator between snippets
 
+    # Count the number of snippets being exported
+    snippets_count = db.session.execute(sel.with_only_columns(sa.func.count())).scalar()
+    
+    # If only one snippet is selected, use its title as the filename
+    if snippets_count == 1:
+        single_snippet = db.session.execute(sel.limit(1)).scalars().first()
+        if single_snippet:
+            filename = f"{single_snippet.title.replace('/', '_')}.md"
+        else:
+            filename = "snippet.md"
+    else:
+        filename = "sophia_snippets.md"
+
     return current_app.response_class(
         generate(),
         headers={
-            'Content-Disposition': 'attachment;filename=sophia_snippets.md',
+            'Content-Disposition': f'attachment;filename={filename}',
             'Content-Type': 'text/markdown'
         },
         mimetype='text/markdown'
@@ -1646,29 +1998,40 @@ def search_solutions():
 @bp.route('/api/user_activity')
 @login_required
 def user_activity():
-    """Provides monthly snippet activity data for the logged-in user."""
+    """Provides daily snippet activity data for the logged-in user for the last 90 days."""
+    from datetime import datetime, timedelta
+    
     today = datetime.utcnow().date()
-    activity_data = []
-    for i in range(12):
-        month_date = today - timedelta(days=i * 30)
-        first_day = month_date.replace(day=1)
-        next_month = (first_day + timedelta(days=32)).replace(day=1)
-        last_day = next_month - timedelta(days=1)
-
-        count = db.session.scalar(
-            sa.select(sa.func.count(Snippet.id))
-            .where(
-                Snippet.user_id == current_user.id,
-                Snippet.timestamp >= first_day,
-                Snippet.timestamp <= last_day
-            )
+    start_date = today - timedelta(days=90)
+    
+    # Get daily snippet counts for the last 90 days
+    activity_data = db.session.execute(
+        sa.select(
+            sa.func.date(Snippet.timestamp).label('date'),
+            sa.func.count(Snippet.id).label('count')
         )
-        activity_data.append({
-            'month': first_day.strftime('%Y-%m'),
-            'count': count or 0
+        .where(
+            Snippet.user_id == current_user.id,
+            Snippet.timestamp >= start_date,
+            Snippet.timestamp < today + timedelta(days=1)
+        )
+        .group_by(sa.func.date(Snippet.timestamp))
+    ).all()
+    
+    # Convert to dictionary for easy lookup
+    daily_counts = {str(row.date): row.count for row in activity_data}
+    
+    # Generate all dates in range with 0 for missing dates
+    result = []
+    for i in range(90):
+        date = today - timedelta(days=i)
+        date_str = str(date)
+        result.append({
+            'date': date_str,
+            'count': daily_counts.get(date_str, 0)
         })
-    activity_data.reverse()
-    return jsonify(activity_data)
+    
+    return jsonify(result)
 
 
 @bp.route('/user_profile')
@@ -1737,6 +2100,104 @@ def user_profile():
         })
     activity_data.reverse() # To show oldest month first
 
+    # Top tags usage
+    tag_usage = db.session.execute(
+        sa.select(Snippet.tags, sa.func.count(Snippet.id))
+        .where(
+            Snippet.user_id == current_user.id,
+            Snippet.tags.isnot(None)
+        )
+        .group_by(Snippet.tags)
+        .order_by(sa.func.count(Snippet.id).desc())
+        .limit(6)
+    ).all()
+    
+    top_tags = []
+    for tags_str, count in tag_usage:
+        if tags_str:
+            for tag in tags_str.split(','):
+                tag = tag.strip()
+                if tag:
+                    # Check if tag already exists
+                    existing_tag = next((t for t in top_tags if t['name'] == tag), None)
+                    if existing_tag:
+                        existing_tag['count'] += count
+                    else:
+                        top_tags.append({'name': tag, 'count': count})
+    
+    # Sort by count and limit to top 6
+    top_tags = sorted(top_tags, key=lambda x: x['count'], reverse=True)[:6]    # Calculate additional statistics
+    # Code quality score (based on average snippet length and diversity)
+    if total_snippets > 0:
+        # Calculate based on: average length, language diversity, tags usage
+        avg_length = float(average_snippet_length) if average_snippet_length != "N/A" else 0
+        
+        # Length score (optimal: 100-500 chars): 0-40 points
+        if avg_length < 50:
+            length_score = 20
+        elif avg_length > 1000:
+            length_score = 25
+        else:
+            length_score = min(40, int(avg_length / 25))
+        
+        # Language diversity score: 0-30 points
+        language_count = len(language_stats)
+        language_score = min(30, language_count * 10)
+        
+        # Tags usage score: 0-30 points
+        tags_count = len([t for t in top_tags if t.get('count', 0) > 0])
+        tags_score = min(30, tags_count * 6)
+        
+        code_quality_score = f"{length_score + language_score + tags_score}%"
+    else:
+        code_quality_score = "N/A"
+    
+    # Current streak calculation (consecutive days with activity)
+    current_streak = 0
+    if total_snippets > 0:
+        # Get the last 30 days of activity
+        activity_dates = []
+        for i in range(30):
+            date = (today - timedelta(days=i))
+            count = db.session.scalar(
+                sa.select(sa.func.count(Snippet.id))
+                .where(
+                    Snippet.user_id == current_user.id,
+                    sa.func.date(Snippet.timestamp) == date
+                )
+            )
+            if count and count > 0:
+                activity_dates.append(date)
+        
+        # Calculate current streak
+        if activity_dates:
+            current_streak = 1
+            for i in range(1, len(activity_dates)):
+                if (activity_dates[i-1] - activity_dates[i]).days == 1:
+                    current_streak += 1
+                else:
+                    break
+    
+    # Total views - calculate based on actual snippet views if view tracking exists
+    # For now, calculate as sum of description length (proxy for engagement)
+    total_views = db.session.scalar(
+        sa.select(sa.func.count(Snippet.id))
+        .where(Snippet.user_id == current_user.id)
+    ) or 0
+    
+    # Favorite coding time (most active hour)
+    favorite_hour = db.session.execute(
+        sa.select(sa.func.strftime('%H', Snippet.timestamp), sa.func.count(Snippet.id))
+        .where(Snippet.user_id == current_user.id)
+        .group_by(sa.func.strftime('%H', Snippet.timestamp))
+        .order_by(sa.func.count(Snippet.id).desc())
+        .limit(1)
+    ).first()
+    
+    favorite_coding_time = f"{favorite_hour[0]}:00" if favorite_hour else "Unknown"
+    
+
+
     return render_template(
         'user_profile.html',
         title='My Profile',
@@ -1747,7 +2208,12 @@ def user_profile():
         total_points=total_points,
         average_snippet_length=average_snippet_length,
         total_tokens=total_tokens,
-        activity_data=activity_data
+        activity_data=activity_data,
+        code_quality_score=code_quality_score,
+        current_streak=current_streak,
+        total_views=total_views,
+        favorite_coding_time=favorite_coding_time,
+        top_tags=top_tags
     )
 
 
@@ -1805,6 +2271,120 @@ def edit_profile():
     form.username.data = current_user.username
     form.email.data = current_user.email
     return render_template('edit_profile.html', title='Account Settings', form=form)
+
+
+@bp.route('/user_settings', methods=['GET', 'POST'])
+@login_required
+def user_settings():
+    """Allows the current user to manage their preferences and AI settings."""
+    form = SettingsForm(obj=current_user)
+    if form.validate_on_submit():
+        # Update user preferences
+        current_user.preferred_ai_model = form.preferred_ai_model.data
+        current_user.code_generation_style = form.code_generation_style.data
+        current_user.auto_explain_code = form.auto_explain_code.data
+        current_user.show_line_numbers = form.show_line_numbers.data
+        current_user.enable_animations = form.enable_animations.data
+        current_user.enable_tooltips = form.enable_tooltips.data
+        current_user.tooltip_delay = form.tooltip_delay.data
+        current_user.dark_mode = form.dark_mode.data
+        current_user.email_notifications = form.email_notifications.data
+        current_user.auto_save_snippets = form.auto_save_snippets.data
+        current_user.public_profile = form.public_profile.data
+        current_user.show_activity = form.show_activity.data
+        current_user.snippet_visibility = form.snippet_visibility.data
+        
+        db.session.commit()
+        flash('Settings updated successfully.', 'success')
+        return redirect(url_for('main.user_profile'))
+    
+    # Pre-fill form with current user preferences
+    form.preferred_ai_model.data = current_user.preferred_ai_model
+    form.code_generation_style.data = current_user.code_generation_style
+    form.auto_explain_code.data = current_user.auto_explain_code
+    form.show_line_numbers.data = current_user.show_line_numbers
+    form.enable_animations.data = current_user.enable_animations
+    form.enable_tooltips.data = current_user.enable_tooltips
+    form.tooltip_delay.data = current_user.tooltip_delay
+    form.dark_mode.data = current_user.dark_mode
+    form.email_notifications.data = current_user.email_notifications
+    form.auto_save_snippets.data = current_user.auto_save_snippets
+    form.public_profile.data = current_user.public_profile
+    form.show_activity.data = current_user.show_activity
+    form.snippet_visibility.data = current_user.snippet_visibility
+    
+    return render_template('user_settings.html', title='User Settings', form=form)
+
+
+@bp.route('/help')
+@login_required
+def help():
+    """Renders the help page."""
+    return render_template('help.html', title='Help')
+
+
+# Individual help topic routes
+@bp.route('/help/quick-start')
+@login_required
+def help_quick_start():
+    """Renders the quick start guide help page."""
+    return render_template('help_quick_start.html', title='Quick Start Guide')
+
+
+@bp.route('/help/search-tips')
+@login_required
+def help_search_tips():
+    """Renders the search tips help page."""
+    return render_template('help_search_tips.html', title='Search Tips')
+
+
+@bp.route('/help/ai-features')
+@login_required
+def help_ai_features():
+    """Renders the AI features help page."""
+    return render_template('help_ai_features.html', title='AI Features Guide')
+
+
+@bp.route('/help/navigation-shortcuts')
+@login_required
+def help_navigation_shortcuts():
+    """Renders the navigation shortcuts help page."""
+    return render_template('help_navigation_shortcuts.html', title='Navigation Shortcuts')
+
+
+@bp.route('/help/useful-tips')
+@login_required
+def help_useful_tips():
+    """Renders the useful tips help page."""
+    return render_template('help_useful_tips.html', title='Useful Tips')
+
+
+@bp.route('/help/points-badges')
+@login_required
+def help_points_badges():
+    """Renders the points & badges help page."""
+    return render_template('help_points_badges.html', title='Points & Badges Guide')
+
+
+@bp.route('/help/common-tasks')
+@login_required
+def help_common_tasks():
+    """Renders the common tasks help page."""
+    return render_template('help_common_tasks.html', title='Common Tasks Guide')
+
+
+@bp.route('/help/snippet-actions')
+@login_required
+def help_snippet_actions():
+    """Renders the snippet actions help page."""
+    return render_template('help_snippet_actions.html', title='Snippet Actions Guide')
+
+
+@bp.route('/snippet_actions')
+@login_required
+def snippet_actions():
+    """Renders the snippet actions page."""
+    return render_template('snippet_actions.html', title='Snippet Actions')
 
 
 # --- Chatbot ---
@@ -2023,6 +2603,14 @@ def move_snippet(snippet_id):
             db.session.add(new_snippet)
             db.session.commit()
             current_app.award_points(current_user, 5, "Snippet Copied") # Award points for copying a snippet
+            
+            # Trigger backup after snippet copy
+            try:
+                from database_backup import increment_snippet_save_counter
+                increment_snippet_save_counter()
+            except Exception as e:
+                current_app.logger.warning(f"Backup trigger failed (copy snippet): {e}")
+                
             flash(f'Snippet "{snippet.title}" copied successfully!', 'success')
         
         return redirect(url_for('main.view_snippet', snippet_id=snippet.id))
@@ -2124,6 +2712,13 @@ def bulk_copy_move_snippets():
                 db.session.add(new_snippet)
                 current_app.award_points(current_user, 5, "Snippet Copied (Bulk)")
                 processed_count += 1
+                
+                # Trigger backup after bulk snippet copy
+                try:
+                    from database_backup import increment_snippet_save_counter
+                    increment_snippet_save_counter()
+                except Exception as e:
+                    current_app.logger.warning(f"Backup trigger failed (bulk copy snippet): {e}")
         db.session.commit()
         flash(f'Successfully {action}ed {processed_count} snippets.', 'success')
     else:
@@ -2132,3 +2727,378 @@ def bulk_copy_move_snippets():
                 flash(f"Error in {field}: {error}", 'danger')
         flash('Invalid request for bulk operation.', 'danger')
     return redirect(url_for('main.index'))
+
+
+# --- Badge API Endpoints ---
+
+@bp.route('/api/badges')
+@login_required
+def api_get_badges():
+    """Get user's badges with progress information."""
+    user_badges = current_user.badges.all()
+    badges_data = []
+    
+    for user_badge in user_badges:
+        badges_data.append({
+            'id': user_badge.badge.id,
+            'name': user_badge.badge.name,
+            'description': user_badge.badge.description,
+            'image_url': user_badge.badge.image_url,
+            'earned_at': user_badge.timestamp.isoformat()
+        })
+    
+    return jsonify({
+        'badges': badges_data,
+        'total_count': len(badges_data)
+    })
+
+
+@bp.route('/api/badge_progress')
+@login_required
+def api_badge_progress():
+    """Get overall progress towards next badges."""
+    # Get user's current stats
+    snippet_count = current_user.snippets.count()
+    collection_count = current_user.collections.count()
+    total_points = current_user.get_total_points()
+    
+    from app.badge_system import calculate_current_streak, calculate_days_active
+    current_streak = calculate_current_streak(current_user)
+    days_active = calculate_days_active(current_user)
+    
+    # Calculate language diversity
+    language_count = db.session.scalar(
+        sa.select(sa.func.count(sa.distinct(Snippet.language)))
+        .where(Snippet.user_id == current_user.id)
+    ) or 0
+    
+    progress = {
+        'snippets': {
+            'current': snippet_count,
+            'next_badge': None,
+            'progress_to_next': 0
+        },
+        'collections': {
+            'current': collection_count,
+            'next_badge': None,
+            'progress_to_next': 0
+        },
+        'points': {
+            'current': total_points,
+            'next_badge': None,
+            'progress_to_next': 0
+        },
+        'streak': {
+            'current': current_streak,
+            'next_badge': None,
+            'progress_to_next': 0
+        },
+        'days_active': {
+            'current': days_active,
+            'next_badge': None,
+            'progress_to_next': 0
+        },
+        'languages': {
+            'current': language_count,
+            'next_badge': None,
+            'progress_to_next': 0
+        }
+    }
+    
+    # Define badge thresholds for progress calculation
+    thresholds = {
+        'snippets': [1, 5, 10, 25, 50, 100, 250],
+        'collections': [1, 5, 10],
+        'points': [10, 50, 100, 250],
+        'streak': [3, 7, 14, 30],
+        'days_active': [30],
+        'languages': [3, 5]
+    }
+    
+    for category, current_value in progress.items():
+        category_thresholds = thresholds.get(category, [])
+        
+        # Find next badge threshold
+        next_threshold = None
+        for threshold in category_thresholds:
+            if current_value < threshold:
+                next_threshold = threshold
+                break
+        
+        if next_threshold:
+            current_value['next_badge'] = next_threshold
+            # Calculate progress percentage
+            prev_threshold = 0
+            for threshold in category_thresholds:
+                if current_value < threshold:
+                    break
+                prev_threshold = threshold
+            
+            if next_threshold > prev_threshold:
+                progress[category]['progress_to_next'] = min(100, (current_value - prev_threshold) / (next_threshold - prev_threshold) * 100)
+    
+    return jsonify(progress)
+
+
+# --- Token-Efficient Streaming Pipeline API Routes ---
+
+@bp.route('/api/stream-code-generation', methods=['POST'])
+@login_required
+def api_stream_code_generation():
+    """API endpoint for streaming code generation with token-efficient prompting."""
+    try:
+        data = request.get_json(silent=True) or {}
+        prompt = data.get('prompt', '').strip()
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        
+        if not prompt:
+            return jsonify({'error': 'Prompt is required.'}), 400
+        
+        def generate():
+            try:
+                for chunk in ai_services.stream_code_generation(prompt, session_id):
+                    yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                print(f"Streaming code generation failed: {e}")
+                yield f"data: {json.dumps({'type': 'error', 'error': 'Streaming failed'})}\n\n"
+        
+        return current_app.response_class(
+            generate(),
+            mimetype='text/plain',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Stream-Type': 'code_generation'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Code generation streaming endpoint failed: {e}")
+        return jsonify({'error': 'Failed to start code generation stream'}), 500
+
+
+@bp.route('/api/stream-code-explanation', methods=['POST'])
+@login_required
+def api_stream_code_explanation():
+    """API endpoint for streaming code explanation generation with context pruning."""
+    try:
+        data = request.get_json(silent=True) or {}
+        code_content = data.get('code_content', '').strip()
+        session_id = data.get('session_id')
+        original_prompt = data.get('original_prompt')
+        
+        if not code_content:
+            return jsonify({'error': 'Code content is required.'}), 400
+        
+        def generate():
+            try:
+                for chunk in ai_services.stream_code_explanation(code_content, session_id, original_prompt):
+                    yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+            except Exception as e:
+                print(f"Streaming explanation generation failed: {e}")
+                yield f"data: {json.dumps({'type': 'error', 'error': 'Streaming explanation failed'})}\n\n"
+        
+        return current_app.response_class(
+            generate(),
+            mimetype='text/plain',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Stream-Type': 'code_explanation'
+            }
+        )
+        
+    except Exception as e:
+        print(f"Explanation streaming endpoint failed: {e}")
+        return jsonify({'error': 'Failed to start explanation stream'}), 500
+
+
+@bp.route('/api/chained-streaming-generation', methods=['POST'])
+@login_required
+def api_chained_streaming_generation():
+    """API endpoint for complete token-efficient chaining pipeline with streaming."""
+    try:
+        data = request.get_json(silent=True) or {}
+        prompt = data.get('prompt', '').strip()
+        session_id = data.get('session_id') or str(uuid.uuid4())
+        code_model = data.get('code_model')
+        explanation_model = data.get('explanation_model')
+        
+        if not prompt:
+            return jsonify({'error': 'Prompt is required.'}), 400
+        
+        # Capture the current app object to use in the generator
+        app = current_app._get_current_object()
+        
+        def generate():
+            with app.app_context():
+                try:
+                    for chunk in ai_services.chained_streaming_generation(prompt, session_id, code_model, explanation_model):
+                        yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
+                    # End of stream marker
+                    yield f"data: {json.dumps({'type': 'stream_end'})}\n\n"
+                except Exception as e:
+                    # Now we can use current_app.logger since we're in app context
+                    current_app.logger.error(f"Chained streaming generation failed: {e}")
+                    yield f"data: {json.dumps({'type': 'error', 'error': 'Pipeline failed'})}\n\n"
+        
+        return current_app.response_class(
+            generate(),
+            mimetype='text/plain',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'X-Stream-Type': 'chained_generation'
+            }
+        )
+        
+    except Exception as e:
+        # Use print for logging since we're outside app context
+        print(f"Chained streaming endpoint failed: {e}")
+        return jsonify({'error': 'Failed to start chained streaming'}), 500
+
+
+@bp.route('/api/streaming-session/<session_id>')
+@login_required
+def api_get_streaming_session(session_id):
+    """API endpoint to retrieve streaming session state and intermediate results."""
+    try:
+        from app.utils.state_manager import StreamingStateManager
+        
+        session_data = StreamingStateManager.get_session_data(session_id)
+        if not session_data:
+            return jsonify({'error': 'Session not found or expired'}), 404
+        
+        # Clean up sensitive data
+        cleaned_data = {
+            'session_id': session_id,
+            'pipeline_type': session_data.get('pipeline_type'),
+            'status': session_data.get('status'),
+            'steps_completed': session_data.get('steps_completed', 0),
+            'start_time': session_data.get('start_time'),
+            'prompt': session_data.get('prompt')
+        }
+        
+        # Add intermediate results if available
+        if session_data.get('intermediate_code'):
+            cleaned_data['intermediate_code'] = session_data['intermediate_code']['content']
+            cleaned_data['code_timestamp'] = session_data['intermediate_code']['timestamp']
+        
+        if session_data.get('final_code'):
+            cleaned_data['final_code'] = session_data['final_code']['content']
+            cleaned_data['code_completed'] = session_data['final_code']['timestamp']
+        
+        if session_data.get('intermediate_explanation'):
+            cleaned_data['intermediate_explanation'] = session_data['intermediate_explanation']['content']
+            cleaned_data['explanation_timestamp'] = session_data['intermediate_explanation']['timestamp']
+        
+        if session_data.get('final_explanation'):
+            cleaned_data['final_explanation'] = session_data['final_explanation']['content']
+            cleaned_data['explanation_completed'] = session_data['final_explanation']['timestamp']
+        
+        return jsonify({
+            'success': True,
+            'session': cleaned_data
+        })
+        
+    except Exception as e:
+        print(f"Failed to retrieve streaming session: {e}")
+        return jsonify({'error': 'Failed to retrieve session data'}), 500
+
+
+@bp.route('/api/clear-streaming-session/<session_id>', methods=['POST'])
+@login_required
+def api_clear_streaming_session(session_id):
+    """API endpoint to clear streaming session data."""
+    try:
+        from app.utils.state_manager import StreamingStateManager
+        
+        StreamingStateManager.clear_session(session_id)
+        
+        return jsonify({
+            'success': True,
+            'message': 'Streaming session cleared'
+        })
+        
+    except Exception as e:
+        print(f"Failed to clear streaming session: {e}")
+        return jsonify({'error': 'Failed to clear session'}), 500
+
+
+@bp.route('/api/model-tiering-config')
+@login_required
+def api_model_tiering_config():
+    """API endpoint to get model tiering configuration for client-side optimization."""
+    try:
+        config = ai_services.MODEL_TIERING_CONFIG
+        
+        # Return configuration with descriptions
+        return jsonify({
+            'success': True,
+            'config': {
+                'code_generation': {
+                    'primary': {
+                        'model': config['code_generation']['primary'],
+                        'description': 'High-reasoning model for complex code generation',
+                        'cost': 'medium',
+                        'speed': 'medium'
+                    },
+                    'fallback': {
+                        'model': config['code_generation']['fallback'],
+                        'description': 'Faster fallback model for code generation',
+                        'cost': 'low',
+                        'speed': 'fast'
+                    },
+                    'cost_optimized': {
+                        'model': config['code_generation']['cost_optimized'],
+                        'description': 'Most cost-effective model for basic code',
+                        'cost': 'very_low',
+                        'speed': 'very_fast'
+                    }
+                },
+                'explanation': {
+                    'primary': {
+                        'model': config['explanation']['primary'],
+                        'description': 'Fast model for code explanations',
+                        'cost': 'low',
+                        'speed': 'fast'
+                    },
+                    'fallback': {
+                        'model': config['explanation']['fallback'],
+                        'description': 'Backup model for explanations',
+                        'cost': 'low',
+                        'speed': 'fast'
+                    },
+                    'cost_optimized': {
+                        'model': config['explanation']['cost_optimized'],
+                        'description': 'Most cost-effective for explanations',
+                        'cost': 'very_low',
+                        'speed': 'very_fast'
+                    }
+                }
+            }
+        })
+        
+    except Exception as e:
+        print(f"Failed to get model tiering config: {e}")
+        return jsonify({'error': 'Failed to get model configuration'}), 500
+
+
+@bp.route('/api/user-preferences')
+@login_required
+def api_user_preferences():
+    """API endpoint to get user tooltip and other UI preferences."""
+    try:
+        return jsonify({
+            'success': True,
+            'preferences': {
+                'enable_tooltips': current_user.enable_tooltips,
+                'tooltip_delay': current_user.tooltip_delay,
+                'enable_animations': current_user.enable_animations,
+                'show_line_numbers': current_user.show_line_numbers,
+                'dark_mode': current_user.dark_mode
+            }
+        })
+    except Exception as e:
+        current_app.logger.error(f"Failed to get user preferences: {e}")
+        return jsonify({'error': 'Failed to get user preferences'}), 500

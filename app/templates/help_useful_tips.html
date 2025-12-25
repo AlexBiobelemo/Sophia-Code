@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.help') }}">Help & Tips</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Useful Tips</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-lightbulb text-secondary fs-1 me-3"></i>
+                <div>
+                    <h1 class="mb-1">Useful Tips & Tricks</h1>
+                    <p class="text-muted mb-0">Pro tips for power users and hidden features</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3><i class="bi bi-lightbulb me-2"></i>Pro Tips for Power Users</h3>
+
+                    <p>Discover hidden features and advanced techniques to maximize your productivity with Sophia.</p>
+
+                    <h4>Hidden Features</h4>
+                    <div class="highlight-box">
+                        <ul>
+                            <li><strong>Drag & drop:</strong> Reorder snippets by dragging</li>
+                            <li><strong>Multi-select:</strong> Select multiple snippets with Ctrl+click</li>
+                            <li><strong>Quick actions:</strong> Right-click for context menus</li>
+                            <li><strong>Bulk operations:</strong> Perform actions on multiple items</li>
+                        </ul>
+                    </div>
+
+                    <h4>Productivity Tips</h4>
+                    <ul>
+                        <li>Use template snippets for common code patterns</li>
+                        <li>Set up keyboard shortcuts for frequent actions</li>
+                        <li>Enable auto-save to prevent data loss</li>
+                        <li>Use collections for project-based organization</li>
+                        <li>Pin important snippets to the dashboard</li>
+                    </ul>
+
+                    <h4>Best Practices</h4>
+                    <ul>
+                        <li>Write clear, descriptive titles for snippets</li>
+                        <li>Use consistent tagging conventions</li>
+                        <li>Add context and usage examples</li>
+                        <li>Regularly clean up and organize your library</li>
+                        <li>Share useful snippets with the community</li>
+                    </ul>
+
+                    <h4>Advanced Techniques</h4>
+                    <ul>
+                        <li>Use variables in snippets for customization</li>
+                        <li>Create snippet dependencies and relationships</li>
+                        <li>Export snippets in various formats</li>
+                        <li>Use version control for important snippets</li>
+                        <li>Collaborate with team members in real-time</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Navigation to other help topics -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <a href="{{ url_for('main.help_navigation_shortcuts') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Previous: Navigation Shortcuts
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('main.help_points_badges') }}" class="btn btn-primary">
+                        Next: Points & Badges<i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom styles for this page -->
+<style>
+    .highlight-box {
+        background: rgba(var(--bs-secondary-rgb), 0.1);
+        border: 1px solid rgba(var(--bs-secondary-rgb), 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

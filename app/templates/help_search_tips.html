@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.help') }}">Help & Tips</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Search Tips</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-search text-info fs-1 me-3"></i>
+                <div>
+                    <h1 class="mb-1">Search Tips & Techniques</h1>
+                    <p class="text-muted mb-0">Master the art of finding what you need quickly</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3><i class="bi bi-search me-2"></i>Master the Art of Searching</h3>
+
+                    <p>Learn advanced search techniques to find exactly what you need quickly and efficiently.</p>
+
+                    <h4>Basic Search</h4>
+                    <ul>
+                        <li><strong>Simple search:</strong> Type keywords to search titles and content</li>
+                        <li><strong>Tag search:</strong> Use <code>tag:python</code> to find Python snippets</li>
+                        <li><strong>Language filter:</strong> Select from the language dropdown</li>
+                    </ul>
+
+                    <h4>Advanced Search Operators</h4>
+                    <div class="highlight-box">
+                        <ul>
+                            <li><code>title:"function"</code> - Search in titles only</li>
+                            <li><code>content:"array"</code> - Search in code content</li>
+                            <li><code>tag:python,javascript</code> - Multiple tags</li>
+                            <li><code>author:username</code> - Find snippets by specific user</li>
+                            <li><code>created:2024</code> - Filter by creation year</li>
+                            <li><code>language:python AND tag:web</code> - Combine filters</li>
+                        </ul>
+                    </div>
+
+                    <h4>Smart Search Features</h4>
+                    <ul>
+                        <li><strong>Fuzzy matching:</strong> Find similar words and typos</li>
+                        <li><strong>Auto-complete:</strong> Suggestions as you type</li>
+                        <li><strong>Recent searches:</strong> Access your search history</li>
+                        <li><strong>Saved searches:</strong> Bookmark frequently used queries</li>
+                    </ul>
+
+                    <h4>Search Tips</h4>
+                    <ul>
+                        <li>Use quotes for exact phrases: <code>"function declaration"</code></li>
+                        <li>Combine operators for precise results</li>
+                        <li>Use wildcards: <code>func*</code> finds "function", "functional", etc.</li>
+                        <li>Filter by date ranges for recent or old snippets</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Navigation to other help topics -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <a href="{{ url_for('main.help_quick_start') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Previous: Quick Start
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('main.help_ai_features') }}" class="btn btn-primary">
+                        Next: AI Features<i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom styles for this page -->
+<style>
+    .highlight-box {
+        background: rgba(var(--bs-info-rgb), 0.1);
+        border: 1px solid rgba(var(--bs-info-rgb), 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    code {
+        background: rgba(var(--bs-dark-rgb), 0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

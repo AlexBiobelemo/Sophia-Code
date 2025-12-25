@@ -1,15 +1,59 @@
-"""Handles all interactions with the external Google Gemini API."""
+"""Multi-provider AI service router supporting Gemini and Minimax."""
 
-import google.generativeai as genai
-from flask import current_app
+from flask import current_app, g
 import numpy as np
+
+# Import provider-specific services
+try:
+    from app.ai_services_minimax import (
+        generate_code_from_prompt as minimax_generate_code,
+        explain_code as minimax_explain_code,
+        format_code_with_ai as minimax_format_code,
+        suggest_tags_for_code as minimax_suggest_tags,
+        chat_answer as minimax_chat_answer,
+        refine_code_with_feedback as minimax_refine_code,
+        generate_embedding as minimax_generate_embedding,
+        generate_leetcode_solution as minimax_leetcode_solution,
+        explain_leetcode_solution as minimax_explain_leetcode_solution,
+        classify_leetcode_solution as minimax_classify_leetcode_solution,
+        multi_step_layer1_architecture as minimax_multi_step_layer1,
+        multi_step_layer2_coder as minimax_multi_step_layer2,
+        multi_step_layer3_tester as minimax_multi_step_layer3,
+        multi_step_layer4_refiner as minimax_multi_step_layer4,
+        multi_step_complete_solver as minimax_multi_step_complete,
+        stream_code_generation as minimax_stream_code_generation,
+        stream_code_explanation as minimax_stream_code_explanation,
+        chained_streaming_generation as minimax_chained_streaming_generation,
+        cosine_similarity as minimax_cosine_similarity,
+        LAST_META as MINIMAX_LAST_META,
+        MODEL_TIERING_CONFIG as MINIMAX_MODEL_TIERING_CONFIG
+    )
+    MINIMAX_AVAILABLE = True
+    print("Minimax services imported successfully")
+except Exception as e:
+    # Catch any exception, not just ImportError, to help with debugging
+    MINIMAX_AVAILABLE = False
+    MINIMAX_MODEL_TIERING_CONFIG = None  # Provide fallback
+    print(f"Failed to import Minimax services: {e}")
+    print("   Falling back to Gemini for all AI operations")
+
+# Import Gemini service (existing functionality)
+import google.generativeai as genai
 import time
 import random
 from typing import Callable, Tuple, Optional, List
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 
+# Model mapping from user preferences to actual API model names
+MODEL_MAPPING = {
+    'gemini-2.5-flash': 'gemini-2.5-flash',
+    'gemini-2.5-pro': 'gemini-2.5-pro',
+    'gemini-3-pro': 'gemini-3-pro',
+    'minimax-m2': 'minimax/minimax-m2:free'
+}
 
-MODEL_NAME = "gemini-2.5-flash"
+DEFAULT_MODEL = 'gemini-2.5-flash'
+MODEL_NAME = DEFAULT_MODEL  # Will be dynamically set based on user preference
 DEFAULT_MAX_INPUT_TOKENS = 12000   # conservative estimate to avoid server-side rejections
 DEFAULT_MAX_OUTPUT_TOKENS = 2048   # keep responses reasonable to reduce timeouts
 REQUEST_TIMEOUT_SECONDS = 300      # default per-request timeout (5 minutes)
@@ -22,33 +66,446 @@ LAST_META = {
     'retries': False,
     'retry_attempts': 0,
     'chunked': False,
+    'provider': 'gemini'
+}
+
+# Global model tiering configuration that combines both providers
+MODEL_TIERING_CONFIG = {
+    "code_generation": {
+        "primary": "gemini-2.5-flash",  # Default to Gemini
+        "fallback": "gemini-1.5-flash",
+        "cost_optimized": "gemini-1.5-flash"
+    },
+    "explanation": {
+        "primary": "gemini-1.5-flash",  # Default to Gemini
+        "fallback": "gemini-1.5-flash",
+        "cost_optimized": "gemini-1.5-flash"
+    }
 }
 
 
-def _count_tokens_estimate(text):
+def get_user_preferred_model():
+    """Get the current user's preferred AI model."""
+    try:
+        # Try to get from Flask's g object (set by before_request handler)
+        if hasattr(g, 'user_preferred_model'):
+            return g.user_preferred_model
+        # Fallback: get from current_user if available
+        if hasattr(current_app, 'login_manager') and hasattr(current_app.login_manager, 'current_user'):
+            user = current_app.login_manager.current_user
+            if user and hasattr(user, 'preferred_ai_model'):
+                return user.preferred_ai_model
+    except Exception:
+        pass
+    # Final fallback to default
+    return 'gemini-2.5-flash'
+
+
+def get_api_model_name(user_preferred_model):
+    """Get the actual API model name based on user's preferred model."""
+    return MODEL_MAPPING.get(user_preferred_model, DEFAULT_MODEL)
+
+
+def update_global_model_name():
+    """Update the global MODEL_NAME based on current user's preference."""
+    global MODEL_NAME
+    preferred_model = get_user_preferred_model()
+    MODEL_NAME = get_api_model_name(preferred_model)
+
+
+def debug_ai_provider_selection():
+    """Debug function to check current AI provider selection status."""
+    try:
+        from flask import current_app
+        print("\n=== AI Provider Debug Info ===")
+        print(f"MINIMAX_AVAILABLE: {MINIMAX_AVAILABLE}")
+        
+        # Check API keys
+        minimax_key = current_app.config.get('MINIMAX_API_KEY')
+        gemini_key = current_app.config.get('GEMINI_API_KEY')
+        print(f"MINIMAX_API_KEY: {'✓ Set' if minimax_key else '✗ Missing'}")
+        print(f"GEMINI_API_KEY: {'✓ Set' if gemini_key else '✗ Missing'}")
+        
+        # Test provider selection
+        preferred_model = get_user_preferred_model()
+        print(f"User preferred model: {preferred_model}")
+        
+        provider, services = _get_provider_and_service(preferred_model)
+        print(f"Selected provider: {provider}")
+        print(f"Services available: {services is not None}")
+        
+        print("============================\n")
+        
+    except Exception as e:
+        print(f"Debug function error: {e}")
+
+
+def _resolve_provider_for_task(task_or_user, task_type: Optional[str] = None) -> Tuple[str, Optional[dict]]:
     """
-    Provides a rough estimate of token count for input validation.
+    Determines which AI provider (Minimax or Gemini) should handle a specific task.
     
     Args:
-        text (str): The text to estimate tokens for.
-    
+        task_or_user: Either the task type string (for backward compatibility) or a User object.
+        task_type: The type of AI task (e.g., 'code_generation', 'explanation', 'chat'). 
+                   Required if first parameter is a User object.
+        
     Returns:
-        int: Estimated token count (roughly 1 token per 4 characters).
+        A tuple containing the chosen provider ('minimax' or 'gemini') and the
+        corresponding services dictionary or None for Gemini (as Gemini services
+        are directly called).
     """
+    # Handle both calling patterns: (task_type,) or (user, task_type)
+    if task_type is None:
+        # Old pattern: _resolve_provider_for_task('code_generation')
+        task_type = task_or_user
+        preferred_model = get_user_preferred_model()
+    else:
+        # New pattern: _resolve_provider_for_task(user, 'code_generation')
+        user = task_or_user
+        if hasattr(user, 'preferred_ai_model'):
+            preferred_model = user.preferred_ai_model
+        else:
+            preferred_model = get_user_preferred_model()
+        
+    # Logic for when minimax-m2 is selected by the user
+    if preferred_model == 'minimax-m2' and MINIMAX_AVAILABLE:
+        # When minimax-m2 is selected, ALL AI features should use minimax
+        minimax_services = {
+            'generate_code_from_prompt': minimax_generate_code,
+            'explain_code': minimax_explain_code,
+            'refine_code_with_feedback': minimax_refine_code,
+            'suggest_tags_for_code': minimax_suggest_tags,
+            'chat_answer': minimax_chat_answer,
+            'generate_embedding': minimax_generate_embedding,
+            'generate_leetcode_solution': minimax_leetcode_solution,
+            'explain_leetcode_solution': minimax_explain_leetcode_solution,
+            'classify_leetcode_solution': minimax_classify_leetcode_solution,
+            'multi_step_layer1_architecture': minimax_multi_step_layer1,
+            'multi_step_layer2_coder': minimax_multi_step_layer2,
+            'multi_step_layer3_tester': minimax_multi_step_layer3,
+            'multi_step_layer4_refiner': minimax_multi_step_layer4,
+            'multi_step_complete_solver': minimax_multi_step_complete,
+            'stream_code_generation': minimax_stream_code_generation,
+            'stream_code_explanation': minimax_stream_code_explanation,
+            'chained_streaming_generation': minimax_chained_streaming_generation,
+            'cosine_similarity': minimax_cosine_similarity,
+            'LAST_META': MINIMAX_LAST_META,
+            'MODEL_TIERING_CONFIG': MINIMAX_MODEL_TIERING_CONFIG
+        }
+        
+        # Route all task types to minimax when minimax-m2 is selected
+        return 'minimax', minimax_services
+    
+    # Default to Gemini for all other cases or if Minimax is not available/preferred
+    return 'gemini', None
+
+
+def _update_last_meta_provider(provider):
+    """Update LAST_META with provider information."""
+    global LAST_META
+    LAST_META['provider'] = provider
+    if provider == 'minimax' and MINIMAX_AVAILABLE:
+        LAST_META.update(MINIMAX_LAST_META)
+    # No need to update with Gemini's LAST_META as it's handled internally by its functions
+
+
+# ============================================================================
+# WRAPPER FUNCTIONS THAT ROUTE TO APPROPRIATE PROVIDER
+# ============================================================================
+
+def generate_code_from_prompt(prompt_text):
+    """Generate code from prompt using user's preferred AI model."""
+    provider, services = _resolve_provider_for_task('code_generation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['generate_code_from_prompt'](prompt_text)
+    else:
+        return _gemini_generate_code_from_prompt(prompt_text)
+
+
+def explain_code(code_to_explain):
+    """Explain code using user's preferred model with hybrid approach.
+    When minimax-m2 is selected, this routes to Gemini for the explain button on view snippet page."""
+    provider, services = _resolve_provider_for_task('explanation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['explain_code'](code_to_explain)
+    else:
+        return _gemini_explain_code(code_to_explain)
+
+
+def explain_code_for_view_snippet(code_to_explain):
+    """Explain code specifically for the view snippet page explain button.
+    This uses the user's preferred model setting."""
+    provider, services = _resolve_provider_for_task('explanation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['explain_code'](code_to_explain)
+    else:
+        return _gemini_explain_code(code_to_explain)
+
+
+def format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
+    """Format code using user's preferred AI model."""
+    provider, services = _resolve_provider_for_task('code_generation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['format_code_with_ai'](code_to_format, language_hint)
+    else:
+        return _gemini_format_code_with_ai(code_to_format, language_hint)
+
+
+def suggest_tags_for_code(code_to_analyze):
+    """Suggest tags for code using user's preferred model with hybrid approach."""
+    provider, services = _resolve_provider_for_task('suggest_tags')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['suggest_tags_for_code'](code_to_analyze)
+    else:
+        return _gemini_suggest_tags_for_code(code_to_analyze)
+
+
+def chat_answer(system_preamble: str, history_pairs: list, user_message: str) -> str:
+    """Return chatbot answer using user's preferred model with hybrid approach."""
+    provider, services = _resolve_provider_for_task('chat_answer')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['chat_answer'](system_preamble, history_pairs, user_message)
+    else:
+        return _gemini_chat_answer(system_preamble, history_pairs, user_message)
+
+
+def refine_code_with_feedback(current_code: str, error_output: str, language_hint: str = None) -> str:
+    """Refine code based on error output using user's preferred AI model."""
+    provider, services = _resolve_provider_for_task('refine_code')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['refine_code_with_feedback'](current_code, error_output, language_hint)
+    else:
+        return _gemini_refine_code_with_feedback(current_code, error_output, language_hint)
+
+
+def generate_embedding(text_to_embed, task_type="RETRIEVAL_DOCUMENT"):
+    """Generate embedding for text using user's preferred AI model."""
+    # Embedding generation is not explicitly mentioned in the routing rules,
+    # so we'll route it based on the general preferred model.
+    # Given Minimax doesn't currently support embeddings, it will fall back to Gemini.
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'embedding_generation') # Generic task type
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['generate_embedding'](text_to_embed, task_type)
+    else:
+        return _gemini_generate_embedding(text_to_embed, task_type)
+
+
+def generate_leetcode_solution(problem_title, problem_description, language):
+    """Generate LeetCode solution using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'leetcode_solution_generation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['generate_leetcode_solution'](problem_title, problem_description, language)
+    else:
+        return _gemini_generate_leetcode_solution(problem_title, problem_description, language)
+
+
+def explain_leetcode_solution(solution_code, problem_title, language):
+    """Explain LeetCode solution using user's preferred AI model."""
+    provider, services = _resolve_provider_for_task('leetcode_explanation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['explain_leetcode_solution'](solution_code, problem_title, language)
+    else:
+        return _gemini_explain_leetcode_solution(solution_code, problem_title, language)
+
+
+def classify_leetcode_solution(solution_code, problem_description):
+    """Classify LeetCode solution using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'leetcode_classification')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['classify_leetcode_solution'](solution_code, problem_description)
+    else:
+        return _gemini_classify_leetcode_solution(solution_code, problem_description)
+
+
+def multi_step_layer1_architecture(prompt_text):
+    """Layer 1: Problem Decomposition using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'multi_step_solver')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['multi_step_layer1_architecture'](prompt_text)
+    else:
+        return _gemini_multi_step_layer1_architecture(prompt_text)
+
+
+def multi_step_layer2_coder(architecture_plan):
+    """Layer 2: Code Generation using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'multi_step_solver')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['multi_step_layer2_coder'](architecture_plan)
+    else:
+        return _gemini_multi_step_layer2_coder(architecture_plan)
+
+
+def multi_step_layer3_tester(code_block, test_cases=None):
+    """Layer 3: Verification & Debugging using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'multi_step_solver')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['multi_step_layer3_tester'](code_block, test_cases)
+    else:
+        return _gemini_multi_step_layer3_tester(code_block, test_cases)
+
+
+def multi_step_layer4_refiner(verified_code, complexity_analysis=None):
+    """Layer 4: Optimization & Final Review using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'multi_step_solver')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['multi_step_layer4_refiner'](verified_code, complexity_analysis)
+    else:
+        return _gemini_multi_step_layer4_refiner(verified_code, complexity_analysis)
+
+
+def multi_step_complete_solver(prompt_text, test_cases=None):
+    """Complete Multi-Step Algorithmic Solver using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'multi_step_solver')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['multi_step_complete_solver'](prompt_text, test_cases)
+    else:
+        return _gemini_multi_step_complete_solver(prompt_text, test_cases)
+
+
+def stream_code_generation(prompt_text, session_id=None):
+    """Stream code generation using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'stream_code_generation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['stream_code_generation'](prompt_text, session_id)
+    else:
+        return _gemini_stream_code_generation(prompt_text, session_id)
+
+
+def stream_code_explanation(code_content, session_id=None, original_prompt=None):
+    """Stream code explanation using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'stream_code_explanation')
+    _update_last_meta_provider(provider)
+    
+    if provider == 'minimax' and services:
+        return services['stream_code_explanation'](code_content, session_id, original_prompt)
+    else:
+        return _gemini_stream_code_explanation(code_content, session_id, original_prompt)
+
+
+def chained_streaming_generation(prompt_text, session_id=None, code_model=None, explanation_model=None):
+    """Complete token-efficient chaining pipeline using user's preferred AI model."""
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'chained_streaming_generation')
+    
+    if provider == 'hybrid_minimax_gemini' and services:
+        # For hybrid, we handle the orchestration here to use both providers
+        def _hybrid_generator():
+            # Minimax for code generation
+            code_content = ""
+            for chunk in services['minimax_code_gen_stream'](prompt_text, session_id):
+                yield chunk
+                if chunk["type"] == "code_complete":
+                    code_content = chunk["content"]
+                    break
+                elif chunk["type"] == "error":
+                    return # Stop on error
+            
+            if not code_content:
+                yield {
+                    "type": "error",
+                    "error": "No code content generated by Minimax",
+                    "status": "error"
+                }
+                return
+            
+            # Gemini for explanation
+            for chunk in services['gemini_expl_stream'](code_content, session_id, prompt_text):
+                yield chunk
+        return _hybrid_generator()
+        
+    elif provider == 'minimax' and services:
+        _update_last_meta_provider(provider)
+        return services['chained_streaming_generation'](prompt_text, session_id, code_model, explanation_model)
+    else:
+        _update_last_meta_provider('gemini')
+        return _gemini_chained_streaming_generation(prompt_text, session_id, code_model, explanation_model)
+
+
+def cosine_similarity(v1, v2):
+    """Calculate cosine similarity between two vectors."""
+    # Cosine similarity is a utility, not directly tied to a model generation,
+    # so we'll route it generally, but Minimax currently doesn't provide it,
+    # so it will fall back to Gemini.
+    # For future proofing, we add a placeholder 'embedding_utility' task type
+    from flask_login import current_user
+    provider, services = _resolve_provider_for_task(current_user, 'embedding_utility')
+    
+    if provider == 'minimax' and services:
+        return services['cosine_similarity'](v1, v2)
+    else:
+        return _gemini_cosine_similarity(v1, v2)
+
+
+def get_model_for_task(task_type, tier="primary"):
+    """Get appropriate model for task with tiering support."""
+    preferred_model = get_user_preferred_model()
+    
+    # If minimax-m2 is selected, use minimax for ALL tasks
+    if preferred_model == 'minimax-m2' and MINIMAX_AVAILABLE:
+        # Use MINIMAX_MODEL_TIERING_CONFIG from minimax_ai_services
+        if MINIMAX_MODEL_TIERING_CONFIG and task_type in MINIMAX_MODEL_TIERING_CONFIG:
+            return MINIMAX_MODEL_TIERING_CONFIG[task_type].get(tier, MINIMAX_MODEL_NAME)
+        return MINIMAX_MODEL_NAME # Fallback to default minimax model
+    else:
+        # For Gemini models, use the user's specific choice directly
+        return get_api_model_name(preferred_model)
+
+
+# ============================================================================
+# ORIGINAL GEMINI IMPLEMENTATION (renamed to avoid conflicts)
+# ============================================================================
+
+def _count_tokens_estimate(text):
+    """Provides a rough estimate of token count for input validation."""
     return len(text) // 4
 
 
 def _validate_input_size(text, max_input_tokens=DEFAULT_MAX_INPUT_TOKENS):
-    """
-    Validates that input text doesn't exceed reasonable token limits.
-    
-    Args:
-        text (str): The text to validate.
-        max_input_tokens (int): Maximum allowed input tokens.
-    
-    Returns:
-        tuple: (is_valid: bool, error_message: str or None)
-    """
+    """Validates that input text doesn't exceed reasonable token limits."""
     estimated_tokens = _count_tokens_estimate(text)
     if estimated_tokens > max_input_tokens:
         return False, f"Input too large ({estimated_tokens} estimated tokens, max {max_input_tokens}). Please reduce input size."
@@ -56,16 +513,7 @@ def _validate_input_size(text, max_input_tokens=DEFAULT_MAX_INPUT_TOKENS):
 
 
 def _handle_api_response(response, operation_name):
-    """
-    Centralized response handling for Gemini API calls.
-    
-    Args:
-        response: The Gemini API response object.
-        operation_name (str): Name of the operation for logging.
-    
-    Returns:
-        tuple: (success: bool, result: str)
-    """
+    """Centralized response handling for Gemini API calls."""
     # Check for prompt feedback (input blocking)
     if hasattr(response, 'prompt_feedback'):
         if hasattr(response.prompt_feedback, 'block_reason'):
@@ -212,21 +660,16 @@ def _chunk_text_by_tokens(text: str, max_tokens: int) -> List[str]:
     return chunks
 
 
-
-def generate_code_from_prompt(prompt_text):
+# Gemini-specific implementations (renamed functions)
+def _gemini_generate_code_from_prompt(prompt_text):
+    """Generate code from prompt using Gemini API."""
     # reset meta for this request
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates code from a text prompt using the Gemini API.
-
-    Args:
-        prompt_text (str): The user's natural language prompt.
-
-    Returns:
-        str: The generated code block as a string, or an error message.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         # Validate input size (revert to original high limit)
         is_valid, error_msg = _validate_input_size(prompt_text, max_input_tokens=200000)
@@ -247,6 +690,8 @@ def generate_code_from_prompt(prompt_text):
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
+        # Update model name based on user preference
+        update_global_model_name()
         model = genai.GenerativeModel(model_name=MODEL_NAME,
                                       generation_config=generation_config,
                                       safety_settings=safety_settings)
@@ -269,20 +714,15 @@ def generate_code_from_prompt(prompt_text):
         current_app.logger.error(f"Gemini API error (generation): {e}")
         return f"Error: Could not generate code. {str(e)}"
 
-def explain_code(code_to_explain):
-    # reset meta for this request
+
+def _gemini_explain_code(code_to_explain):
+    """Generate explanation for code using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates an explanation for a block of code using the Gemini API.
-
-    Args:
-        code_to_explain (str): The block of code to be explained.
-
-    Returns:
-        str: The AI-generated explanation in Markdown format, or an error message.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         # Validate input size
         is_valid, error_msg = _validate_input_size(code_to_explain, max_input_tokens=DEFAULT_MAX_INPUT_TOKENS)
@@ -297,6 +737,8 @@ def explain_code(code_to_explain):
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
+        # Update model name based on user preference
+        update_global_model_name()
         model = genai.GenerativeModel(model_name=MODEL_NAME, safety_settings=safety_settings)
 
         # Chunk very large inputs to avoid timeouts and server-side truncation
@@ -330,21 +772,14 @@ def explain_code(code_to_explain):
         current_app.logger.error(f"Gemini API error (explanation): {e}")
         return f"Error: Could not generate explanation. {str(e)}"
 
-def format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
-    """
-    Formats code using the Gemini API.
 
-    Args:
-        code_to_format (str): The code to be formatted.
-        language_hint (str): Optional hint for the language (e.g., 'python', 'javascript').
-
-    Returns:
-        str: The formatted code, or an error message starting with 'Error:'.
-    """
-    # reset meta for this request
+def _gemini_format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
+    """Format code using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
+    LAST_META['provider'] = 'gemini'
 
     try:
         # Validate input size
@@ -366,6 +801,8 @@ def format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
+        # Update model name based on user preference
+        update_global_model_name()
         model = genai.GenerativeModel(model_name=MODEL_NAME,
                                       generation_config=generation_config,
                                       safety_settings=safety_settings)
@@ -393,20 +830,14 @@ def format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
         return f"Error: Could not format code. {str(e)}"
 
 
-def suggest_tags_for_code(code_to_analyze):
-    # reset meta for this request
+def _gemini_suggest_tags_for_code(code_to_analyze):
+    """Generate suggested tags for code using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates suggested tags for a block of code using the Gemini API.
-
-    Args:
-        code_to_analyze (str): The block of code to be analyzed.
-
-    Returns:
-        str: A comma-separated string of tags, or an error message.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         # Validate input size
         is_valid, error_msg = _validate_input_size(code_to_analyze, max_input_tokens=DEFAULT_MAX_INPUT_TOKENS)
@@ -459,16 +890,9 @@ def suggest_tags_for_code(code_to_analyze):
         current_app.logger.error(f"Gemini API error (tagging): {e}")
         return f"Error: Could not suggest tags. {str(e)}"
 
-def chat_answer(system_preamble: str, history_pairs: list, user_message: str) -> str:
-    """Return a chatbot answer constrained to the app purpose.
 
-    Args:
-        system_preamble (str): The preprompt / instructions.
-        history_pairs (list): list of {"role": "user"|"assistant", "content": str}
-        user_message (str): latest user question
-    Returns:
-        str: assistant reply text
-    """
+def _gemini_chat_answer(system_preamble: str, history_pairs: list, user_message: str) -> str:
+    """Return a chatbot answer using Gemini API."""
     try:
         genai.configure(api_key=_get_api_key())
         full_msgs = []
@@ -497,22 +921,13 @@ def chat_answer(system_preamble: str, history_pairs: list, user_message: str) ->
         return f"Error: {e}"
 
 
-def refine_code_with_feedback(current_code: str, error_output: str, language_hint: str = None) -> str:
-    """
-    Refines/regenerates code based on runtime error output.
-
-    Args:
-        current_code: The current code that produced an error.
-        error_output: The error/stack trace or failing test output.
-        language_hint: Optional hint for the language (e.g., 'python').
-
-    Returns:
-        str: The revised code. Returns an error string starting with 'Error:' on failure.
-    """
-    # reset meta for this request
+def _gemini_refine_code_with_feedback(current_code: str, error_output: str, language_hint: str = None) -> str:
+    """Refine code based on error output using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
+    LAST_META['provider'] = 'gemini'
 
     try:
         genai.configure(api_key=_get_api_key())
@@ -528,6 +943,8 @@ def refine_code_with_feedback(current_code: str, error_output: str, language_hin
             {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
             {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
         ]
+        # Update model name based on user preference
+        update_global_model_name()
         model = genai.GenerativeModel(model_name=MODEL_NAME,
                                       generation_config=generation_config,
                                       safety_settings=safety_settings)
@@ -553,22 +970,14 @@ def refine_code_with_feedback(current_code: str, error_output: str, language_hin
         return f"Error: Could not refine code. {str(e)}"
 
 
-def generate_embedding(text_to_embed, task_type="RETRIEVAL_DOCUMENT"):
-    # reset meta for this request
+def _gemini_generate_embedding(text_to_embed, task_type="RETRIEVAL_DOCUMENT"):
+    """Generate embedding for text using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates a vector embedding for a block of text using the Gemini API.
-
-    Args:
-        text_to_embed (str): The text to create an embedding for.
-        task_type (str): The type of task ('RETRIEVAL_DOCUMENT' for storing,
-                         'RETRIEVAL_QUERY' for searching).
-
-    Returns:
-        list: A list of floats representing the vector embedding, or None on error.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         genai.configure(api_key=_get_api_key())
         def _do_call():
@@ -601,22 +1010,14 @@ def generate_embedding(text_to_embed, task_type="RETRIEVAL_DOCUMENT"):
         return None
 
 
-def generate_leetcode_solution(problem_title, problem_description, language):
-    # reset meta for this request
+def _gemini_generate_leetcode_solution(problem_title, problem_description, language):
+    """Generate LeetCode solution using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates a LeetCode solution using the Gemini API.
-
-    Args:
-        problem_title (str): The title of the LeetCode problem.
-        problem_description (str): The description of the problem.
-        language (str): The programming language for the solution.
-
-    Returns:
-        str: The generated code solution, or an error message.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         # Combine inputs for validation
         combined_input = f"Title: {problem_title}\nDescription: {problem_description}\nLanguage: {language}"
@@ -661,22 +1062,15 @@ def generate_leetcode_solution(problem_title, problem_description, language):
         current_app.logger.error(f"Gemini API error (solution generation): {e}")
         return f"Error: Could not generate solution. {str(e)}"
 
-def explain_leetcode_solution(solution_code, problem_title, language):
-    # reset meta for this request
+
+def _gemini_explain_leetcode_solution(solution_code, problem_title, language):
+    """Explain LeetCode solution using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates an explanation for a LeetCode solution using the Gemini API.
-
-    Args:
-        solution_code (str): The code of the solution to explain.
-        problem_title (str): The title of the LeetCode problem.
-        language (str): The programming language of the solution.
-
-    Returns:
-        str: The AI-generated explanation, or an error message.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         # Combine inputs for validation
         combined_input = f"Title: {problem_title}\nSolution: {solution_code}\nLanguage: {language}"
@@ -721,21 +1115,15 @@ def explain_leetcode_solution(solution_code, problem_title, language):
         current_app.logger.error(f"Gemini API error (explanation): {e}")
         return f"Error: Could not generate explanation. {str(e)}"
 
-def classify_leetcode_solution(solution_code, problem_description):
-    # reset meta for this request
+
+def _gemini_classify_leetcode_solution(solution_code, problem_description):
+    """Classify LeetCode solution using Gemini API."""
+    global LAST_META
     LAST_META['retries'] = False
     LAST_META['retry_attempts'] = 0
     LAST_META['chunked'] = False
-    """
-    Generates classification tags for a LeetCode solution using the Gemini API.
-
-    Args:
-        solution_code (str): The code of the solution.
-        problem_description (str): The description of the LeetCode problem.
-
-    Returns:
-        str: A comma-separated string of classification tags, or an error message.
-    """
+    LAST_META['provider'] = 'gemini'
+    
     try:
         # Combine inputs for validation
         combined_input = f"Description: {problem_description}\nSolution: {solution_code}"
@@ -775,19 +1163,547 @@ def classify_leetcode_solution(solution_code, problem_description):
         return f"Error: Could not classify solution. {str(e)}"
 
 
-def cosine_similarity(v1, v2):
-    """
-    Calculates the cosine similarity between two vectors.
-
-    Args:
-        v1 (np.array): The first vector.
-        v2 (np.array): The second vector.
-
-    Returns:
-        float: The cosine similarity between v1 and v2, or 0.0 if a norm is zero.
-    """
+def _gemini_cosine_similarity(v1, v2):
+    """Calculate cosine similarity between two vectors."""
     norm_v1 = np.linalg.norm(v1)
     norm_v2 = np.linalg.norm(v2)
     if norm_v1 == 0 or norm_v2 == 0:
         return 0.0
     return np.dot(v1, v2) / (norm_v1 * norm_v2)
+
+
+# Multi-Step Algorithmic Solver Architecture Functions for Gemini
+def _gemini_multi_step_layer1_architecture(prompt_text):
+    """Layer 1: Problem Decomposition & Strategy (Gemini implementation)."""
+    try:
+        genai.configure(api_key=_get_api_key())
+
+        generation_config = {
+            "temperature": 0.3,
+            "top_p": 1,
+            "top_k": 32,
+            "max_output_tokens": 327680,
+        }
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        # Update model name based on user preference
+        update_global_model_name()
+        model = genai.GenerativeModel(model_name=MODEL_NAME,
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+        
+        prompt = (
+            "You are The Architect - Layer 1 of the Multi-Step Algorithmic Solver Architecture.\n\n"
+            "Your goal is to fully understand the problem, identify constraints, handle edge cases, "
+            "and select the optimal algorithm. Analyze the problem systematically and provide a "
+            "detailed, justified plan and strategic outline.\n\n"
+            "Structure your response as:\n"
+            "1. Problem Understanding & Requirements Analysis\n"
+            "2. Input/Output Specifications & Constraints\n"
+            "3. Edge Cases & Boundary Conditions\n"
+            "4. Algorithm Selection & Justification\n"
+            "5. Implementation Strategy & Approach\n"
+            "6. Complexity Analysis (Time & Space)\n"
+            "7. Risk Assessment & Potential Challenges\n\n"
+            f"PROBLEM DESCRIPTION:\n{prompt_text}\n\n"
+            "Provide a comprehensive architectural analysis and strategic plan."
+        )
+        
+        def _do_call():
+            return model.generate_content(prompt)
+        
+        response = _call_with_retries(_do_call, "multi-step layer 1 architecture")
+        success, result = _handle_api_response(response, "multi-step layer 1 architecture")
+        return result
+        
+    except Exception as e:
+        current_app.logger.error(f"Multi-step Layer 1 error: {e}")
+        return f"Error: Could not generate architectural plan. {str(e)}"
+
+
+def _gemini_multi_step_layer2_coder(architecture_plan):
+    """Layer 2: Code Generation (Gemini implementation)."""
+    try:
+        genai.configure(api_key=_get_api_key())
+        generation_config = {
+            "temperature": 0.2,
+            "top_p": 1,
+            "top_k": 32,
+            "max_output_tokens": 655360,
+        }
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        model = genai.GenerativeModel(model_name=MODEL_NAME,
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+        
+        prompt = (
+            "You are The Coder - Layer 2 of the Multi-Step Algorithmic Solver Architecture.\n\n"
+            "Your goal is to generate clean, fully commented, and robust code based strictly "
+            "on the architectural plan from Layer 1. Follow the strategic outline precisely "
+            "and implement a complete, executable solution.\n\n"
+            "Requirements:\n"
+            "- Follow the architecture plan exactly\n"
+            "- Include comprehensive inline comments\n"
+            "- Handle edge cases as identified in Layer 1\n"
+            "- Use clear variable names and proper formatting\n"
+            "- Ensure the code is production-ready\n"
+            "- Return ONLY the code, no explanations or markdown\n\n"
+            f"ARCHITECTURE PLAN:\n{architecture_plan}\n\n"
+            "GENERATE THE COMPLETE CODE:"
+        )
+        
+        def _do_call():
+            return model.generate_content(prompt)
+        
+        response = _call_with_retries(_do_call, "multi-step layer 2 coder")
+        success, result = _handle_api_response(response, "multi-step layer 2 coder")
+        return result
+        
+    except Exception as e:
+        current_app.logger.error(f"Multi-step Layer 2 error: {e}")
+        return f"Error: Could not generate code. {str(e)}"
+
+
+def _gemini_multi_step_layer3_tester(code_block, test_cases=None):
+    """Layer 3: Verification & Debugging (Gemini implementation)."""
+    try:
+        genai.configure(api_key=_get_api_key())
+        generation_config = {
+            "temperature": 0.3,
+            "top_p": 1,
+            "top_k": 32,
+            "max_output_tokens": 491520,
+        }
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        model = genai.GenerativeModel(model_name=MODEL_NAME,
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+        
+        test_cases_section = f"\nADDITIONAL TEST CASES:\n{test_cases}" if test_cases else ""
+        
+        prompt = (
+            "You are The Tester - Layer 3 of the Multi-Step Algorithmic Solver Architecture.\n\n"
+            "Your goal is to rigorously test the generated code using provided or self-generated "
+            "test cases, identify bugs, and produce the corrected solution.\n\n"
+            "Process:\n"
+            "1. Analyze the code for potential bugs and edge cases\n"
+            "2. Generate comprehensive test cases covering:\n"
+            "   - Normal cases\n"
+            "   - Edge cases\n"
+            "   - Boundary conditions\n"
+            "   - Error scenarios\n"
+            "3. Simulate execution and identify issues\n"
+            "4. Provide corrected code if needed\n"
+            "5. Document any bugs found and fixes applied\n\n"
+            f"GENERATED CODE:\n```\n{code_block}\n```{test_cases_section}\n\n"
+            "Provide your verification analysis and corrected code (if any fixes were needed)."
+        )
+        
+        def _do_call():
+            return model.generate_content(prompt)
+        
+        response = _call_with_retries(_do_call, "multi-step layer 3 tester")
+        success, result = _handle_api_response(response, "multi-step layer 3 tester")
+        return result
+        
+    except Exception as e:
+        current_app.logger.error(f"Multi-step Layer 3 error: {e}")
+        return f"Error: Could not verify and debug code. {str(e)}"
+
+
+def _gemini_multi_step_layer4_refiner(verified_code, complexity_analysis=None):
+    """Layer 4: Optimization & Final Review (Gemini implementation)."""
+    try:
+        genai.configure(api_key=_get_api_key())
+        generation_config = {
+            "temperature": 0.2,
+            "top_p": 1,
+            "top_k": 32,
+            "max_output_tokens": 491520,
+        }
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        model = genai.GenerativeModel(model_name=MODEL_NAME,
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+        
+        complexity_section = f"\nCOMPLEXITY ANALYSIS:\n{complexity_analysis}" if complexity_analysis else ""
+        
+        prompt = (
+            "You are The Refiner - Layer 4 of the Multi-Step Algorithmic Solver Architecture.\n\n"
+            "Your goal is to analyze the time and space complexity and optimize the solution "
+            "for efficiency (if possible). Provide the final optimized code and complexity summary.\n\n"
+            "Tasks:\n"
+            "1. Analyze current time and space complexity\n"
+            "2. Identify potential optimizations\n"
+            "3. Apply optimizations while maintaining correctness\n"
+            "4. Provide final optimized code\n"
+            "5. Give detailed complexity analysis (Big O notation)\n"
+            "6. Explain optimization techniques used\n\n"
+            f"VERIFIED CODE:\n```\n{verified_code}\n```{complexity_section}\n\n"
+            "Provide the final optimized solution with comprehensive complexity analysis."
+        )
+        
+        def _do_call():
+            return model.generate_content(prompt)
+        
+        response = _call_with_retries(_do_call, "multi-step layer 4 refiner")
+        success, result = _handle_api_response(response, "multi-step layer 4 refiner")
+        return result
+        
+    except Exception as e:
+        current_app.logger.error(f"Multi-step Layer 4 error: {e}")
+        return f"Error: Could not optimize and finalize code. {str(e)}"
+
+
+def _gemini_multi_step_complete_solver(prompt_text, test_cases=None):
+    """Complete Multi-Step Algorithmic Solver (Gemini implementation)."""
+    start_time = time.time()
+    try:
+        # Layer 1: Architecture
+        layer1_result = _gemini_multi_step_layer1_architecture(prompt_text)
+        if layer1_result.startswith("Error:"):
+            processing_time = time.time() - start_time
+            return {"error": layer1_result, "layer": 1, "processing_time": processing_time}
+        
+        # Layer 2: Code Generation
+        layer2_result = _gemini_multi_step_layer2_coder(layer1_result)
+        if layer2_result.startswith("Error:"):
+            processing_time = time.time() - start_time
+            return {"error": layer2_result, "layer": 2, "layer1": layer1_result, "processing_time": processing_time}
+        
+        # Layer 3: Testing & Debugging
+        layer3_result = _gemini_multi_step_layer3_tester(layer2_result, test_cases)
+        if layer3_result.startswith("Error:"):
+            processing_time = time.time() - start_time
+            return {"error": layer3_result, "layer": 3, "layer1": layer1_result, "layer2": layer2_result, "processing_time": processing_time}
+        
+        # Layer 4: Optimization & Final Review
+        layer4_result = _gemini_multi_step_layer4_refiner(layer3_result)
+        if layer4_result.startswith("Error:"):
+            processing_time = time.time() - start_time
+            return {"error": layer4_result, "layer": 4, "layer1": layer1_result, "layer2": layer2_result, "layer3": layer3_result, "processing_time": processing_time}
+        
+        processing_time = time.time() - start_time
+        return {
+            "success": True,
+            "layer1_architecture": layer1_result,
+            "layer2_coder": layer2_result,
+            "layer3_tester": layer3_result,
+            "layer4_refiner": layer4_result,
+            "final_code": layer4_result,
+            "processing_time": processing_time
+        }
+        
+    except Exception as e:
+        processing_time = time.time() - start_time
+        current_app.logger.error(f"Multi-step complete solver error: {e}")
+        return {"error": f"Multi-step solver failed: {str(e)}", "processing_time": processing_time}
+
+
+# Token-Efficient Streaming Pipeline Functions for Gemini
+def _gemini_stream_code_generation(prompt_text, session_id=None):
+    """Stream code generation using Gemini (token-efficient prompting)."""
+    try:
+        genai.configure(api_key=_get_api_key())
+        generation_config = {
+            "temperature": 0.4,
+            "top_p": 1,
+            "top_k": 32,
+            "max_output_tokens": 819200
+        }
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        model = genai.GenerativeModel(model_name=MODEL_NAME,
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+        
+        # Token-efficient prompt - focused on code only
+        optimized_prompt = (
+            "Generate ONLY the algorithmic code solution for the following problem. "
+            "Return only raw code without explanations, comments, or markdown formatting.\n\n"
+            f"PROBLEM: {prompt_text}\n\n"
+            "CODE:"
+        )
+        
+        def _do_stream_call():
+            return model.generate_content(optimized_prompt, stream=True)
+        
+        response = _call_with_retries(_do_stream_call, "streaming code generation")
+        
+        # Save session state if provided
+        if session_id:
+            from app.utils.state_manager import StreamingStateManager
+            StreamingStateManager.save_session_start(session_id, "code_generation", prompt_text)
+        
+        accumulated_code = ""
+        chunk_count = 0
+        
+        for chunk in response:
+            if chunk.text:
+                accumulated_code += chunk.text
+                chunk_count += 1
+                
+                # Yield streaming chunk
+                yield {
+                    "type": "code_chunk",
+                    "content": chunk.text,
+                    "accumulated": accumulated_code,
+                    "chunk_count": chunk_count,
+                    "status": "streaming"
+                }
+                
+                # Save intermediate state
+                if session_id:
+                    from app.utils.state_manager import StreamingStateManager
+                    StreamingStateManager.save_intermediate_code(session_id, accumulated_code)
+        
+        # Final completion
+        yield {
+            "type": "code_complete",
+            "content": accumulated_code,
+            "total_chunks": chunk_count,
+            "status": "completed",
+            "token_savings": "Optimized prompt used - no explanation overhead"
+        }
+        
+        # Save final state
+        if session_id:
+            from app.utils.state_manager import StreamingStateManager
+            StreamingStateManager.save_final_code(session_id, accumulated_code)
+            
+    except Exception as e:
+        # Safely log the error - check if we have an application context
+        try:
+            current_app.logger.error(f"Streaming code generation error: {e}")
+        except RuntimeError:
+            # Working outside of application context, use print instead
+            print(f"Streaming code generation error: {e}")
+        yield {
+            "type": "error",
+            "error": f"Could not generate code: {str(e)}",
+            "status": "error"
+        }
+
+
+def _gemini_stream_code_explanation(code_content, session_id=None, original_prompt=None):
+    """Stream code explanation generation (Gemini implementation)."""
+    try:
+        genai.configure(api_key=_get_api_key())
+        generation_config = {
+            "temperature": 0.3,
+            "top_p": 1,
+            "top_k": 32,
+            "max_output_tokens": 409600
+        }
+        safety_settings = [
+            {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+            {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        ]
+        model = genai.GenerativeModel(model_name=MODEL_NAME,
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+        
+        # Context-pruned prompt - only uses the code, not original problem description
+        explanation_prompt = (
+            "You are a senior code reviewer and educator. Analyze the following code and provide a comprehensive explanation.\n\n"
+            "STRUCTURE YOUR RESPONSE AS:\n"
+            "1. **Overview & Intent** — what the code does and why this approach\n"
+            "2. **How It Works** — main steps/flow (not line-by-line unless necessary)\n"
+            "3. **Key Design Decisions** — data structures, algorithms, trade-offs\n"
+            "4. **Complexity Analysis** — Big-O time and space complexity\n"
+            "5. **Edge Cases & Correctness** — inputs to watch for and why it remains correct\n"
+            "6. **Improvements & Alternatives** — performance, readability, robustness ideas\n"
+            "7. **Security/Performance Notes** — only if applicable\n\n"
+            "CODE TO EXPLAIN:\n"
+            f"```\n{code_content}\n```\n\n"
+            "Provide a clear, structured explanation:"
+        )
+        
+        def _do_stream_call():
+            return model.generate_content(explanation_prompt, stream=True)
+        
+        response = _call_with_retries(_do_stream_call, "streaming explanation generation")
+        
+        accumulated_explanation = ""
+        chunk_count = 0
+        
+        for chunk in response:
+            if chunk.text:
+                accumulated_explanation += chunk.text
+                chunk_count += 1
+                
+                # Yield streaming chunk
+                yield {
+                    "type": "explanation_chunk",
+                    "content": chunk.text,
+                    "accumulated": accumulated_explanation,
+                    "chunk_count": chunk_count,
+                    "status": "streaming"
+                }
+        
+        # Final completion
+        yield {
+            "type": "explanation_complete",
+            "content": accumulated_explanation,
+            "total_chunks": chunk_count,
+            "status": "completed",
+            "context_optimization": "Context pruned - only code used as input, original problem excluded"
+        }
+        
+    except Exception as e:
+        print(f"Streaming explanation generation error: {e}")
+        yield {
+            "type": "error",
+            "error": f"Could not generate explanation: {str(e)}",
+            "status": "error"
+        }
+
+
+def _gemini_chained_streaming_generation(prompt_text, session_id=None, code_model=None, explanation_model=None):
+    """Complete token-efficient chaining pipeline (Gemini implementation)."""
+    try:
+        # Step 1: Generate code with streaming
+        yield {
+            "type": "pipeline_start",
+            "step": 1,
+            "total_steps": 2,
+            "status": "starting_code_generation"
+        }
+        
+        code_content = ""
+        code_chunks = 0
+        
+        for code_chunk in _gemini_stream_code_generation(prompt_text, session_id):
+            if code_chunk["type"] == "code_chunk":
+                code_content = code_chunk["accumulated"]
+                code_chunks = code_chunk["chunk_count"]
+                yield {
+                    "type": "code_progress",
+                    "step": 1,
+                    "content": code_chunk["content"],
+                    "accumulated": code_content,
+                    "progress": f"Code chunks: {code_chunks}",
+                    "status": "generating"
+                }
+            elif code_chunk["type"] == "code_complete":
+                code_content = code_chunk["content"]
+                yield {
+                    "type": "step_complete",
+                    "step": 1,
+                    "total_chunks": code_chunks,
+                    "content": code_content,
+                    "status": "completed",
+                    "next_step": "generating_explanation"
+                }
+                break
+            elif code_chunk["type"] == "error":
+                yield code_chunk
+                return
+        
+        if not code_content:
+            yield {
+                "type": "error",
+                "error": "No code content generated",
+                "status": "error"
+            }
+            return
+        
+        # Step 2: Generate explanation with streaming (context pruning applied)
+        yield {
+            "type": "pipeline_progress",
+            "step": 2,
+            "total_steps": 2,
+            "status": "starting_explanation_generation"
+        }
+        
+        explanation_content = ""
+        explanation_chunks = 0
+        
+        for explanation_chunk in _gemini_stream_code_explanation(code_content, session_id, prompt_text):
+            if explanation_chunk["type"] == "explanation_chunk":
+                explanation_content = explanation_chunk["accumulated"]
+                explanation_chunks = explanation_chunk["chunk_count"]
+                yield {
+                    "type": "explanation_progress",
+                    "step": 2,
+                    "content": explanation_chunk["content"],
+                    "accumulated": explanation_content,
+                    "progress": f"Explanation chunks: {explanation_chunks}",
+                    "status": "generating"
+                }
+            elif explanation_chunk["type"] == "explanation_complete":
+                explanation_content = explanation_chunk["content"]
+                yield {
+                    "type": "pipeline_complete",
+                    "step": 2,
+                    "total_chunks": explanation_chunks,
+                    "code": code_content,
+                    "explanation": explanation_content,
+                    "status": "completed",
+                    "optimizations": {
+                        "token_efficient": True,
+                        "context_pruned": True,
+                        "streaming_enabled": True,
+                        "code_chunks": code_chunks,
+                        "explanation_chunks": explanation_chunks
+                    }
+                }
+                break
+            elif explanation_chunk["type"] == "error":
+                yield explanation_chunk
+                return
+        
+    except Exception as e:
+        # Safely log the error - check if we have an application context
+        try:
+            current_app.logger.error(f"Chained streaming generation error: {e}")
+        except RuntimeError:
+            # Working outside of application context, use print instead
+            print(f"Chained streaming generation error: {e}")
+        yield {
+            "type": "error",
+            "error": f"Pipeline failed: {str(e)}",
+            "status": "error"
+        }
+
+
+def _gemini_get_model_for_task(task_type, tier="primary"):
+    """Get appropriate model for task with tiering support (Gemini implementation)."""
+    MODEL_TIERING_CONFIG = {
+        "code_generation": {
+            "primary": "gemini-2.5-flash",  # High reasoning for code
+            "fallback": "gemini-1.5-flash",  # Faster fallback
+            "cost_optimized": "gemini-1.5-flash"
+        },
+        "explanation": {
+            "primary": "gemini-1.5-flash",  # Faster, cheaper for explanations
+            "fallback": "gemini-1.5-flash",
+            "cost_optimized": "gemini-1.5-flash"
+        }
+    }
+    return MODEL_TIERING_CONFIG.get(task_type, {}).get(tier, MODEL_NAME)

@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-intelligent-container py-5">
+    <div class="container-xl">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Search Header -->
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold text-gradient">Intelligent Search</h1>
+                    <p class="lead text-muted">Find code using natural language and semantic understanding</p>
+                </div>
+
+                <!-- Search Form -->
+                <div class="card shadow-lg border-0 mb-5">
+                    <div class="card-body p-4">
+                        <form id="intelligent-search-form" action="{{ url_for('main.search') }}" method="get">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text bg-white border-end-0">
+                                            <i class="bi bi-search text-primary"></i>
+                                        </span>
+                                        <input type="text" class="form-control border-start-0 ps-0" name="q"
+                                            id="search-input"
+                                            placeholder="Describe what you're looking for... (e.g., 'Python function to sort a list', 'React component for form validation')"
+                                            aria-label="Search query">
+                                        <button class="btn btn-primary" type="submit">
+                                            <i class="bi bi-search me-2"></i>Search
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Search Scope</label>
+                                    <select class="form-select" name="scope" id="search-scope">
+                                        <option value="snippets">Code Snippets</option>
+                                        <option value="solutions">LeetCode Solutions</option>
+                                        <option value="both">Both</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Language Filter</label>
+                                    <select class="form-select" name="language" id="language-filter">
+                                        <option value="">All Languages</option>
+                                        <option value="python">Python</option>
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="java">Java</option>
+                                        <option value="c++">C++</option>
+                                        <option value="c#">C#</option>
+                                        <option value="go">Go</option>
+                                        <option value="rust">Rust</option>
+                                        <option value="typescript">TypeScript</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Advanced Filters -->
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Tags</label>
+                                    <input type="text" class="form-control" name="tags"
+                                        placeholder="e.g., algorithm, data-structure">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Date Range</label>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="date" class="form-control" name="start_date">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="date" class="form-control" name="end_date">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold">Sort By</label>
+                                    <select class="form-select" name="sort">
+                                        <option value="relevance">Relevance</option>
+                                        <option value="date_desc">Newest First</option>
+                                        <option value="date_asc">Oldest First</option>
+                                        <option value="alpha">Alphabetical</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Search Tips -->
+                <div class="card shadow-sm border-0 mb-5">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>
+                            Search Tips
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> Use natural language
+                                        descriptions</li>
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> Include programming
+                                        language if relevant</li>
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> Use specific keywords
+                                        for better results</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled mb-0">
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> Filter by tags for
+                                        more precise results</li>
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> Use date range to find
+                                        recent code</li>
+                                    <li><i class="bi bi-check-circle-fill text-success me-2"></i> Sort by relevance for
+                                        semantic search</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Examples -->
+                <div class="card shadow-sm border-0 mb-5">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">
+                            <i class="bi bi-magic text-primary me-2"></i>
+                            Example Searches
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm search-example"
+                                        data-query="Python function to sort a list">
+                                        Python function to sort a list
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm search-example"
+                                        data-query="React component for form validation">
+                                        React component for form validation
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm search-example"
+                                        data-query="JavaScript async/await error handling">
+                                        JavaScript async/await error handling
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex flex-column gap-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm search-example"
+                                        data-query="C++ implementation of binary search tree">
+                                        C++ implementation of binary search tree
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm search-example"
+                                        data-query="Go goroutine patterns">
+                                        Go goroutine patterns
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm search-example"
+                                        data-query="SQL query optimization techniques">
+                                        SQL query optimization techniques
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Searches -->
+                {% if recent_searches %}
+                <div class="card shadow-sm border-0 mb-5">
+                    <div class="card-body">
+                        <h6 class="card-title mb-3">
+                            <i class="bi bi-clock-history text-info me-2"></i>
+                            Recent Searches
+                        </h6>
+                        <div class="row">
+                            {% for search in recent_searches %}
+                            <div class="col-md-4 mb-2">
+                                <a href="{{ url_for('main.search', q=search.query) }}"
+                                    class="btn btn-outline-secondary btn-sm w-100 text-start">
+                                    <i class="bi bi-search me-2"></i>{{ search.query }}
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Search Results Preview -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-search-heart text-primary fs-1 mb-3"></i>
+                        <h5 class="card-title">Ready to Find Your Code?</h5>
+                        <p class="card-text text-muted">Enter your search query above to get started with intelligent
+                            code search.</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{{ url_for('main.snippets') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-code-slash me-2"></i>Browse All Snippets
+                            </a>
+                            <a href="{{ url_for('main.generate') }}" class="btn btn-outline-warning">
+                                <i class="bi bi-magic me-2"></i>Generate Code
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Search example buttons
+        const searchExamples = document.querySelectorAll('.search-example');
+        const searchInput = document.getElementById('search-input');
+        const searchForm = document.getElementById('intelligent-search-form');
+
+        searchExamples.forEach(example => {
+            example.addEventListener('click', function () {
+                searchInput.value = this.dataset.query;
+                searchForm.submit();
+            });
+        });
+
+        // Auto-complete suggestions
+        const searchInputField = document.getElementById('search-input');
+        const suggestionsContainer = document.createElement('div');
+        suggestionsContainer.className = 'suggestions-dropdown position-absolute bg-white border shadow-sm rounded';
+        suggestionsContainer.style.display = 'none';
+        suggestionsContainer.style.zIndex = '1000';
+        suggestionsContainer.style.width = '100%';
+        suggestionsContainer.style.top = '100%';
+        suggestionsContainer.style.left = '0';
+
+        searchInputField.parentNode.appendChild(suggestionsContainer);
+
+        const suggestions = [
+            'Python function to sort a list',
+            'React component for form validation',
+            'JavaScript async/await error handling',
+            'C++ implementation of binary search tree',
+            'Go goroutine patterns',
+            'SQL query optimization techniques',
+            'Python data analysis with pandas',
+            'JavaScript DOM manipulation examples',
+            'Java Spring Boot REST API'
+        ];
+
+        searchInputField.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+            suggestionsContainer.innerHTML = '';
+
+            if (query.length > 2) {
+                const filtered = suggestions.filter(s => s.toLowerCase().includes(query));
+
+                if (filtered.length > 0) {
+                    suggestionsContainer.style.display = 'block';
+                    filtered.forEach(suggestion => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item p-2 border-bottom';
+                        div.style.cursor = 'pointer';
+                        div.textContent = suggestion;
+                        div.addEventListener('mouseenter', function () {
+                            this.style.backgroundColor = '#f8f9fa';
+                        });
+                        div.addEventListener('mouseleave', function () {
+                            this.style.backgroundColor = 'white';
+                        });
+                        div.addEventListener('click', function () {
+                            searchInputField.value = this.textContent;
+                            suggestionsContainer.style.display = 'none';
+                        });
+                        suggestionsContainer.appendChild(div);
+                    });
+                } else {
+                    suggestionsContainer.style.display = 'none';
+                }
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function (e) {
+            if (e.target !== searchInputField && !suggestionsContainer.contains(e.target)) {
+                suggestionsContainer.style.display = 'none';
+            }
+        });
+
+        // Form submission with loading state
+        searchForm.addEventListener('submit', function () {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Searching...';
+            submitBtn.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,578 @@
+/* Button Liquid Glass Effects Only */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: rgba(255, 255, 255, 0.1);
+    --glass-backdrop: blur(8px);
+    --glass-ripple: 0deg;
+}
+
+/* Dark theme glass variables */
+[data-bs-theme='dark'] {
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-shadow: rgba(0, 0, 0, 0.3);
+    --glass-backdrop: blur(10px);
+}
+
+/* Light theme glass variables */
+[data-bs-theme='light'] {
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --glass-shadow: rgba(0, 0, 0, 0.1);
+    --glass-backdrop: blur(8px);
+}
+
+/* Buttons with liquid glass effect */
+.btn.liquid-glass {
+    /* Frosted glass background */
+    background: linear-gradient(145deg, 
+        rgba(255, 255, 255, 0.2) 0%, 
+        rgba(255, 255, 255, 0.05) 50%, 
+        rgba(255, 255, 255, 0.15) 100%);
+    
+    /* Glass border with liquid effect */
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    
+    /* Backdrop blur for true glass effect */
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    backdrop-filter: var(--glass-backdrop);
+    
+    /* Subtle inner shadow for liquid feel */
+    box-shadow: 
+        inset 0 0 20px rgba(255, 255, 255, 0.1),
+        inset 0 0 40px rgba(255, 255, 255, 0.05),
+        0 6px 20px var(--glass-shadow);
+    
+    /* Smooth transitions for all properties */
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Liquid-like overflow handling */
+    overflow: hidden;
+    position: relative;
+    color: var(--bs-body-color);
+}
+
+/* Liquid glass pseudo-elements for ripple effects */
+.btn.liquid-glass::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+        circle at 50% 50%,
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0.05) 40%,
+        transparent 50%
+    );
+    transform: rotate(var(--glass-ripple));
+    transition: transform 0.6s ease;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+/* Enhanced hover effects for buttons */
+.btn.liquid-glass:hover {
+    /* Lift effect */
+    transform: translateY(-2px) scale(1.02);
+    
+    /* Enhanced glass clarity */
+    background: linear-gradient(145deg, 
+        rgba(255, 255, 255, 0.35) 0%, 
+        rgba(255, 255, 255, 0.1) 50%, 
+        rgba(255, 255, 255, 0.25) 100%);
+    
+    /* Stronger border glow */
+    border-color: rgba(255, 255, 255, 0.35);
+    
+    /* Enhanced shadow */
+    box-shadow: 
+        inset 0 0 30px rgba(255, 255, 255, 0.15),
+        inset 0 0 60px rgba(255, 255, 255, 0.1),
+        0 8px 24px var(--glass-shadow);
+    
+    /* Ripple animation */
+    --glass-ripple: 10deg;
+}
+
+/* Active/click state for buttons */
+.btn.liquid-glass:active {
+    transform: translateY(0) scale(0.98);
+    --glass-ripple: 20deg;
+    opacity: 0.9;
+}
+
+/* Specific button type overrides */
+.btn-primary.liquid-glass {
+    background: linear-gradient(145deg, 
+        rgba(30, 91, 184, 0.3) 0%, 
+        rgba(30, 91, 184, 0.1) 50%, 
+        rgba(30, 91, 184, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-success.liquid-glass {
+    background: linear-gradient(145deg, 
+        rgba(25, 135, 84, 0.3) 0%, 
+        rgba(25, 135, 84, 0.1) 50%, 
+        rgba(25, 135, 84, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-warning.liquid-glass {
+    background: linear-gradient(145deg, 
+        rgba(181, 134, 0, 0.3) 0%, 
+        rgba(181, 134, 0, 0.1) 50%, 
+        rgba(181, 134, 0, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-danger.liquid-glass {
+    background: linear-gradient(145deg, 
+        rgba(162, 58, 58, 0.3) 0%, 
+        rgba(162, 58, 58, 0.1) 50%, 
+        rgba(162, 58, 58, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-info.liquid-glass {
+    background: linear-gradient(145deg, 
+        rgba(124, 58, 237, 0.3) 0%, 
+        rgba(124, 58, 237, 0.1) 50%, 
+        rgba(124, 58, 237, 0.25) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Hover states for specific button types */
+.btn-primary.liquid-glass:hover {
+    background: linear-gradient(145deg, 
+        rgba(30, 91, 184, 0.45) 0%, 
+        rgba(30, 91, 184, 0.15) 50%, 
+        rgba(30, 91, 184, 0.35) 100%);
+}
+
+.btn-success.liquid-glass:hover {
+    background: linear-gradient(145deg, 
+        rgba(25, 135, 84, 0.45) 0%, 
+        rgba(25, 135, 84, 0.15) 50%, 
+        rgba(25, 135, 84, 0.35) 100%);
+}
+
+.btn-warning.liquid-glass:hover {
+    background: linear-gradient(145deg, 
+        rgba(181, 134, 0, 0.45) 0%, 
+        rgba(181, 134, 0, 0.15) 50%, 
+        rgba(181, 134, 0, 0.35) 100%);
+}
+
+.btn-danger.liquid-glass:hover {
+    background: linear-gradient(145deg, 
+        rgba(162, 58, 58, 0.45) 0%, 
+        rgba(162, 58, 58, 0.15) 50%, 
+        rgba(162, 58, 58, 0.35) 100%);
+}
+
+.btn-info.liquid-glass:hover {
+    background: linear-gradient(145deg, 
+        rgba(124, 58, 237, 0.45) 0%, 
+        rgba(124, 58, 237, 0.15) 50%, 
+        rgba(124, 58, 237, 0.35) 100%);
+}
+
+/* Ripple effect on click */
+.liquid-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.liquid-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease, opacity 0.6s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.liquid-ripple:active::after {
+    width: 200px;
+    height: 200px;
+    opacity: 0.3;
+}
+
+/* Smooth page transitions */
+#page-content {
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    animation: pageSlideIn 0.6s ease-out;
+}
+
+@keyframes pageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Enhanced tooltip system with auto-disappearance */
+.tooltip-system {
+    position: fixed;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.tooltip-auto {
+    background: linear-gradient(145deg, 
+        rgba(0, 0, 0, 0.85) 0%, 
+        rgba(0, 0, 0, 0.7) 50%, 
+        rgba(0, 0, 0, 0.85) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 14px;
+    padding: 14px 18px;
+    color: white;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 
+        0 12px 32px rgba(0, 0, 0, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.12),
+        inset 0 0 80px rgba(255, 255, 255, 0.06);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    max-width: 320px;
+    opacity: 0;
+    transform: translateY(-12px) scale(0.95);
+    will-change: transform, opacity;
+}
+
+.tooltip-auto.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.tooltip-auto.hide {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.95);
+}
+
+/* Auto-hide animation with liquid effect */
+@keyframes tooltipFadeOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-6px) scale(0.98);
+        filter: blur(0.5px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.95);
+        filter: blur(1px);
+    }
+}
+
+.tooltip-auto.auto-hide {
+    animation: tooltipFadeOut 0.6s ease forwards;
+}
+
+/* Tooltip content styling */
+.tooltip-auto .tooltip-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-auto .tooltip-content {
+    font-size: 13px;
+    line-height: 1.4;
+    color: #e6e6e6;
+    opacity: 0.95;
+}
+
+/* Tooltip arrow with liquid effect */
+.tooltip-auto::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid;
+    border-top-color: rgba(0, 0, 0, 0.85);
+    bottom: -8px;
+    left: 20px;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+    transition: all 0.4s ease;
+}
+
+.tooltip-auto.show::after {
+    animation: arrowPulse 2s ease-in-out infinite;
+}
+
+@keyframes arrowPulse {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translateY(-2px) scale(1.05);
+        opacity: 0.8;
+    }
+}
+
+/* Different tooltip types with liquid glass effects */
+.tooltip-auto.type-info {
+    background: linear-gradient(145deg, 
+        rgba(30, 91, 184, 0.9) 0%, 
+        rgba(30, 91, 184, 0.7) 50%, 
+        rgba(30, 91, 184, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 
+        0 12px 32px rgba(30, 91, 184, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.tooltip-auto.type-success {
+    background: linear-gradient(145deg, 
+        rgba(25, 135, 84, 0.9) 0%, 
+        rgba(25, 135, 84, 0.7) 50%, 
+        rgba(25, 135, 84, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 
+        0 12px 32px rgba(25, 135, 84, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.tooltip-auto.type-warning {
+    background: linear-gradient(145deg, 
+        rgba(181, 134, 0, 0.9) 0%, 
+        rgba(181, 134, 0, 0.7) 50%, 
+        rgba(181, 134, 0, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 
+        0 12px 32px rgba(181, 134, 0, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.tooltip-auto.type-error {
+    background: linear-gradient(145deg, 
+        rgba(162, 58, 58, 0.9) 0%, 
+        rgba(162, 58, 58, 0.7) 50%, 
+        rgba(162, 58, 58, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 
+        0 12px 32px rgba(162, 58, 58, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+.tooltip-auto.type-debug {
+    background: linear-gradient(145deg, 
+        rgba(124, 58, 237, 0.9) 0%, 
+        rgba(124, 58, 237, 0.7) 50%, 
+        rgba(124, 58, 237, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 
+        0 12px 32px rgba(124, 58, 237, 0.4),
+        inset 0 0 40px rgba(255, 255, 255, 0.15);
+}
+
+/* Tooltip hover interaction for extended visibility */
+.tooltip-auto.interactive {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.tooltip-auto.interactive:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 
+        0 16px 40px rgba(0, 0, 0, 0.5),
+        inset 0 0 50px rgba(255, 255, 255, 0.2);
+}
+
+/* Tooltip positioning variants */
+.tooltip-auto.position-top {
+    transform-origin: bottom center;
+}
+
+.tooltip-auto.position-bottom {
+    transform-origin: top center;
+}
+
+.tooltip-auto.position-left {
+    transform-origin: center right;
+}
+
+.tooltip-auto.position-right {
+    transform-origin: center left;
+}
+
+/* Liquid ripple effect on tooltip creation */
+@keyframes tooltipRipple {
+    0% {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.9);
+        filter: blur(2px);
+    }
+    50% {
+        opacity: 0.8;
+        transform: translateY(-6px) scale(0.95);
+        filter: blur(1px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0px);
+    }
+}
+
+.tooltip-auto.ripple-in {
+    animation: tooltipRipple 0.5s ease-out;
+}
+
+/* Tooltip content animations */
+.tooltip-auto .tooltip-title {
+    animation: titleSlideIn 0.4s ease-out 0.1s both;
+}
+
+.tooltip-auto .tooltip-content {
+    animation: contentSlideIn 0.4s ease-out 0.2s both;
+}
+
+@keyframes titleSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes contentSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Floating elements with gentle movement */
+.float-gentle {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Breathing effect for important elements */
+.breathing {
+    animation: breathe 4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.02);
+        opacity: 0.9;
+    }
+}
+
+/* Responsive glass scaling */
+@media (max-width: 768px) {
+    .btn.liquid-glass {
+        border-radius: 10px;
+        box-shadow: 
+            inset 0 0 15px rgba(255, 255, 255, 0.08),
+            0 4px 16px var(--glass-shadow);
+    }
+}
+
+/* Performance optimized glass for mobile */
+@media (max-width: 480px) {
+    .btn.liquid-glass {
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
+        background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .tooltip-auto {
+        max-width: 250px;
+        font-size: 14px;
+    }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .btn.liquid-glass,
+    .tooltip-auto,
+    .float-gentle,
+    .breathing {
+        transition: none !important;
+        animation: none !important;
+    }
+    
+    #page-content {
+        animation: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .btn.liquid-glass {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(0, 0, 0, 0.8);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    
+    .tooltip-auto {
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        color: white;
+    }
+}
+
+/* Print styles - remove glass effects for printing */
+@media print {
+    .btn.liquid-glass,
+    .tooltip-auto,
+    .floating-elements {
+        background: transparent !important;
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}

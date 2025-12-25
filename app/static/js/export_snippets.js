@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const dlAllBtn = document.getElementById('download-all-btn');
     const allSort = document.getElementById('all-sort');
     const dlColBtn = document.getElementById('download-collections-btn');
@@ -10,15 +10,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllSnippetsCheckbox = document.getElementById('select-all-snippets');
     const individualSnippetsList = document.getElementById('individual-snippets-list');
     const downloadSelectedSnippetsBtn = document.getElementById('download-selected-snippets-btn');
+    const downloadSelectedSnippetsDirectBtn = document.getElementById('download-selected-snippets-direct-btn');
     const individualSort = document.getElementById('individual-sort');
 
     // --- Existing functionality (All Snippets & Collections) ---
-    dlAllBtn.addEventListener('click', function() {
+    dlAllBtn.addEventListener('click', function () {
         const sort = allSort.value;
         window.location.href = `/export/download?sort=${encodeURIComponent(sort)}`;
     });
 
-    dlColBtn.addEventListener('click', function() {
+    dlColBtn.addEventListener('click', function () {
         const selected = Array.from(collectionsSel.selectedOptions).map(o => o.value).filter(Boolean);
         if (!selected.length) {
             alert('Please select at least one collection.');
@@ -57,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (allSnippets.length === 0) {
             individualSnippetsList.innerHTML = '<p class="text-muted text-center">No snippets available.</p>';
             downloadSelectedSnippetsBtn.disabled = true;
+            downloadSelectedSnippetsDirectBtn.disabled = true;
             selectAllSnippetsCheckbox.disabled = true;
             return;
         }
@@ -103,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const updateDownloadButtonState = () => {
         const checkedCount = document.querySelectorAll('.snippet-checkbox:checked').length;
         downloadSelectedSnippetsBtn.disabled = checkedCount === 0;
+        downloadSelectedSnippetsDirectBtn.disabled = checkedCount === 0;
     };
 
     const updateSelectAllCheckboxState = () => {
@@ -124,10 +127,11 @@ document.addEventListener('DOMContentLoaded', function() {
         individualSort.addEventListener('change', renderIndividualSnippets);
     }
 
+    // ZIP download functionality (existing)
     if (downloadSelectedSnippetsBtn) {
-        downloadSelectedSnippetsBtn.addEventListener('click', function() {
+        downloadSelectedSnippetsBtn.addEventListener('click', function () {
             const selectedSnippetIds = Array.from(document.querySelectorAll('.snippet-checkbox:checked'))
-                                            .map(cb => cb.value);
+                .map(cb => cb.value);
             if (selectedSnippetIds.length === 0) {
                 alert('Please select at least one snippet to export.');
                 return;
@@ -139,6 +143,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 sort: sort,
             });
             window.location.href = `${window.SOPHIA_EXPORT_CONFIG.exportSelectedZipUrl}?${qs.toString()}`;
+        });
+    }
+
+    // Direct download functionality (new)
+    if (downloadSelectedSnippetsDirectBtn) {
+        downloadSelectedSnippetsDirectBtn.addEventListener('click', function () {
+            const selectedSnippetIds = Array.from(document.querySelectorAll('.snippet-checkbox:checked'))
+                .map(cb => cb.value);
+            if (selectedSnippetIds.length === 0) {
+                alert('Please select at least one snippet to export.');
+                return;
+            }
+
+            const sort = individualSort.value;
+            const qs = new URLSearchParams({
+                ids: selectedSnippetIds.join(','),
+                sort: sort,
+            });
+            window.location.href = `${window.SOPHIA_EXPORT_CONFIG.exportSelectedDirectUrl}?${qs.toString()}`;
         });
     }
 

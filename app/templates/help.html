@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Help & Tips</h1>
+    <p class="text-muted mb-4">Click on any card below to learn more about that feature or topic.</p>
+
+    <!-- Help Cards Grid -->
+    <div class="row g-4">
+        <!-- Quick Start Guide Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_quick_start') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-play-circle me-2"></i>
+                            Quick Start Guide
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Get started with our application in minutes. Learn the basics of creating your first
+                            snippet,
+                            using search features, and navigating the interface efficiently.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Create your first snippet</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Basic navigation</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Essential features</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Search Tips Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_search_tips') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-search me-2"></i>
+                            Search Tips
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Master the art of finding what you need quickly. Discover advanced search techniques,
+                            filters, and smart search strategies to locate your snippets efficiently.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Advanced search operators</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Filter by language/type</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Smart suggestions</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- AI Features Guide Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_ai_features') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-robot me-2"></i>
+                            AI Features Guide
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Leverage the power of AI to enhance your coding workflow. Learn about code generation,
+                            intelligent suggestions, and automated optimization features.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Code generation</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Smart suggestions</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Auto-optimization</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Navigation Shortcuts Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_navigation_shortcuts') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-keyboard me-2"></i>
+                            Navigation Shortcuts
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Speed up your workflow with keyboard shortcuts and navigation tips.
+                            Learn to move quickly through the application using keyboard shortcuts.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Keyboard shortcuts</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Quick navigation</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Workflow optimization</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Useful Tips Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_useful_tips') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            Useful Tips
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Discover hidden features and best practices that can enhance your productivity.
+                            Learn pro tips from experienced users and power-user techniques.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Pro tips & tricks</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Best practices</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Hidden features</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Points & Badges Guide Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_points_badges') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-award me-2"></i>
+                            Points & Badges Guide
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Understand the gamification system and earn rewards for your contributions.
+                            Learn how to earn points, unlock badges, and climb the leaderboard.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Earn points</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Unlock badges</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Leaderboards</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Common Tasks Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_common_tasks') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-task me-2"></i>
+                            Common Tasks
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Step-by-step guides for frequently performed tasks. From basic operations
+                            to advanced workflows, learn how to accomplish common goals efficiently.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Basic operations</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Advanced workflows</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Task automation</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Snippet Actions Card -->
+        <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12">
+            <a href="{{ url_for('main.help_snippet_actions') }}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm help-card clickable-card">
+                    <div class="card-header bg-purple text-white" style="background-color: #6f42c1;">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-code-square me-2"></i>
+                            Snippet Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            Master snippet management with comprehensive guides on creating, editing,
+                            organizing, and sharing your code snippets effectively.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check2 text-success me-2"></i>Create & edit</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Organize snippets</li>
+                            <li><i class="bi bi-check2 text-success me-2"></i>Share & export</li>
+                        </ul>
+                        <div class="mt-auto">
+                            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Click to view detailed
+                                guide</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Add custom styles for help page -->
+<style>
+    .help-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: 1px solid var(--bs-border-color);
+    }
+
+    .help-card:hover {
+        transform: translateY(-5px);
+        box-shadow:
+            0 0.5rem 1rem rgba(0, 0, 0, 0.15),
+            0 0 0 1px var(--bs-primary),
+            0 0 20px rgba(var(--bs-primary-rgb), 0.3) !important;
+        border-color: var(--bs-primary);
+    }
+
+    .clickable-card {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .clickable-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+        transition: left 0.5s;
+        z-index: 1;
+    }
+
+    .clickable-card:hover::before {
+        left: 100%;
+    }
+
+    .card-header {
+        border-bottom: none;
+        font-weight: 600;
+    }
+
+    .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 2;
+    }
+
+    .card-text {
+        flex-grow: 1;
+    }
+
+    @media (max-width: 576px) {
+        .card-header h5 {
+            font-size: 1rem;
+        }
+    }
+
+    /* Dark mode adjustments for help cards */
+    :root[data-bs-theme='dark'] .card {
+        background-color: var(--bs-dark);
+        border-color: var(--bs-border-color);
+    }
+
+    :root[data-bs-theme='dark'] .card-header {
+        background-color: var(--bs-secondary-bg) !important;
+        border-color: var(--bs-border-color);
+    }
+
+    :root[data-bs-theme='light'] .card {
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-border-color);
+    }
+
+    /* Ensure all text elements use proper theme colors in help section */
+    :root[data-bs-theme='dark'] .card * {
+        color: var(--bs-body-color);
+    }
+
+    :root[data-bs-theme='light'] .card * {
+        color: var(--bs-body-color);
+    }
+
+    /* Fix for any hardcoded black text in help cards */
+    :root[data-bs-theme='dark'] .card *[style*="color: black"],
+    :root[data-bs-theme='dark'] .card *[style*="color:#000"],
+    :root[data-bs-theme='dark'] .card *[style*="color:#000000"] {
+        color: var(--bs-body-color) !important;
+    }
+
+    /* Ensure card text and list items have proper colors */
+    :root[data-bs-theme='dark'] .card-text,
+    :root[data-bs-theme='dark'] .card-body ul li {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='light'] .card-text,
+    :root[data-bs-theme='light'] .card-body ul li {
+        color: var(--bs-body-color) !important;
+    }
+
+    /* Additional dark mode text fixes */
+    :root[data-bs-theme='dark'] .card p {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='dark'] .card li {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='light'] .card p {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='light'] .card li {
+        color: var(--bs-body-color) !important;
+    }
+
+    /* Additional dark mode text fixes */
+    :root[data-bs-theme='dark'] .card p {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='dark'] .card li {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='light'] .card p {
+        color: var(--bs-body-color) !important;
+    }
+
+    :root[data-bs-theme='light'] .card li {
+        color: var(--bs-body-color) !important;
+    }
+</style>
+{% endblock %}

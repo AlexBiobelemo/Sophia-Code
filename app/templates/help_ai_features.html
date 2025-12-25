@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.help') }}">Help & Tips</a></li>
+            <li class="breadcrumb-item active" aria-current="page">AI Features</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-robot text-success fs-1 me-3"></i>
+                <div>
+                    <h1 class="mb-1">AI Features Guide</h1>
+                    <p class="text-muted mb-0">Leverage AI for better code and enhanced workflow</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3><i class="bi bi-robot me-2"></i>Leverage AI for Better Code</h3>
+
+                    <p>Discover how AI can enhance your coding workflow with intelligent suggestions and automated
+                        features.</p>
+
+                    <h4>Code Generation</h4>
+                    <div class="highlight-box">
+                        <ul>
+                            <li>Describe what you need and let AI generate the code</li>
+                            <li>Supports multiple programming languages</li>
+                            <li>Generate functions, classes, or complete modules</li>
+                            <li>Get code comments and documentation</li>
+                        </ul>
+                    </div>
+
+                    <h4>Smart Suggestions</h4>
+                    <ul>
+                        <li><strong>Code completion:</strong> AI-powered autocomplete</li>
+                        <li><strong>Best practices:</strong> Suggestions for optimal code structure</li>
+                        <li><strong>Performance tips:</strong> Recommendations for optimization</li>
+                        <li><strong>Security alerts:</strong> Identify potential vulnerabilities</li>
+                    </ul>
+
+                    <h4>Code Analysis</h4>
+                    <ul>
+                        <li>Automatic code review and quality assessment</li>
+                        <li>Bug detection and suggested fixes</li>
+                        <li>Complexity analysis and optimization suggestions</li>
+                        <li>Code refactoring recommendations</li>
+                    </ul>
+
+                    <h4>How to Use AI Features</h4>
+                    <ol class="step-list">
+                        <li>Select the AI assistant from the main menu</li>
+                        <li>Choose the type of assistance you need</li>
+                        <li>Provide clear descriptions or context</li>
+                        <li>Review and refine the AI suggestions</li>
+                        <li>Save or integrate the generated code</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Navigation to other help topics -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <a href="{{ url_for('main.help_search_tips') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Previous: Search Tips
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('main.help_navigation_shortcuts') }}" class="btn btn-primary">
+                        Next: Navigation Shortcuts<i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom styles for this page -->
+<style>
+    .highlight-box {
+        background: rgba(var(--bs-success-rgb), 0.1);
+        border: 1px solid rgba(var(--bs-success-rgb), 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    .step-list {
+        counter-reset: step-counter;
+    }
+
+    .step-list li {
+        counter-increment: step-counter;
+        position: relative;
+        padding-left: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .step-list li::before {
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        background: var(--bs-success);
+        color: white;
+        width: 1.8rem;
+        height: 1.8rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}

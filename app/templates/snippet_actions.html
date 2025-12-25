@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-6 text-primary">Snippet Actions</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Snippets
+        </a>
+        <a href="{{ url_for('main.create_snippet') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle me-2"></i>Create New Snippet
+        </a>
+    </div>
+</div>
+
+<!-- Quick Actions Grid -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary bg-gradient rounded-circle p-3 me-3">
+                        <i class="bi bi-pencil text-white fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Edit & Manage</h5>
+                        <small class="text-muted">Modify and organize your snippets</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-list me-2"></i>View All Snippets
+                    </a>
+                    <a href="{{ url_for('main.collections') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-folder2-open me-2"></i>Manage Collections
+                    </a>
+                    <a href="{{ url_for('main.export_snippets') }}" class="btn btn-outline-info">
+                        <i class="bi bi-download me-2"></i>Export Snippets
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-warning bg-gradient rounded-circle p-3 me-3">
+                        <i class="bi bi-gear text-white fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Advanced Actions</h5>
+                        <small class="text-muted">Powerful snippet operations</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.generate') }}" class="btn btn-outline-success">
+                        <i class="bi bi-magic me-2"></i>AI Generate Code
+                    </a>
+                    <a href="{{ url_for('main.chat') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-chat-dots me-2"></i>AI Chat
+                    </a>
+                    <a href="{{ url_for('main.user_settings') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-sliders me-2"></i>User Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-danger bg-gradient rounded-circle p-3 me-3">
+                        <i class="bi bi-trash text-white fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Delete Operations</h5>
+                        <small class="text-muted">Careful with these actions</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-2"></i>Delete Individual Snippets
+                    </a>
+                    <button class="btn btn-outline-warning" onclick="confirmDeleteAll()">
+                        <i class="bi bi-x-circle me-2"></i>Delete All Snippets
+                    </button>
+                    <a href="{{ url_for('main.user_profile') }}" class="btn btn-outline-info">
+                        <i class="bi bi-award me-2"></i>View Profile & Badges
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Operations Section -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-check-circle me-2"></i>Bulk Operations
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-8">
+                <p class="text-muted mb-3">
+                    Perform operations on multiple snippets at once. First, go to the main snippets page and select the
+                    snippets you want to operate on.
+                </p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Tip:</strong> Use the "Select All" checkbox and filters to quickly choose multiple snippets
+                    for bulk operations.
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                        <i class="bi bi-list-check me-2"></i>Go to Snippets Page
+                    </a>
+                    <a href="{{ url_for('main.export_snippets') }}" class="btn btn-info">
+                        <i class="bi bi-download me-2"></i>Export Selected
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Quick Links -->
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-compass me-2"></i>Quick Navigation
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <h6>Code Management</h6>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.index') }}" class="text-decoration-none">
+                            <i class="bi bi-list me-2"></i>All Snippets
+                        </a></li>
+                    <li><a href="{{ url_for('main.create_snippet') }}" class="text-decoration-none">
+                            <i class="bi bi-plus-circle me-2"></i>Create Snippet
+                        </a></li>
+                    <li><a href="{{ url_for('main.collections') }}" class="text-decoration-none">
+                            <i class="bi bi-folder2-open me-2"></i>Collections
+                        </a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h6>Notes & Documentation</h6>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.notes') }}" class="text-decoration-none">
+                            <i class="bi bi-journal-text me-2"></i>My Notes
+                        </a></li>
+                    <li><a href="{{ url_for('main.create_note') }}" class="text-decoration-none">
+                            <i class="bi bi-plus-square me-2"></i>Create Note
+                        </a></li>
+                    <li><a href="{{ url_for('main.help') }}" class="text-decoration-none">
+                            <i class="bi bi-question-circle me-2"></i>Help & Guides
+                        </a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h6>AI Features</h6>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.generate') }}" class="text-decoration-none">
+                            <i class="bi bi-magic me-2"></i>AI Code Generation
+                        </a></li>
+                    <li><a href="{{ url_for('main.chat') }}" class="text-decoration-none">
+                            <i class="bi bi-chat-dots me-2"></i>AI Chat
+                        </a></li>
+                    <li><a href="{{ url_for('main.user_settings') }}" class="text-decoration-none">
+                            <i class="bi bi-sliders me-2"></i>AI Settings
+                        </a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h6>User & Profile</h6>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('main.user_profile') }}" class="text-decoration-none">
+                            <i class="bi bi-award me-2"></i>My Profile
+                        </a></li>
+                    <li><a href="{{ url_for('main.edit_profile') }}" class="text-decoration-none">
+                            <i class="bi bi-person-gear me-2"></i>Account Settings
+                        </a></li>
+                    <li><a href="{{ url_for('main.logout') }}" class="text-decoration-none">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Delete All Confirmation -->
+<script>
+    function confirmDeleteAll() {
+        if (confirm('Are you sure you want to delete ALL your snippets? This action cannot be undone.')) {
+            // This would need to be implemented in the backend
+            alert('This feature is not yet implemented. Please delete snippets individually or contact support.');
+        }
+    }
+</script>
+
+<style>
+    .card {
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .bg-gradient {
+        background: linear-gradient(135deg, var(--bs-bg-opacity, 1) 0%, rgba(255, 255, 255, 0.1) 100%);
+    }
+
+    .btn-group-vertical .btn {
+        border-radius: 0;
+    }
+
+    .btn-group-vertical .btn:first-child {
+        border-top-left-radius: 0.375rem;
+        border-top-right-radius: 0.375rem;
+    }
+
+    .btn-group-vertical .btn:last-child {
+        border-bottom-left-radius: 0.375rem;
+        border-bottom-right-radius: 0.375rem;
+    }
+
+    .list-unstyled a {
+        color: var(--bs-body-color);
+        transition: color 0.2s ease;
+    }
+
+    .list-unstyled a:hover {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .card-header h5 {
+        color: var(--bs-body-color);
+    }
+
+    .card-body h6 {
+        color: var(--bs-body-color);
+        border-bottom: 1px solid var(--bs-border-color);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}

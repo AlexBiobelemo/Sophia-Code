@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="display-4">{{ title }}</h1>
+    <div class="d-flex align-items-center gap-2">
+        <!-- Dirty indicator -->
+        <span class="dirty-indicator badge bg-warning" style="display: none;">
+            <i class="bi bi-exclamation-triangle me-1"></i>Unsaved Changes
+        </span>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form action="" method="post" id="create-note-form">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.title.label(class="form-label") }}
+                {{ form.title(class="form-control", size=32, id="note-title", data_autosave="true") }}
+                {% for error in form.title.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                {{ form.content.label(class="form-label") }}
+
+                <!-- Markdown Toolbar -->
+                <div class="markdown-toolbar mb-2">
+                    <div class="btn-group" role="group" aria-label="Markdown formatting">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="bold"
+                            title="Bold (Ctrl+B)">
+                            <i class="bi bi-type-bold"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="italic"
+                            title="Italic (Ctrl+I)">
+                            <i class="bi bi-type-italic"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="underline"
+                            title="Underline (Ctrl+U)">
+                            <i class="bi bi-type-underline"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="highlight"
+                            title="Highlight">
+                            <i class="bi bi-highlight"></i>
+                        </button>
+
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                data-bs-toggle="dropdown" title="Headings">
+                                <i class="bi bi-type-h1"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" data-format="h1">Heading 1</a></li>
+                                <li><a class="dropdown-item" href="#" data-format="h2">Heading 2</a></li>
+                                <li><a class="dropdown-item" href="#" data-format="h3">Heading 3</a></li>
+                                <li><a class="dropdown-item" href="#" data-format="h4">Heading 4</a></li>
+                            </ul>
+                        </div>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="ulist"
+                            title="Bullet List">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="olist"
+                            title="Numbered List">
+                            <i class="bi bi-list-ol"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="task"
+                            title="Task List">
+                            <i class="bi bi-check-square"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="quote"
+                            title="Quote">
+                            <i class="bi bi-quote"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="code"
+                            title="Inline Code">
+                            <i class="bi bi-code"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="codeblock"
+                            title="Code Block">
+                            <i class="bi bi-code-square"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="link" title="Link">
+                            <i class="bi bi-link-45deg"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="image"
+                            title="Image">
+                            <i class="bi bi-image"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="table"
+                            title="Table">
+                            <i class="bi bi-table"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-format="hr"
+                            title="Horizontal Rule">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="btn-group ms-2" role="group">
+                        <button type="button" class="btn btn-outline-info btn-sm" id="preview-btn"
+                            title="Toggle Preview">
+                            <i class="bi bi-eye"></i> Preview
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" id="help-btn" title="Markdown Help">
+                            <i class="bi bi-question-circle"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Text Area -->
+                {{ form.content(class="form-control", rows=15, id="note-content", placeholder="Start writing your note
+                with Markdown formatting...", data_autosave="true") }}
+                {% for error in form.content.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+
+                <!-- Preview Panel -->
+                <div id="preview-panel" class="mt-3" style="display: none;">
+                    <h6>Preview:</h6>
+                    <div class="border rounded p-3 markdown-preview">
+                        <div id="preview-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                    <a href="{{ url_for('main.notes') }}" class="btn btn-outline-secondary btn-lg ms-2">Cancel</a>
+                </div>
+                <div class="text-muted small">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Your work is automatically saved as you type
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Markdown Help Modal -->
+<div class="modal fade" id="markdownHelpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Markdown Formatting Guide</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Text Formatting</h6>
+                        <ul class="list-unstyled">
+                            <li><code>**bold**</code> → <strong>bold</strong></li>
+                            <li><code>*italic*</code> → <em>italic</em></li>
+                            <li><code>~~strikethrough~~</code> → <del>strikethrough</del></li>
+                            <li><code>`code`</code> → <code>code</code></li>
+                        </ul>
+
+                        <h6>Headings</h6>
+                        <ul class="list-unstyled">
+                            <li><code># H1</code>, <code>## H2</code>, <code>### H3</code></li>
+                        </ul>
+
+                        <h6>Lists</h6>
+                        <ul class="list-unstyled">
+                            <li><code>- item</code> or <code>* item</code> for bullets</li>
+                            <li><code>1. item</code> for numbered</li>
+                            <li><code>- [ ] task</code> for checkboxes</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Links & Images</h6>
+                        <ul class="list-unstyled">
+                            <li><code>[text](url)</code> for links</li>
+                            <li><code>![alt](image-url)</code> for images</li>
+                        </ul>
+
+                        <h6>Code & Blocks</h6>
+                        <ul class="list-unstyled">
+                            <li><code>```lang</code> for code blocks</li>
+                            <li><code>> quote</code> for blockquotes</li>
+                        </ul>
+
+                        <h6>Other</h6>
+                        <ul class="list-unstyled">
+                            <li><code>---</code> for horizontal rule</li>
+                            <li><code>| table |</code> for tables</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .markdown-toolbar {
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        background-color: var(--bs-secondary-bg);
+    }
+
+    .markdown-toolbar .btn-group .btn {
+        border-radius: 0.25rem;
+        margin-right: 2px;
+    }
+
+    .markdown-toolbar .btn-group .btn:last-child {
+        margin-right: 0;
+    }
+
+    .markdown-toolbar .btn-outline-secondary {
+        color: var(--bs-body-color);
+        border-color: var(--bs-border-color);
+    }
+
+    .markdown-toolbar .btn-outline-secondary:hover {
+        background-color: var(--bs-tertiary-bg);
+        border-color: var(--bs-border-color);
+        color: var(--bs-body-color);
+    }
+
+    #preview-content {
+        min-height: 200px;
+        color: var(--bs-body-color);
+    }
+
+    .markdown-preview {
+        background-color: var(--bs-card-bg);
+        border: 1px solid var(--bs-border-color);
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3 {
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: var(--bs-body-color);
+    }
+
+    .markdown-preview h1 {
+        color: var(--bs-primary);
+    }
+
+    .markdown-preview h2 {
+        color: var(--bs-info);
+    }
+
+    .markdown-preview h3 {
+        color: var(--bs-success);
+    }
+
+    .markdown-preview p {
+        margin-bottom: 0.75rem;
+        color: var(--bs-body-color);
+    }
+
+    .markdown-preview ul,
+    .markdown-preview ol {
+        margin-bottom: 0.75rem;
+        padding-left: 1.5rem;
+    }
+
+    .markdown-preview li {
+        color: var(--bs-body-color);
+    }
+
+    .markdown-preview code {
+        background-color: var(--bs-tertiary-bg);
+        color: var(--bs-warning);
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+    }
+
+    .markdown-preview pre {
+        background-color: var(--bs-tertiary-bg);
+        border: 1px solid var(--bs-border-color);
+        color: var(--bs-body-color);
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        overflow-x: auto;
+        margin-bottom: 0.75rem;
+    }
+
+    .markdown-preview blockquote {
+        border-left: 4px solid var(--bs-primary);
+        background-color: var(--bs-secondary-bg);
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+        font-style: italic;
+        color: var(--bs-body-color);
+    }
+
+    .markdown-preview table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+        background-color: var(--bs-card-bg);
+    }
+
+    .markdown-preview th,
+    .markdown-preview td {
+        border: 1px solid var(--bs-border-color);
+        padding: 0.5rem;
+        text-align: left;
+        color: var(--bs-body-color);
+    }
+
+    .markdown-preview th {
+        background-color: var(--bs-secondary-bg);
+        color: var(--bs-primary);
+        font-weight: bold;
+    }
+
+    .markdown-preview a {
+        color: var(--bs-link-color);
+    }
+
+    .markdown-preview a:hover {
+        color: var(--bs-link-hover-color);
+    }
+
+    .markdown-preview hr {
+        border-color: var(--bs-border-color);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const contentTextarea = document.getElementById('note-content');
+        const previewBtn = document.getElementById('preview-btn');
+        const helpBtn = document.getElementById('help-btn');
+        const previewPanel = document.getElementById('preview-panel');
+        const previewContent = document.getElementById('preview-content');
+
+        // Markdown formatting functions
+        function wrapSelection(before, after, placeholder = '') {
+            const start = contentTextarea.selectionStart;
+            const end = contentTextarea.selectionEnd;
+            const selectedText = contentTextarea.value.substring(start, end);
+            const replacement = before + (selectedText || placeholder) + after;
+
+            contentTextarea.value = contentTextarea.value.substring(0, start) + replacement + contentTextarea.value.substring(end);
+            const newPos = start + before.length + (selectedText || placeholder).length;
+            contentTextarea.setSelectionRange(newPos, newPos);
+            contentTextarea.focus();
+
+            updatePreview();
+        }
+
+        function insertAtCursor(text) {
+            const start = contentTextarea.selectionStart;
+            const end = contentTextarea.selectionEnd;
+            contentTextarea.value = contentTextarea.value.substring(0, start) + text + contentTextarea.value.substring(end);
+            const newPos = start + text.length;
+            contentTextarea.setSelectionRange(newPos, newPos);
+            contentTextarea.focus();
+
+            updatePreview();
+        }
+
+        function formatHeading(level) {
+            const hashes = '#'.repeat(level) + ' ';
+            insertAtCursor(hashes);
+        }
+
+        function formatList(type) {
+            const lines = contentTextarea.value.substring(0, contentTextarea.selectionStart).split('\n');
+            const currentLine = lines[lines.length - 1];
+
+            let prefix = '';
+            if (type === 'ul') prefix = '- ';
+            else if (type === 'ol') prefix = '1. ';
+            else if (type === 'task') prefix = '- [ ] ';
+
+            insertAtCursor(prefix);
+        }
+
+        // Toolbar button handlers
+        document.querySelectorAll('[data-format]').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const format = this.getAttribute('data-format');
+
+                switch (format) {
+                    case 'bold':
+                        wrapSelection('**', '**', 'bold text');
+                        break;
+                    case 'italic':
+                        wrapSelection('*', '*', 'italic text');
+                        break;
+                    case 'underline':
+                        wrapSelection('<u>', '</u>', 'underlined text');
+                        break;
+                    case 'highlight':
+                        wrapSelection('==', '==', 'highlighted text');
+                        break;
+                    case 'h1':
+                    case 'h2':
+                    case 'h3':
+                    case 'h4':
+                        formatHeading(parseInt(format.charAt(1)));
+                        break;
+                    case 'ulist':
+                        formatList('ul');
+                        break;
+                    case 'olist':
+                        formatList('ol');
+                        break;
+                    case 'task':
+                        formatList('task');
+                        break;
+                    case 'quote':
+                        insertAtCursor('> ');
+                        break;
+                    case 'code':
+                        wrapSelection('`', '`', 'code');
+                        break;
+                    case 'codeblock':
+                        insertAtCursor('\n```\ncode block\n```\n');
+                        break;
+                    case 'link':
+                        wrapSelection('[', '](url)', 'link text');
+                        break;
+                    case 'image':
+                        insertAtCursor('![alt text](image-url)');
+                        break;
+                    case 'table':
+                        insertAtCursor('\n| Column 1 | Column 2 |\n|----------|----------|\n| Cell 1   | Cell 2   |\n');
+                        break;
+                    case 'hr':
+                        insertAtCursor('\n---\n');
+                        break;
+                }
+            });
+        });
+
+        // Dropdown handlers
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                const format = this.getAttribute('data-format');
+                if (format) {
+                    formatHeading(parseInt(format.charAt(1)));
+                }
+            });
+        });
+
+        // Preview toggle
+        previewBtn.addEventListener('click', function () {
+            if (previewPanel.style.display === 'none') {
+                previewPanel.style.display = 'block';
+                updatePreview();
+                this.innerHTML = '<i class="bi bi-eye-slash"></i> Hide Preview';
+            } else {
+                previewPanel.style.display = 'none';
+                this.innerHTML = '<i class="bi bi-eye"></i> Preview';
+            }
+        });
+
+        // Help modal
+        helpBtn.addEventListener('click', function () {
+            const modal = new bootstrap.Modal(document.getElementById('markdownHelpModal'));
+            modal.show();
+        });
+
+        // Update preview
+        function updatePreview() {
+            if (previewPanel.style.display !== 'none') {
+                const markdown = contentTextarea.value;
+                // Simple markdown to HTML conversion for preview
+                let html = markdown
+                    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                    .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+                    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                    .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                    .replace(/~~(.*)~~/gim, '<del>$1</del>')
+                    .replace(/`(.*?)`/gim, '<code>$1</code>')
+                    .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                    .replace(/^- (.*$)/gim, '<li>$1</li>')
+                    .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+                    .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+                    .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1">')
+                    .replace(/---/gim, '<hr>')
+                    .replace(/\n/gim, '<br>');
+
+                // Wrap consecutive list items
+                html = html.replace(/(<li>.*<\/li>)/gims, '<ul>$1</ul>');
+
+                previewContent.innerHTML = html;
+            }
+        }
+
+        // Update preview on text change
+        contentTextarea.addEventListener('input', updatePreview);
+
+        // Keyboard shortcuts
+        contentTextarea.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'b':
+                        e.preventDefault();
+                        wrapSelection('**', '**', 'bold text');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        wrapSelection('*', '*', 'italic text');
+                        break;
+                    case 'k':
+                        e.preventDefault();
+                        wrapSelection('[', '](url)', 'link text');
+                        break;
+                }
+            }
+        });
+
+        // Form state preservation
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('create-note-form');
+            const titleInput = document.getElementById('note-title');
+            const contentTextarea = document.getElementById('note-content');
+
+            // Preserve form data on input
+            function preserveFormData() {
+                if (window.stateManager) {
+                    const formData = {
+                        title: titleInput.value,
+                        content: contentTextarea.value
+                    };
+                    window.stateManager.apiPreserveFormState('create_note', formData);
+                }
+            }
+
+            titleInput.addEventListener('input', preserveFormData);
+            contentTextarea.addEventListener('input', preserveFormData);
+
+            // Clear auto-save on successful form submission
+            form.addEventListener('submit', function (e) {
+                if (window.stateManager) {
+                    window.stateManager.clearPageState();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

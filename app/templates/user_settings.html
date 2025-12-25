@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-gear me-2"></i>User Settings</h3>
+                <p class="mb-0 text-muted">Manage your AI preferences, interface settings, and privacy options</p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {{ form.hidden_tag() }}
+
+                    <!-- AI Preferences Section -->
+                    <div class="mb-4">
+                        <h4 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-robot me-2"></i>AI Preferences
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.preferred_ai_model.label(class="form-label") }}
+                                    {{ form.preferred_ai_model(class="form-select") }}
+                                    <div class="form-text">Choose the AI model for code generation and explanations
+                                    </div>
+                                    {% for e in form.preferred_ai_model.errors %}<div class="text-danger small">{{ e }}
+                                    </div>{% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.code_generation_style.label(class="form-label") }}
+                                    {{ form.code_generation_style(class="form-select") }}
+                                    <div class="form-text">Configure how detailed AI explanations should be</div>
+                                    {% for e in form.code_generation_style.errors %}<div class="text-danger small">{{ e
+                                        }}</div>{% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.auto_explain_code(class="form-check-input") }}
+                                {{ form.auto_explain_code.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-text">Automatically generate explanations when creating snippets with AI
+                            </div>
+                            {% for e in form.auto_explain_code.errors %}<div class="text-danger small">{{ e }}</div>{%
+                            endfor %}
+                        </div>
+                    </div>
+
+                    <!-- UI Preferences Section -->
+                    <div class="mb-4">
+                        <h4 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-display me-2"></i>Interface Preferences
+                        </h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.show_line_numbers(class="form-check-input") }}
+                                        {{ form.show_line_numbers.label(class="form-check-label") }}
+                                    </div>
+                                    <div class="form-text">Display line numbers in code snippets</div>
+                                    {% for e in form.show_line_numbers.errors %}<div class="text-danger small">{{ e }}
+                                    </div>{% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.enable_animations(class="form-check-input") }}
+                                        {{ form.enable_animations.label(class="form-check-label") }}
+                                    </div>
+                                    <div class="form-text">Enable UI animations and transitions</div>
+                                    {% for e in form.enable_animations.errors %}<div class="text-danger small">{{ e }}
+                                    </div>{% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.dark_mode(class="form-check-input") }}
+                                {{ form.dark_mode.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-text">Use dark mode theme (Note: This is currently managed by browser
+                                preference)</div>
+                            {% for e in form.dark_mode.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Tooltip Preferences Section -->
+                    <div class="mb-4">
+                        <h4 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-chat-square-text me-2"></i>Tooltip Preferences
+                        </h4>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.enable_tooltips(class="form-check-input") }}
+                                {{ form.enable_tooltips.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-text">Enable tooltips throughout the application (tooltips will appear
+                                after 3 seconds of hovering)</div>
+                            {% for e in form.enable_tooltips.errors %}<div class="text-danger small">{{ e }}</div>{%
+                            endfor %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.tooltip_delay.label(class="form-label") }}
+                                    {{ form.tooltip_delay(class="form-select") }}
+                                    <div class="form-text">Delay in seconds before tooltips appear on hover</div>
+                                    {% for e in form.tooltip_delay.errors %}<div class="text-danger small">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Privacy & Sharing Section -->
+                    <div class="mb-4">
+                        <h4 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-shield-check me-2"></i>Privacy & Sharing
+                        </h4>
+                        <div class="mb-3">
+                            {{ form.snippet_visibility.label(class="form-label") }}
+                            {{ form.snippet_visibility(class="form-select") }}
+                            <div class="form-text">Default visibility for new snippets</div>
+                            {% for e in form.snippet_visibility.errors %}<div class="text-danger small">{{ e }}</div>{%
+                            endfor %}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.public_profile(class="form-check-input") }}
+                                        {{ form.public_profile.label(class="form-check-label") }}
+                                    </div>
+                                    <div class="form-text">Make your profile visible to other users</div>
+                                    {% for e in form.public_profile.errors %}<div class="text-danger small">{{ e }}
+                                    </div>{% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        {{ form.show_activity(class="form-check-input") }}
+                                        {{ form.show_activity.label(class="form-check-label") }}
+                                    </div>
+                                    <div class="form-text">Show your activity on your public profile</div>
+                                    {% for e in form.show_activity.errors %}<div class="text-danger small">{{ e }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Section -->
+                    <div class="mb-4">
+                        <h4 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-bell me-2"></i>Notifications
+                        </h4>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.email_notifications(class="form-check-input") }}
+                                {{ form.email_notifications.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-text">Receive email notifications for important updates</div>
+                            {% for e in form.email_notifications.errors %}<div class="text-danger small">{{ e }}</div>{%
+                            endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Auto-save Section -->
+                    <div class="mb-4">
+                        <h4 class="border-bottom pb-2 mb-3">
+                            <i class="bi bi-save me-2"></i>Auto-save
+                        </h4>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.auto_save_snippets(class="form-check-input") }}
+                                {{ form.auto_save_snippets.label(class="form-check-label") }}
+                            </div>
+                            <div class="form-text">Automatically save snippets while editing</div>
+                            {% for e in form.auto_save_snippets.errors %}<div class="text-danger small">{{ e }}</div>{%
+                            endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="d-flex gap-2">
+                        {{ form.submit(class="btn btn-primary") }}
+                        <a class="btn btn-secondary" href="{{ url_for('main.user_profile') }}">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const submitButton = document.getElementById('submit-button');
+
+        if (form && submitButton) {
+            form.addEventListener('submit', async () => {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+
+                // Clear cached user preferences to force reload
+                if (typeof tooltipSystem !== 'undefined') {
+                    localStorage.removeItem('user_preferences');
+                    await tooltipSystem.loadUserPreferences();
+                }
+            });
+        }
+
+        // Handle tooltip enable/disable toggle in real-time
+        const enableTooltipsCheckbox = document.querySelector('input[name="enable_tooltips"]');
+        const tooltipDelaySelect = document.querySelector('select[name="tooltip_delay"]');
+
+        if (enableTooltipsCheckbox && typeof tooltipSystem !== 'undefined') {
+            enableTooltipsCheckbox.addEventListener('change', async (e) => {
+                const isEnabled = e.target.checked;
+                // Update localStorage immediately for real-time feedback
+                const currentPrefs = JSON.parse(localStorage.getItem('user_preferences') || '{}');
+                currentPrefs.enable_tooltips = isEnabled;
+                localStorage.setItem('user_preferences', JSON.stringify(currentPrefs));
+                console.log('🔍 Tooltips', isEnabled ? 'enabled' : 'disabled');
+                
+                // Reinitialize tooltips based on new preference
+                await tooltipSystem.reinitializeTooltips();
+            });
+        }
+
+        if (tooltipDelaySelect && typeof tooltipSystem !== 'undefined') {
+            tooltipDelaySelect.addEventListener('change', async (e) => {
+                const delay = parseInt(e.target.value);
+                // Update localStorage immediately for real-time feedback
+                const currentPrefs = JSON.parse(localStorage.getItem('user_preferences') || '{}');
+                currentPrefs.tooltip_delay = delay;
+                localStorage.setItem('user_preferences', JSON.stringify(currentPrefs));
+                console.log('🔍 Tooltip delay updated to', delay, 'seconds');
+                
+                // Reinitialize tooltips with new delay
+                await tooltipSystem.reinitializeTooltips();
+            });
+        }
+    });
+</script>
+{% endblock %}

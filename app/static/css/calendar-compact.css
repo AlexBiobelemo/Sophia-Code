@@ -1,0 +1,75 @@
+/* Compact Calendar Styles - Additional CSS */
+.activity-calendar-container {
+    width: 100%;
+    font-size: 11px !important;
+}
+
+.calendar-header {
+    margin-bottom: 8px !important;
+    gap: 5px !important;
+}
+
+.calendar-navigation {
+    gap: 8px !important;
+}
+
+.calendar-title {
+    font-size: 0.9rem !important;
+    min-width: 100px !important;
+}
+
+.calendar-legend {
+    gap: 4px !important;
+    font-size: 9px !important;
+}
+
+.legend-square {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.calendar-grid {
+    gap: 2px !important;
+}
+
+.calendar-weekdays {
+    gap: 1px !important;
+    margin-bottom: 2px !important;
+}
+
+.calendar-weekday {
+    font-size: 8px !important;
+    padding: 2px 0 !important;
+}
+
+.calendar-days {
+    gap: 1px !important;
+}
+
+.calendar-day {
+    min-height: 16px !important;
+    border-radius: 1px !important;
+}
+
+.day-number {
+    font-size: 7px !important;
+}
+
+.activity-count {
+    font-size: 6px !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 576px) {
+    .calendar-day {
+        min-height: 14px !important;
+    }
+
+    .day-number {
+        font-size: 6px !important;
+    }
+
+    .activity-count {
+        font-size: 5px !important;
+    }
+}

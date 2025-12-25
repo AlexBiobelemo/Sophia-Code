@@ -294,3 +294,59 @@ class EditProfileForm(FlaskForm):
         if not any(c in '!@#$%^&*()-_=+[]{};:\\|,.<>/?' for c in pwd): errs.append('symbol')
         if errs:
             raise ValidationError('Password needs: ' + ', '.join(errs))
+
+
+class NoteForm(FlaskForm):
+    """Form for creating and editing a personal note."""
+    title = StringField('Title', validators=[DataRequired(), Length(min=1, max=140)])
+    content = TextAreaField('Content', validators=[DataRequired()])
+    submit = SubmitField('Save Note')
+
+
+class SettingsForm(FlaskForm):
+    """Form for user settings and preferences."""
+    # AI Preferences
+    preferred_ai_model = SelectField('Preferred AI Model', choices=[
+        ('gemini-2.5-flash', 'Gemini 2.5 Flash (Fast, Good for simple tasks)'),
+        ('gemini-2.5-pro', 'Gemini 2.5 Pro (Balanced, Good for most tasks)'),
+        ('gemini-3-pro', 'Gemini 3 Pro (Advanced, Best for complex tasks)'),
+        ('minimax-m2', 'Minimax M2 (Free, Good for code generation)')
+    ], validators=[DataRequired()])
+    
+    code_generation_style = SelectField('Code Generation Style', choices=[
+        ('balanced', 'Balanced (Good explanations with moderate detail)'),
+        ('detailed', 'Detailed (Comprehensive explanations and comments)'),
+        ('concise', 'Concise (Minimal explanations, focus on code)')
+    ], validators=[DataRequired()])
+    
+    auto_explain_code = BooleanField('Automatically explain generated code')
+    
+    # UI Preferences
+    show_line_numbers = BooleanField('Show line numbers in code snippets')
+    enable_animations = BooleanField('Enable UI animations and transitions')
+    enable_tooltips = BooleanField('Enable tooltips throughout the application')
+    tooltip_delay = SelectField('Tooltip delay (seconds)', choices=[
+        (1, '1 second'),
+        (2, '2 seconds'),
+        (3, '3 seconds'),
+        (5, '5 seconds'),
+        (10, '10 seconds')
+    ], validators=[DataRequired()])
+    dark_mode = BooleanField('Use dark mode theme')
+    
+    # Privacy & Sharing
+    public_profile = BooleanField('Make profile public')
+    show_activity = BooleanField('Show activity on public profile')
+    snippet_visibility = SelectField('Default snippet visibility', choices=[
+        ('private', 'Private (Only you can see)'),
+        ('public', 'Public (Anyone can see)'),
+        ('friends', 'Friends only (If social features added)')
+    ], validators=[DataRequired()])
+    
+    # Notifications
+    email_notifications = BooleanField('Receive email notifications')
+    
+    # Auto-save
+    auto_save_snippets = BooleanField('Auto-save snippets while editing')
+    
+    submit = SubmitField('Save Settings', render_kw={'id': 'submit-button'})

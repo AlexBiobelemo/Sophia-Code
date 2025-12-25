@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="display-6 text-primary">My Notes</h1>
+    <a href="{{ url_for('main.create_note') }}" class="btn btn-success btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Add Note
+    </a>
+</div>
+
+<div class="mb-4">
+    <form class="d-flex" action="{{ url_for('main.notes') }}" method="get">
+        <input class="form-control me-2" type="search" name="q" placeholder="Search notes..." value="{{ query }}"
+            aria-label="Search notes">
+        <button class="btn btn-outline-primary" type="submit">
+            <i class="bi bi-search"></i> Search
+        </button>
+    </form>
+</div>
+
+{% if notes.items %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for note in notes.items %}
+    <div class="col">
+        <div class="card h-100 shadow-sm note-card">
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title text-primary d-flex align-items-center">
+                    <i class="bi bi-journal-text me-2"></i>{{ note.title }}
+                </h5>
+                <p class="card-text text-muted small mb-3">
+                    <i class="bi bi-calendar3 me-1"></i>{{ moment(note.timestamp).format('LLL') }}
+                </p>
+
+                <div class="card-text flex-grow-1 mb-3 note-preview">
+                    <div class="markdown-preview">
+                        {{ note.content | markdown_preview(300) | safe }}
+                    </div>
+                </div>
+
+                <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('main.view_note', note_id=note.id) }}" class="btn btn-primary btn-sm">
+                            <i class="bi bi-eye me-1"></i>View
+                        </a>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('main.edit_note', note_id=note.id) }}"
+                                class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="{{ url_for('main.delete_note', note_id=note.id) }}" method="post"
+                                onsubmit="return confirm('Are you sure you want to delete this note?');"
+                                class="d-inline">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if notes and notes.pages > 1 %}
+<div class="mt-4">
+    {% with pagination=notes, endpoint='main.notes', kwargs={'q': query or None} %}
+    {% include '_pagination.html' %}
+    {% endwith %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-journal-text text-muted" style="font-size: 4rem;"></i>
+    </div>
+    <h3 class="text-muted mb-3">No notes found</h3>
+    <p class="text-muted mb-4">
+        {% if query %}
+        No notes match your search criteria. Try adjusting your search terms.
+        {% else %}
+        You don't have any notes yet. Start by creating your first note!
+        {% endif %}
+    </p>
+    <a href="{{ url_for('main.create_note') }}" class="btn btn-success btn-lg">
+        <i class="bi bi-plus-circle me-2"></i>Create Your First Note
+    </a>
+</div>
+{% endif %}
+
+<style>
+    .note-card {
+        transition: all 0.3s ease;
+        border: 1px solid var(--bs-border-color);
+    }
+
+    .note-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .note-preview {
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3 {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .markdown-preview p {
+        margin-bottom: 0.5rem;
+    }
+
+    .markdown-preview ul,
+    .markdown-preview ol {
+        margin-bottom: 0.5rem;
+    }
+
+    .markdown-preview code {
+        background-color: var(--bs-tertiary-bg);
+        color: var(--bs-body-color);
+        padding: 0.1rem 0.3rem;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+    }
+
+    .markdown-preview pre {
+        background-color: var(--bs-tertiary-bg);
+        color: var(--bs-body-color);
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.875rem;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,465 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="intelligent-search-container">
+    <!-- Search Header Section -->
+    <section class="search-header py-5">
+        <div class="container-xl">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="search-hero text-center">
+                        <h1 class="display-4 fw-bold mb-3">Intelligent Search</h1>
+                        <p class="lead text-muted mb-4">
+                            Find code using natural language. Our AI-powered search understands context,
+                            semantics, and relationships between your snippets.
+                        </p>
+
+                        <!-- Advanced Search Form -->
+                        <div class="search-form-card card shadow-lg">
+                            <div class="card-body p-4">
+                                <form id="intelligent-search-form" action="{{ url_for('main.search') }}" method="get">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-primary text-white">
+                                                    <i class="bi bi-search"></i>
+                                                </span>
+                                                <input type="text" name="q" class="form-control form-control-lg"
+                                                    placeholder="Describe what you're looking for... (e.g., 'Python function to parse JSON', 'React component for forms', 'SQL query for user data')"
+                                                    value="{{ query or '' }}" id="search-input">
+                                                <button class="btn btn-primary btn-lg" type="submit">
+                                                    <i class="bi bi-search me-2"></i>Search
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Advanced Filters -->
+                                    <div class="row g-3 mt-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">Language</label>
+                                            <select name="language" class="form-select" id="language-filter">
+                                                <option value="">Any Language</option>
+                                                {% for lang in languages %}
+                                                <option value="{{ lang }}" {% if selected_language==lang %}selected{%
+                                                    endif %}>{{ lang }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">Tags</label>
+                                            <input type="text" name="tag" class="form-select"
+                                                placeholder="e.g., api, database, frontend"
+                                                value="{{ selected_tag or '' }}" id="tag-filter">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">Sort</label>
+                                            <select name="sort" class="form-select" id="sort-filter">
+                                                <option value="date_desc" {% if selected_sort=='date_desc' %}selected{%
+                                                    endif %}>Newest First</option>
+                                                <option value="date_asc" {% if selected_sort=='date_asc' %}selected{%
+                                                    endif %}>Oldest First</option>
+                                                <option value="alpha" {% if selected_sort=='alpha' %}selected{% endif
+                                                    %}>A→Z</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-semibold">Text Filter</label>
+                                            <input type="text" name="q" class="form-select"
+                                                placeholder="Filter by text content" value="{{ text_query or '' }}"
+                                                id="text-filter">
+                                        </div>
+                                    </div>
+
+                                    <!-- Search Tips -->
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <div class="alert alert-info" role="alert">
+                                                <h6 class="mb-2">Search Tips:</h6>
+                                                <ul class="mb-0">
+                                                    <li><strong>Use operators:</strong> <code>tag:python</code>,
+                                                        <code>lang:javascript</code>, <code>in:title</code>,
+                                                        <code>before:2023-01-01</code>, <code>after:2023-06-01</code>
+                                                    </li>
+                                                    <li><strong>Exclude terms:</strong> Use <code>-term</code> to
+                                                        exclude (e.g., <code>api -deprecated</code>)</li>
+                                                    <li><strong>Quotes:</strong> Use quotes for exact phrases (e.g.,
+                                                        <code>"error handling"</code>)
+                                                    </li>
+                                                    <li><strong>Multi-field:</strong>
+                                                        <code>in:title,description,code,tags</code> to search specific
+                                                        fields
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search Results Section -->
+    {% if results %}
+    <section class="search-results py-5">
+        <div class="container-xl">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0">
+                            Results for <span class="text-primary">"{{ query }}"</span>
+                            <span class="badge bg-secondary ms-2">{{ results|length }} found</span>
+                        </h2>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-success">Semantic Search</span>
+                            <span class="badge bg-info">Keyword Match</span>
+                        </div>
+                    </div>
+
+                    <!-- Results Grid -->
+                    <div class="row g-4">
+                        {% for snippet in results %}
+                        <div class="col-lg-6">
+                            <div class="search-result-card card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="flex-grow-1">
+                                            <h5 class="card-title mb-1">
+                                                <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}"
+                                                    class="text-decoration-none">
+                                                    {% if highlights.get(snippet.id) and 'title' in
+                                                    highlights[snippet.id] %}
+                                                    <mark>{{ snippet.title|e }}</mark>
+                                                    {% else %}
+                                                    {{ snippet.title }}
+                                                    {% endif %}
+                                                </a>
+                                            </h5>
+                                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                                {% if snippet.language %}
+                                                <span class="badge bg-primary">{{ snippet.language }}</span>
+                                                {% endif %}
+                                                {% if snippet.tags %}
+                                                {% for tag in snippet.tags.split(',') %}
+                                                <span class="badge bg-secondary">{{ tag.strip() }}</span>
+                                                {% endfor %}
+                                                {% endif %}
+                                                {% if highlights.get(snippet.id) %}
+                                                {% for badge in highlights[snippet.id] %}
+                                                <span class="badge bg-warning">{{ badge }}</span>
+                                                {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">{{ snippet.timestamp.strftime('%Y-%m-%d %H:%M')
+                                                }}</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="snippet-description mb-3">
+                                        {% if snippet.description %}
+                                        {% if highlights.get(snippet.id) and 'description' in highlights[snippet.id] %}
+                                        <p class="card-text">{{ hi_desc.get(snippet.id,
+                                            snippet.description)|striptags|truncate(150) }}</p>
+                                        {% else %}
+                                        <p class="card-text">{{ snippet.description|striptags|truncate(150) }}</p>
+                                        {% endif %}
+                                        {% else %}
+                                        <p class="card-text text-muted">No description provided</p>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}"
+                                                class="btn btn-primary btn-sm">
+                                                <i class="bi bi-eye me-2"></i>View Full
+                                            </a>
+                                            <a href="{{ url_for('main.edit_snippet', snippet_id=snippet.id) }}"
+                                                class="btn btn-outline-primary btn-sm">
+                                                <i class="bi bi-pencil me-2"></i>Edit
+                                            </a>
+                                        </div>
+                                        {% if snippet.collection %}
+                                        <small class="text-muted">Collection: {{ snippet.collection.name }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if pagination and pagination.pages > 1 %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <nav aria-label="Search results pagination">
+                                <ul class="pagination justify-content-center">
+                                    {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                            href="{{ url_for('main.search', q=query, language=selected_language, tag=selected_tag, sort=selected_sort, page=pagination.prev_num) }}">Previous</a>
+                                    </li>
+                                    {% endif %}
+
+                                    {% for page_num in pagination.iter_pages() %}
+                                    {% if page_num %}
+                                    {% if page_num != pagination.page %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                            href="{{ url_for('main.search', q=query, language=selected_language, tag=selected_tag, sort=selected_sort, page=page_num) }}">{{
+                                            page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ page_num }}</span>
+                                    </li>
+                                    {% endif %}
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+
+                                    {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                            href="{{ url_for('main.search', q=query, language=selected_language, tag=selected_tag, sort=selected_sort, page=pagination.next_num) }}">Next</a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+    {% else %}
+    <!-- No Results Section -->
+    <section class="no-results py-5">
+        <div class="container-xl">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <div class="empty-state">
+                        <i class="bi bi-search fs-1 text-muted mb-4"></i>
+                        <h3 class="text-muted mb-3">No Results Found</h3>
+                        <p class="text-muted mb-4">
+                            We couldn't find any snippets matching your search criteria. Try adjusting your search terms
+                            or filters.
+                        </p>
+
+                        <div class="suggestions-card card border-0">
+                            <div class="card-body">
+                                <h6 class="card-title">Try These Suggestions:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-lightbulb text-warning me-2"></i>Use more specific keywords</li>
+                                    <li><i class="bi bi-lightbulb text-warning me-2"></i>Try different search operators
+                                    </li>
+                                    <li><i class="bi bi-lightbulb text-warning me-2"></i>Remove some filters to broaden
+                                        your search</li>
+                                    <li><i class="bi bi-lightbulb text-warning me-2"></i>Check for typos in your search
+                                        terms</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-arrow-left me-2"></i>Back to Snippets
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<style>
+    .intelligent-search-container {
+        min-height: 100vh;
+    }
+
+    .search-hero {
+        background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-info) 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .search-form-card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .search-result-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-result-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .code-snippet {
+        max-height: 150px;
+        overflow-y: auto;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+    }
+
+    .empty-state {
+        background-color: var(--bs-card-bg);
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 16px;
+        padding: 3rem;
+        margin: 2rem 0;
+    }
+
+    .suggestions-card {
+        background-color: var(--bs-secondary-bg);
+        border: 1px solid var(--bs-border-color);
+    }
+
+    .badge.bg-warning {
+        background-color: var(--bs-warning) !important;
+        color: var(--bs-dark) !important;
+    }
+
+    :root[data-bs-theme='dark'] .badge.bg-warning {
+        color: #212529 !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .search-hero {
+            padding: 1.5rem;
+        }
+
+        .code-snippet {
+            max-height: 100px;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Enhanced search input with suggestions
+        const searchInput = document.getElementById('search-input');
+        const languageFilter = document.getElementById('language-filter');
+        const tagFilter = document.getElementById('tag-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        const textFilter = document.getElementById('text-filter');
+
+        // Auto-save search state to localStorage
+        const saveSearchState = () => {
+            const state = {
+                query: searchInput.value,
+                language: languageFilter.value,
+                tag: tagFilter.value,
+                sort: sortFilter.value,
+                text: textFilter.value
+            };
+            localStorage.setItem('intelligent_search_state', JSON.stringify(state));
+        };
+
+        // Load search state from localStorage
+        const loadSearchState = () => {
+            const saved = localStorage.getItem('intelligent_search_state');
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    if (state.query) searchInput.value = state.query;
+                    if (state.language) languageFilter.value = state.language;
+                    if (state.tag) tagFilter.value = state.tag;
+                    if (state.sort) sortFilter.value = state.sort;
+                    if (state.text) textFilter.value = state.text;
+                } catch (e) {
+                    console.warn('Failed to load search state:', e);
+                }
+            }
+        };
+
+        // Event listeners for auto-save
+        [searchInput, languageFilter, tagFilter, sortFilter, textFilter].forEach(element => {
+            element.addEventListener('input', saveSearchState);
+            element.addEventListener('change', saveSearchState);
+        });
+
+        // Load state on page load
+        loadSearchState();
+
+        // Enhanced search form submission
+        const searchForm = document.getElementById('intelligent-search-form');
+        searchForm.addEventListener('submit', function (e) {
+            // Validate search query
+            if (!searchInput.value.trim()) {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.classList.add('is-invalid');
+                setTimeout(() => searchInput.classList.remove('is-invalid'), 2000);
+                return;
+            }
+
+            // Save final state before submission
+            saveSearchState();
+        });
+
+        // Keyboard shortcuts for search
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+                searchInput.select();
+            }
+        });
+
+        // Highlight search terms in results (client-side enhancement)
+        const highlightTerms = (text, terms) => {
+            if (!terms || !text) return text;
+            const regex = new RegExp(`(${terms.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        };
+
+        // Add copy functionality to code snippets
+        document.querySelectorAll('.code-snippet').forEach(snippet => {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'btn btn-sm btn-outline-secondary position-absolute';
+            copyBtn.style.top = '5px';
+            copyBtn.style.right = '5px';
+            copyBtn.innerHTML = '<i class="bi bi-clipboard"></i>';
+            copyBtn.title = 'Copy code';
+
+            snippet.style.position = 'relative';
+            snippet.appendChild(copyBtn);
+
+            copyBtn.addEventListener('click', async () => {
+                const code = snippet.querySelector('code').textContent;
+                try {
+                    await navigator.clipboard.writeText(code);
+                    copyBtn.innerHTML = '<i class="bi bi-check2"></i>';
+                    setTimeout(() => copyBtn.innerHTML = '<i class="bi bi-clipboard"></i>', 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

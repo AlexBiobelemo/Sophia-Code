@@ -5,8 +5,18 @@ from config import Config
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_moment import Moment # Import Flask-Moment
 import sqlalchemy as sa # Import sqlalchemy
 import time, uuid
+import markdown
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, continue without it
+    pass
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -14,6 +24,7 @@ migrate = Migrate()
 login_manager = LoginManager()
 login_manager.login_view = 'main.login' # The route for the login page
 login_manager.login_message_category = 'info' # Flash message category
+moment = Moment() # Initialize Flask-Moment
 
 
 def create_app(config_class=Config):
@@ -21,10 +32,47 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Configure Flask session for better persistence
+    app.config['SESSION_PERMANENT'] = True
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
     # Initialize extensions with the app
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    moment.init_app(app) # Initialize Flask-Moment
+
+    # Register custom Jinja filters
+    @app.template_filter('markdown_to_html')
+    def markdown_to_html_filter(text):
+        """Convert markdown text to HTML."""
+        if not text:
+            return ""
+        # Convert markdown to HTML with safe extensions
+        html = markdown.markdown(text, extensions=['extra', 'codehilite', 'fenced_code', 'nl2br'])
+        return html
+
+    @app.template_filter('markdown_preview')
+    def markdown_preview_filter(text, length=200):
+        """Convert markdown to HTML and create a safe preview."""
+        if not text:
+            return ""
+        html = markdown.markdown(text, extensions=['extra', 'codehilite', 'fenced_code', 'nl2br'])
+        
+        # Remove HTML tags for length calculation, but keep the HTML for display
+        import re
+        text_only = re.sub('<[^<]+?>', '', html)
+        
+        if len(text_only) <= length:
+            return html
+        
+        # Truncate text but preserve HTML structure by finding a safe break point
+        truncated_text = text_only[:length].rsplit(' ', 1)[0] + '...'
+        
+        # Simple approach: just return first part of HTML and let it render
+        # For a more sophisticated approach, you'd need HTML-aware truncation
+        return html[:length*2] + '...'
 
     # Register blueprints
     from app.routes import bp as main_bp
@@ -100,6 +148,21 @@ def create_app(config_class=Config):
                 f.write("\n".join(lines))
         except Exception as e:
             app.logger.warning(f"Snapshot skipped: {e}")
+
+    # Set user's preferred AI model for each request
+    @app.before_request
+    def _set_user_ai_preference():
+        """Set the user's preferred AI model in Flask's g object for use in AI services."""
+        try:
+            from flask_login import current_user
+            if current_user.is_authenticated and hasattr(current_user, 'preferred_ai_model'):
+                g.user_preferred_model = current_user.preferred_ai_model
+            else:
+                # Default fallback
+                g.user_preferred_model = 'gemini-2.5-flash'
+        except Exception:
+            # If anything fails, use default
+            g.user_preferred_model = 'gemini-2.5-flash'
 
     # Import models here to ensure they are registered with the app
     from app import models

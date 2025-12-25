@@ -6,32 +6,283 @@
         <div class="card">
             <div class="card-body">
                 <h2 class="card-title text-center mb-4">AI Code Generation</h2>
-                <p class="text-center text-muted mb-2">Describe the function or code block you need, and the AI will generate it for you.</p>
-                <p class="text-center small text-warning mb-4">Tip: Very long requests can take time. Keep prompts concise for faster results.</p>
+                <p class="text-center text-muted mb-2">Describe the function or code block you need, and the AI will
+                    generate it for you.</p>
+                <p class="text-center small text-warning mb-4">Tip: Very long requests can take time. Keep prompts
+                    concise for faster results.</p>
+
+                <!-- Generation Mode Toggles -->
+                <div class="mb-4">
+                    <!-- Token-Efficient Streaming Toggle -->
+                    <div class="card border-primary mb-3">
+                        <div class="card-body">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="tokenEfficientStreaming"
+                                    name="token_efficient_streaming" data-bs-toggle="tooltip"
+                                    title="Enable advanced 2-step pipeline with real-time streaming (~40% fewer tokens)">
+                                <label class="form-check-label" for="tokenEfficientStreaming">
+                                    <strong>
+                                        <i class="fas fa-bolt me-2 text-primary"></i>Token-Efficient Streaming
+                                        <span class="badge bg-success ms-2" data-bs-toggle="tooltip"
+                                            title="New feature with improved efficiency">NEW</span>
+                                    </strong>
+                                    <small class="d-block text-muted">Advanced 2-step pipeline with real-time streaming
+                                        (~40% fewer tokens)</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Step Thinking Toggle (Original) -->
+                    <div class="card border-info">
+                        <div class="card-body">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="multiStepThinking"
+                                    name="multi_step_thinking" data-bs-toggle="tooltip"
+                                    title="Enable advanced 4-layer algorithmic solving process for complex problems">
+                                <label class="form-check-label" for="multiStepThinking">
+                                    <strong>Multi-Step Thinking</strong>
+                                    <small class="d-block text-muted">Enable advanced 4-layer algorithmic solving
+                                        process</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <form id="ai-generate-form" method="POST" action="">
                     {{ form.hidden_tag() }}
+
+                    <!-- Multi-Step Thinking Fields (initially hidden) -->
+                    <div id="multiStepFields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="test_cases" class="form-label" data-bs-toggle="tooltip"
+                                title="Optional test cases to help verify the solution. Include expected inputs and outputs.">Test
+                                Cases (Optional)</label>
+                            <textarea class="form-control" id="test_cases" name="test_cases" rows="3"
+                                placeholder="Provide specific test cases or expected outputs to help with verification..."
+                                data-bs-toggle="tooltip"
+                                title="Add test cases to verify your solution works correctly. Include sample inputs and expected outputs."></textarea>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         {{ form.prompt.label(class="form-label") }}
                         {{ form.prompt(class="form-control", rows=5) }}
                         {% for error in form.prompt.errors %}
-                            <div class="text-danger small mt-1">{{ error }}</div>
+                        <div class="text-danger small mt-1">{{ error }}</div>
                         {% endfor %}
                     </div>
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">
-                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
-                            Generate
+                        <button type="submit" class="btn btn-primary" id="generateButton" data-bs-toggle="tooltip"
+                            title="Generate AI code based on your prompt. Choose between regular, streaming, or multi-step modes.">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"
+                                style="display: none;"></span>
+                            <span id="generateButtonText">Generate</span>
                         </button>
                     </div>
                 </form>
+
+                <!-- Streaming Container -->
+                <div id="streaming-container"></div>
+
+                <!-- Multi-Step Progress Display -->
+                <div id="multiStepProgress" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Multi-Step Solving Process</h5>
+                            <div class="progress mb-3">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <div id="layerStatus">
+                                <p class="mb-1"><strong>Current Step:</strong> <span
+                                        id="currentLayer">Preparing...</span></p>
+                                <p class="mb-0 text-muted small" id="layerDescription"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <script>
                     document.addEventListener('DOMContentLoaded', () => {
                         const form = document.getElementById('ai-generate-form');
                         const submitButton = form.querySelector('button[type="submit"]');
+                        const multiStepToggle = document.getElementById('multiStepThinking');
+                        const streamingToggle = document.getElementById('tokenEfficientStreaming');
+                        const multiStepFields = document.getElementById('multiStepFields');
+                        const multiStepProgress = document.getElementById('multiStepProgress');
+                        const generateButtonText = document.getElementById('generateButtonText');
 
                         if (!form || !submitButton) return;
 
-                        form.addEventListener('submit', function() {
+                        // Token-Efficient Streaming Toggle
+                        streamingToggle.addEventListener('change', function () {
+                            if (this.checked) {
+                                generateButtonText.textContent = 'Generate with Streaming';
+
+                                // Disable multi-step when streaming is enabled
+                                if (multiStepToggle.checked) {
+                                    multiStepToggle.checked = false;
+                                    multiStepFields.style.display = 'none';
+                                    multiStepProgress.style.display = 'none';
+                                }
+                            } else {
+                                generateButtonText.textContent = 'Generate';
+                            }
+                        });
+
+                        // Multi-Step Thinking Toggle
+                        multiStepToggle.addEventListener('change', function () {
+                            if (this.checked) {
+                                multiStepFields.style.display = 'block';
+                                multiStepProgress.style.display = 'block';
+                                generateButtonText.textContent = 'Generate with Multi-Step Thinking';
+
+                                // Disable streaming when multi-step is enabled
+                                if (streamingToggle.checked) {
+                                    streamingToggle.checked = false;
+                                }
+                            } else {
+                                multiStepFields.style.display = 'none';
+                                multiStepProgress.style.display = 'none';
+                                generateButtonText.textContent = streamingToggle.checked ? 'Generate with Streaming' : 'Generate';
+                            }
+                        });
+
+                        form.addEventListener('submit', function (e) {
+                            if (streamingToggle.checked) {
+                                // Token-Efficient Streaming mode
+                                e.preventDefault();
+                                executeStreamingGeneration();
+                            } else if (multiStepToggle.checked) {
+                                // Multi-step thinking mode
+                                e.preventDefault();
+                                executeMultiStepGeneration();
+                            } else {
+                                // Regular generation mode
+                                e.preventDefault();
+                                executeRegularGeneration();
+                            }
+                        });
+
+                        function executeStreamingGeneration() {
+                            const prompt = document.getElementById('prompt').value.trim();
+
+                            if (!prompt) {
+                                alert('Please enter a prompt for code generation.');
+                                return;
+                            }
+
+                            // Ensure streaming AI manager is available
+                            if (!window.streamingAI) {
+                                alert('Streaming AI manager not available. Please refresh the page.');
+                                return;
+                            }
+
+                            // Start streaming generation
+                            console.log('Starting token-efficient streaming generation...');
+
+                            try {
+                                // Disable form during generation
+                                if (window.setLoadingState) {
+                                    window.setLoadingState(submitButton, true, 'Initializing streaming...');
+                                }
+
+                                // Start the chained streaming process
+                                window.streamingAI.startChainedStreaming(prompt, {
+                                    containerId: 'streaming-container'
+                                }).then(sessionId => {
+                                    console.log('Streaming session started:', sessionId);
+
+                                    // Update button text
+                                    if (window.setLoadingState) {
+                                        window.setLoadingState(submitButton, true, 'Streaming in progress...');
+                                    }
+                                }).catch(error => {
+                                    console.error('Failed to start streaming:', error);
+                                    alert('Failed to start streaming generation: ' + error.message);
+
+                                    // Re-enable form
+                                    if (window.setLoadingState) {
+                                        window.setLoadingState(submitButton, false);
+                                    }
+                                });
+
+                            } catch (error) {
+                                console.error('Streaming generation error:', error);
+                                alert('An error occurred: ' + error.message);
+
+                                // Re-enable form
+                                if (window.setLoadingState) {
+                                    window.setLoadingState(submitButton, false);
+                                }
+                            }
+                        }
+
+                        function executeMultiStepGeneration() {
+                            // Get form data
+                            const prompt = document.getElementById('prompt').value;
+                            const testCases = document.getElementById('test_cases') ?
+                                document.getElementById('test_cases').value : '';
+
+                            // Update UI for multi-step process
+                            updateMultiStepProgress(0, 'Starting...', 'Initializing the multi-step solving process');
+
+                            if (window.setLoadingState) {
+                                window.setLoadingState(submitButton, true, 'Processing...');
+                            }
+                            if (window.startAiAnimation) {
+                                window.startAiAnimation();
+                            }
+
+                            // Send JSON data
+                            fetch('/generate_multi_step', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    prompt: prompt,
+                                    test_cases: testCases
+                                })
+                            })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        // Redirect to results page
+                                        window.location.href = `/multi_step_results/${data.result_id}`;
+                                    } else {
+                                        // Handle error
+                                        alert('Error: ' + (data.error || 'Unknown error occurred'));
+                                        if (window.setLoadingState) {
+                                            window.setLoadingState(submitButton, false);
+                                        }
+                                        if (window.stopAiAnimation) {
+                                            window.stopAiAnimation();
+                                        }
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    alert('Network error occurred. Please try again.');
+                                    if (window.setLoadingState) {
+                                        window.setLoadingState(submitButton, false);
+                                    }
+                                    if (window.stopAiAnimation) {
+                                        window.stopAiAnimation();
+                                    }
+                                });
+                        }
+
+                        function executeRegularGeneration() {
+                            const prompt = document.getElementById('prompt').value.trim();
+
+                            if (!prompt) {
+                                alert('Please enter a prompt for code generation.');
+                                return;
+                            }
+
+                            // Set loading state
                             if (window.setLoadingState) {
                                 window.setLoadingState(submitButton, true, 'Generating...');
                             }
@@ -39,17 +290,27 @@
                                 window.startAiAnimation();
                             }
 
-                            // Safety: re-enable after 90s in case of navigation issues or unhandled errors
-                            setTimeout(() => {
-                                if (window.setLoadingState) {
-                                    window.setLoadingState(submitButton, false);
-                                }
-                                if (window.stopAiAnimation) {
-                                    window.stopAiAnimation();
-                                }
-                            }, 90000);
-                        });
+                            // Store the original prompt for retry functionality
+                            window.originalPrompt = prompt;
+
+                            // Submit the form normally (will redirect to create_snippet)
+                            form.submit();
+                        }
+
+                        function updateMultiStepProgress(percentage, layer, description) {
+                            const progressBar = document.querySelector('.progress-bar');
+                            const currentLayerSpan = document.getElementById('currentLayer');
+                            const layerDescriptionSpan = document.getElementById('layerDescription');
+
+                            progressBar.style.width = percentage + '%';
+                            progressBar.setAttribute('aria-valuenow', percentage);
+                            currentLayerSpan.textContent = layer;
+                            layerDescriptionSpan.textContent = description;
+                        }
                     });
+
+                    // Tooltips are now handled by the custom tooltip system with 3-second delay
+                    // No need for Bootstrap tooltip initialization - our system handles all tooltips automatically
                 </script>
             </div>
         </div>

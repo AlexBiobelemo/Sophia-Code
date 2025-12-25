@@ -26,6 +26,21 @@ class User(UserMixin, db.Model):
     failed_login_attempts = db.Column(db.Integer, default=0)
     last_failed_login = db.Column(db.DateTime, nullable=True)
     locked_until = db.Column(db.DateTime, nullable=True)
+    
+    # AI and User Preferences
+    preferred_ai_model = db.Column(db.String(50), default='gemini-2.5-flash')
+    code_generation_style = db.Column(db.String(50), default='balanced')  # balanced, detailed, concise
+    auto_explain_code = db.Column(db.Boolean, default=True)
+    show_line_numbers = db.Column(db.Boolean, default=True)
+    enable_animations = db.Column(db.Boolean, default=True)
+    enable_tooltips = db.Column(db.Boolean, default=True)
+    tooltip_delay = db.Column(db.Integer, default=3)  # Delay in seconds before tooltip appears
+    dark_mode = db.Column(db.Boolean, default=True)
+    email_notifications = db.Column(db.Boolean, default=True)
+    auto_save_snippets = db.Column(db.Boolean, default=True)
+    public_profile = db.Column(db.Boolean, default=False)
+    show_activity = db.Column(db.Boolean, default=True)
+    snippet_visibility = db.Column(db.String(20), default='private')  # private, public, friends
 
     snippets = db.relationship('Snippet', backref='author', lazy='dynamic')
     collections = db.relationship('Collection', backref='owner', lazy='dynamic')
@@ -33,6 +48,7 @@ class User(UserMixin, db.Model):
     leetcode_solutions = db.relationship('LeetcodeSolution', backref='contributor', lazy='dynamic')
     points = db.relationship('Point', backref='user', lazy='dynamic')
     badges = db.relationship('UserBadge', backref='user', lazy='dynamic')
+    notes = db.relationship('Note', backref='author', lazy='dynamic')
 
     __table_args__ = (
         db.Index('ix_user_username', 'username', unique=True),
@@ -65,6 +81,7 @@ class User(UserMixin, db.Model):
             db.session.commit()
             return True
         return False
+
 
 class Collection(db.Model):
     """Represents a user-defined collection for organizing snippets."""
@@ -100,6 +117,7 @@ class Snippet(db.Model):
     embedding = db.Column(db.JSON, nullable=True)
     collection_id = db.Column(db.Integer, db.ForeignKey('collection.id'), nullable=True)
     language = db.Column(db.String(50), nullable=False, default='python')
+    thought_steps = db.Column(db.JSON, nullable=True)  # Stores multi-step thinking process
 
     versions = db.relationship('SnippetVersion', backref='snippet', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -199,6 +217,7 @@ class UserBadge(db.Model):
         return f'<User {self.user.username} earned {self.badge.name}>'
 
 
+
 class LeetcodeProblem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False, unique=True)
@@ -282,3 +301,78 @@ class ChatMessage(db.Model):
 
     def __repr__(self):
         return f'<ChatMessage {self.role} {self.created_at}>'
+
+
+class Note(db.Model):
+    """Represents a user's personal note in the database."""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(140), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
+    __table_args__ = (
+        db.Index('ix_note_timestamp', 'timestamp'),
+        db.Index('ix_note_user_id', 'user_id'),
+    )
+
+    def __repr__(self):
+        return f'<Note {self.title}>'
+
+
+class MultiStepResult(db.Model):
+    """Represents multi-step AI thinking results for code generation."""
+    id = db.Column(db.Integer, primary_key=True)
+    result_id = db.Column(db.String(36), nullable=False, unique=True)  # UUID string
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    prompt = db.Column(db.Text, nullable=False)
+    test_cases = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), nullable=False, default='processing')  # processing, completed, error
+    error_message = db.Column(db.Text, nullable=True)
+    
+    # Multi-step thinking layers
+    layer1_architecture = db.Column(db.Text, nullable=True)
+    layer2_coder = db.Column(db.Text, nullable=True)
+    layer3_tester = db.Column(db.Text, nullable=True)
+    layer4_refiner = db.Column(db.Text, nullable=True)
+    
+    # Final results
+    final_code = db.Column(db.Text, nullable=True)
+    processing_time = db.Column(db.Float, nullable=True)  # in seconds
+    
+    # Timestamps
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', backref='multi_step_results')
+    
+    __table_args__ = (
+        db.Index('ix_multi_step_result_result_id', 'result_id'),
+        db.Index('ix_multi_step_result_user_id', 'user_id'),
+        db.Index('ix_multi_step_result_timestamp', 'timestamp'),
+        db.Index('ix_multi_step_result_status', 'status'),
+    )
+
+    def __repr__(self):
+        return f'<MultiStepResult {self.result_id} ({self.status})>'
+
+    def to_dict(self):
+        """Convert the model instance to a dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'result_id': self.result_id,
+            'user_id': self.user_id,
+            'prompt': self.prompt,
+            'test_cases': self.test_cases,
+            'status': self.status,
+            'error_message': self.error_message,
+            'layer1_architecture': self.layer1_architecture,
+            'layer2_coder': self.layer2_coder,
+            'layer3_tester': self.layer3_tester,
+            'layer4_refiner': self.layer4_refiner,
+            'final_code': self.final_code,
+            'processing_time': self.processing_time,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+        }

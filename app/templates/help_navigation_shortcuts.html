@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.help') }}">Help & Tips</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Navigation Shortcuts</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-keyboard text-warning fs-1 me-3"></i>
+                <div>
+                    <h1 class="mb-1">Navigation Shortcuts</h1>
+                    <p class="text-muted mb-0">Speed up your workflow with keyboard shortcuts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3><i class="bi bi-keyboard me-2"></i>Speed Up Your Workflow</h3>
+
+                    <p>Master keyboard shortcuts and navigation techniques to move through Sophia quickly and
+                        efficiently.</p>
+
+                    <h4>Global Shortcuts</h4>
+                    <div class="highlight-box">
+                        <ul>
+                            <li><code>Ctrl+N</code> - Create new snippet</li>
+                            <li><code>Ctrl+S</code> - Save current snippet</li>
+                            <li><code>Ctrl+F</code> - Search snippets</li>
+                            <li><code>Ctrl+/</code> - Toggle comments</li>
+                            <li><code>Ctrl+Shift+S</code> - Save as new snippet</li>
+                            <li><code>Escape</code> - Close modal/dialog</li>
+                        </ul>
+                    </div>
+
+                    <h4>Navigation Shortcuts</h4>
+                    <ul>
+                        <li><code>Ctrl+1-8</code> - Quick access to main sections</li>
+                        <li><code>Alt+Left/Right</code> - Navigate back/forward</li>
+                        <li><code>Ctrl+Tab</code> - Next tab/window</li>
+                        <li><code>Ctrl+Shift+Tab</code> - Previous tab/window</li>
+                    </ul>
+
+                    <h4>Editor Shortcuts</h4>
+                    <ul>
+                        <li><code>Ctrl+D</code> - Select next occurrence</li>
+                        <li><code>Ctrl+Shift+L</code> - Select all occurrences</li>
+                        <li><code>Alt+Up/Down</code> - Move line up/down</li>
+                        <li><code>Ctrl+Shift+K</code> - Delete current line</li>
+                        <li><code>Ctrl+Shift+Enter</code> - Insert line below</li>
+                    </ul>
+
+                    <h4>Workflow Optimization</h4>
+                    <ul>
+                        <li>Use the command palette (<code>Ctrl+Shift+P</code>)</li>
+                        <li>Create custom shortcuts in settings</li>
+                        <li>Use split view for multiple snippets</li>
+                        <li>Enable vim/emacs mode for power users</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Navigation to other help topics -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <a href="{{ url_for('main.help_ai_features') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-left me-2"></i>Previous: AI Features
+                    </a>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('main.help_useful_tips') }}" class="btn btn-primary">
+                        Next: Useful Tips<i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom styles for this page -->
+<style>
+    .highlight-box {
+        background: rgba(var(--bs-warning-rgb), 0.1);
+        border: 1px solid rgba(var(--bs-warning-rgb), 0.3);
+        border-radius: 10px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+
+    code {
+        background: rgba(var(--bs-dark-rgb), 0.1);
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--bs-primary);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
