@@ -29,6 +29,14 @@ Project Sophia addresses the common problem developers face in managing an ever-
 - **Syntax Highlighting:** Pygments
 - **Markdown:** python-markdown for note rendering
 
+## Documentation
+
+- **[User Guide](User Guide.md)** - Complete user manual with tutorials and examples
+- **[Developer Guide](Developer Guide.md)** - Technical documentation for contributors
+- **[Features](Features.md)** - Detailed feature descriptions and demos
+- **[Troubleshooting](Troubleshooting.md)** - Common issues and solutions
+- **[Updates](updates.md)** - Version history and migration guide
+
 ## Getting Started
 
 ### Prerequisites
