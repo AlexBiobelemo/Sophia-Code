@@ -14,5 +14,6 @@ SQLAlchemy
 Werkzeug
 WTForms
 markdown
+google.generativeai
 
 
