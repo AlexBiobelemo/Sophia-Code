@@ -15,5 +15,6 @@ Werkzeug
 WTForms
 markdown
 google.generativeai
+gunicorn
 
 
