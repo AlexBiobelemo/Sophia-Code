@@ -24,30 +24,37 @@ bp = Blueprint('main', __name__)
 
 def check_and_award_badges(user):
     """Checks user activity and awards badges if criteria are met."""
+    # Fetch counts once to avoid redundant O(N) queries
+    snippet_count = user.snippets.count()
+    collection_count = user.collections.count()
+    leetcode_problem_count = user.leetcode_problems.count()
+    leetcode_solution_count = user.leetcode_solutions.count()
+    total_points = user.get_total_points()
+
     # Badge: First Snippet
-    if user.snippets.count() >= 1:
+    if snippet_count >= 1:
         user.award_badge("First Snippet")
 
     # Badge: Snippet Enthusiast (e.g., 10 snippets, 100 snippets, 250 snippets, 500 snippets)
-    if user.snippets.count() >= 500:
+    if snippet_count >= 500:
         user.award_badge("Snippet Master")
-    elif user.snippets.count() >= 250:
+    elif snippet_count >= 250:
         user.award_badge("Snippet Virtuoso")
-    elif user.snippets.count() >= 100:
+    elif snippet_count >= 100:
         user.award_badge("Snippet Grandmaster")
-    elif user.snippets.count() >= 10:
+    elif snippet_count >= 10:
         user.award_badge("Snippet Enthusiast")
 
     # Badge: Collection Creator (e.g., 1 collection)
-    if user.collections.count() >= 1:
+    if collection_count >= 1:
         user.award_badge("Collection Creator")
 
     # Badge: Leetcode Contributor (e.g., 1 problem or solution)
-    if user.leetcode_problems.count() >= 1 or user.leetcode_solutions.count() >= 1:
+    if leetcode_problem_count >= 1 or leetcode_solution_count >= 1:
         user.award_badge("Leetcode Contributor")
 
     # Badge: Point Accumulator (e.g., 50 points)
-    if user.get_total_points() >= 50:
+    if total_points >= 50:
         user.award_badge("Point Accumulator")
 
     db.session.commit() # Commit any badge awards
@@ -637,6 +644,19 @@ def generate_multi_step():
             status='processing'
         )
         db.session.add(multi_step_record)
+        
+        # Clean up old results (keep only last 10 per user) - do it here once
+        old_results_ids = db.session.execute(
+            sa.select(MultiStepResult.id).where(
+                MultiStepResult.user_id == current_user.id
+            ).order_by(MultiStepResult.timestamp.desc()).offset(10)
+        ).scalars().all()
+        
+        if old_results_ids:
+            db.session.execute(
+                sa.delete(MultiStepResult).where(MultiStepResult.id.in_(old_results_ids))
+            )
+            
         db.session.commit()
         
         # Call the multi-step solver
@@ -694,17 +714,6 @@ def get_multi_step_result(result_id):
             current_app.logger.warning(f"Result ID {result_id} not found in database")
             return jsonify({'error': 'Result not found.'}), 404
 
-        # Clean up old results (keep only last 10 per user)
-        old_results = db.session.execute(
-            sa.select(MultiStepResult).where(
-                MultiStepResult.user_id == current_user.id
-            ).order_by(MultiStepResult.timestamp.desc()).offset(10)
-        ).scalars().all()
-        
-        for old_result in old_results:
-            db.session.delete(old_result)
-        db.session.commit()
-        
         return jsonify({
             'success': True,
             'result': result_record.to_dict()
@@ -732,17 +741,6 @@ def multi_step_results(result_id):
             current_app.logger.warning(f"Result ID {result_id} not found in database")
             flash('Results not found or expired.', 'warning')
             return redirect(url_for('main.generate'))
-        
-        # Clean up old results (keep only last 10 per user)
-        old_results = db.session.execute(
-            sa.select(MultiStepResult).where(
-                MultiStepResult.user_id == current_user.id
-            ).order_by(MultiStepResult.timestamp.desc()).offset(10)
-        ).scalars().all()
-        
-        for old_result in old_results:
-            db.session.delete(old_result)
-        db.session.commit()
         
         return render_template('multi_step_results.html', title='Multi-Step Results', result=result_record)
         

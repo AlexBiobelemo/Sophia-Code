@@ -57,7 +57,9 @@ class User(UserMixin, db.Model):
     )
 
     def get_total_points(self):
-        return sum(point.points for point in self.points)
+        return db.session.scalar(
+            sa.select(sa.func.sum(Point.points)).where(Point.user_id == self.id)
+        ) or 0
 
     def set_password(self, password):
         """Hashes and sets the user's password."""
