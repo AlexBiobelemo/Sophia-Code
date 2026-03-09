@@ -9,6 +9,8 @@ class TooltipSystem {
         this.hoverTimers = new Map();
         this.autoHideTimers = new Map();
         this.longPressTimers = new Map();
+        this.cachedPrefs = null;
+        this.lastPrefsFetch = 0;
         this.init();
     }
 
@@ -276,19 +278,27 @@ class TooltipSystem {
     }
 
     async getUserTooltipDelay() {
-        // Try to get user preferences from server first, then localStorage as fallback
+        // Use cached preferences if available (within 1 minute)
+        if (this.cachedPrefs && (Date.now() - this.lastPrefsFetch < 60000)) {
+            return (this.cachedPrefs.tooltip_delay || 3) * 1000;
+        }
+
         try {
-            // First try to get from server
+            // Try to get user preferences from server first
             const serverPrefs = await this.getUserPreferencesFromServer();
-            if (serverPrefs && serverPrefs.tooltip_delay !== undefined) {
-                return serverPrefs.tooltip_delay * 1000; // Convert to milliseconds
+            if (serverPrefs) {
+                this.cachedPrefs = serverPrefs;
+                this.lastPrefsFetch = Date.now();
+                return (serverPrefs.tooltip_delay || 3) * 1000;
             }
 
             // Fallback to localStorage
             const userPrefs = localStorage.getItem('user_preferences');
             if (userPrefs) {
                 const prefs = JSON.parse(userPrefs);
-                return (prefs.tooltip_delay || 3) * 1000; // Convert to milliseconds
+                this.cachedPrefs = prefs;
+                this.lastPrefsFetch = Date.now();
+                return (prefs.tooltip_delay || 3) * 1000;
             }
         } catch (e) {
             console.warn('Could not load user tooltip preferences:', e);
@@ -297,18 +307,27 @@ class TooltipSystem {
     }
 
     async isTooltipsEnabled() {
+        // Use cached preferences if available (within 1 minute)
+        if (this.cachedPrefs && (Date.now() - this.lastPrefsFetch < 60000)) {
+            return this.cachedPrefs.enable_tooltips !== false;
+        }
+
         try {
             // First try to get from server
             const serverPrefs = await this.getUserPreferencesFromServer();
-            if (serverPrefs && serverPrefs.enable_tooltips !== undefined) {
-                return serverPrefs.enable_tooltips;
+            if (serverPrefs) {
+                this.cachedPrefs = serverPrefs;
+                this.lastPrefsFetch = Date.now();
+                return serverPrefs.enable_tooltips !== false;
             }
 
             // Fallback to localStorage
             const userPrefs = localStorage.getItem('user_preferences');
             if (userPrefs) {
                 const prefs = JSON.parse(userPrefs);
-                return prefs.enable_tooltips !== false; // Default to true
+                this.cachedPrefs = prefs;
+                this.lastPrefsFetch = Date.now();
+                return prefs.enable_tooltips !== false;
             }
         } catch (e) {
             console.warn('Could not load user tooltip preferences:', e);
@@ -623,9 +642,10 @@ async function initializeTooltipSystem() {
 initializeTooltipSystem();
 
 // Also re-initialize when new content is added to the page
+let reinitTimeout = null;
 const observer = new MutationObserver(async function (mutations) {
     let shouldReinitialize = false;
-    mutations.forEach(function (mutation) {
+    for (let mutation of mutations) {
         if (mutation.addedNodes.length > 0) {
             for (let node of mutation.addedNodes) {
                 if (node.nodeType === 1) { // Element node
@@ -639,16 +659,19 @@ const observer = new MutationObserver(async function (mutations) {
                 }
             }
         }
-    });
+        if (shouldReinitialize) break;
+    }
 
     if (shouldReinitialize) {
-        // Only reinitialize if tooltips are enabled
-        const tooltipsEnabled = await tooltipSystem.isTooltipsEnabled();
-        if (tooltipsEnabled) {
-            setTimeout(async () => {
+        // Throttle reinitialization to once every 250ms
+        if (reinitTimeout) clearTimeout(reinitTimeout);
+        reinitTimeout = setTimeout(async () => {
+            const tooltipsEnabled = await tooltipSystem.isTooltipsEnabled();
+            if (tooltipsEnabled) {
                 await initializeDelayedTooltips();
-            }, 100);
-        }
+            }
+            reinitTimeout = null;
+        }, 250);
     }
 });
 

@@ -22,32 +22,6 @@ class StreamingAIManager {
         console.log('Streaming AI Manager initialized');
         this.setupEventListeners();
         this.loadModelTieringConfig();
-
-        // Initialize Bootstrap tooltips
-        this.initTooltips();
-    }
-
-    /**
-     * Initialize Bootstrap tooltips
-     */
-    initTooltips() {
-        // Wait for DOM to be ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                this.initializeTooltips();
-            });
-        } else {
-            this.initializeTooltips();
-        }
-    }
-
-    /**
-     * Initialize tooltips for dynamically created elements
-     */
-    initializeTooltips() {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        // Tooltips are now handled by the custom tooltip system with 3-second delay
-        // No need for Bootstrap tooltip initialization - our system handles all tooltips automatically
     }
 
     /**
@@ -278,9 +252,6 @@ class StreamingAIManager {
         this.createStreamingElements(ui);
         this.activeStreams.set(sessionId, ui);
 
-        // Initialize tooltips for the newly created elements
-        this.initializeTooltips();
-
         return ui;
     }
 
@@ -292,7 +263,6 @@ class StreamingAIManager {
         container.id = `streaming-ui-${Date.now()}`;
         container.className = 'streaming-ai-container';
 
-        // Insert after the generate button or at the top of the main content
         const generateButton = document.getElementById('generateButton');
         if (generateButton) {
             generateButton.parentNode.insertBefore(container, generateButton.nextSibling);
@@ -334,7 +304,6 @@ class StreamingAIManager {
                 </div>
                 
                 <div class="card-body">
-                    <!-- Progress indicator -->
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="step-indicator text-light">
@@ -350,13 +319,11 @@ class StreamingAIManager {
                         </div>
                     </div>
 
-                    <!-- Current step description -->
                     <div class="step-description mb-3 text-light">
                         <i class="fas fa-info-circle text-primary me-2"></i>
                         <span id="step-desc-${ui.sessionId}" class="text-light">Preparing pipeline...</span>
                     </div>
 
-                    <!-- Token efficiency indicator -->
                     <div class="token-efficiency mb-3">
                         <div class="alert alert-info py-2 mb-0">
                             <small class="text-dark">
@@ -369,15 +336,12 @@ class StreamingAIManager {
                         </div>
                     </div>
 
-                    <!-- Code output -->
                     <div class="code-output mb-3" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="mb-0">
                                 <i class="fas fa-code me-2 text-success"></i>Generated Code
-                                <small class="text-muted ms-2">(Step 1/2)</small>
                             </h6>
-                            <button class="btn btn-sm btn-outline-success" onclick="streamingAI.copyCode('${ui.sessionId}')"
-                                    data-bs-toggle="tooltip" title="Copy generated code to clipboard">
+                            <button class="btn btn-sm btn-outline-success" onclick="streamingAI.copyCode('${ui.sessionId}')">
                                 <i class="fas fa-copy me-1"></i>Copy
                             </button>
                         </div>
@@ -386,15 +350,12 @@ class StreamingAIManager {
                         </pre>
                     </div>
 
-                    <!-- Explanation output -->
                     <div class="explanation-output" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
                             <h6 class="mb-0 text-light">
                                 <i class="fas fa-book me-2 text-info"></i>Explanation
-                                <small class="text-muted ms-2">(Step 2/2)</small>
                             </h6>
-                            <button class="btn btn-sm btn-outline-info" onclick="streamingAI.copyExplanation('${ui.sessionId}')"
-                                    data-bs-toggle="tooltip" title="Copy explanation to clipboard">
+                            <button class="btn btn-sm btn-outline-info" onclick="streamingAI.copyExplanation('${ui.sessionId}')">
                                 <i class="fas fa-copy me-1"></i>Copy
                             </button>
                         </div>
@@ -403,29 +364,20 @@ class StreamingAIManager {
                         </div>
                     </div>
 
-                    <!-- Action buttons (shown when complete) -->
                     <div class="action-buttons mt-3" style="display: none;" id="actions-${ui.sessionId}">
                         <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-success" onclick="streamingAI.saveAsSnippet('${ui.sessionId}')"
-                                    data-bs-toggle="tooltip" title="Save generated code as a snippet">
+                            <button class="btn btn-success" onclick="streamingAI.saveAsSnippet('${ui.sessionId}')">
                                 <i class="fas fa-save me-1"></i>Save as Snippet
                             </button>
-                            <button class="btn btn-warning" onclick="streamingAI.retryGeneration('${ui.sessionId}')"
-                                    data-bs-toggle="tooltip" title="Retry generation with the same prompt">
+                            <button class="btn btn-warning" onclick="streamingAI.retryGeneration('${ui.sessionId}')">
                                 <i class="fas fa-redo me-1"></i>Retry Generation
                             </button>
-                            <button class="btn btn-outline-primary" onclick="streamingAI.generateNew('${ui.sessionId}')"
-                                    data-bs-toggle="tooltip" title="Start a new generation">
+                            <button class="btn btn-outline-primary" onclick="streamingAI.generateNew('${ui.sessionId}')">
                                 <i class="fas fa-plus me-1"></i>Generate Another
-                            </button>
-                            <button class="btn btn-outline-secondary" onclick="streamingAI.shareResults('${ui.sessionId}')"
-                                    data-bs-toggle="tooltip" title="Share results with others">
-                                <i class="fas fa-share me-1"></i>Share
                             </button>
                         </div>
                     </div>
 
-                    <!-- Error display -->
                     <div class="error-display alert alert-danger" style="display: none;" id="error-${ui.sessionId}">
                         <h6><i class="fas fa-exclamation-triangle me-2"></i>Generation Error</h6>
                         <p class="mb-0" id="error-message-${ui.sessionId}"></p>
@@ -434,7 +386,6 @@ class StreamingAIManager {
             </div>
         `;
 
-        // Store element references
         ui.elements = {
             progressBar: container.querySelector(`#progress-${ui.sessionId}`),
             statusText: container.querySelector(`#status-${ui.sessionId}`),
@@ -465,58 +416,65 @@ class StreamingAIManager {
         const { elements, state } = ui;
         if (!elements) return;
 
-        // Update progress
-        if (elements.progressBar) {
-            const progressPercent = state.currentStep === 1 ? 50 : 100;
-            elements.progressBar.style.width = `${progressPercent}%`;
-            elements.progressBar.setAttribute('aria-valuenow', progressPercent);
-        }
+        // Throttle UI updates to once per frame
+        if (ui.renderPending) return;
+        ui.renderPending = true;
+        
+        requestAnimationFrame(() => {
+            // Update progress
+            if (elements.progressBar) {
+                const progressPercent = state.currentStep === 1 ? 50 : 100;
+                elements.progressBar.style.width = `${progressPercent}%`;
+                elements.progressBar.setAttribute('aria-valuenow', progressPercent);
+            }
 
-        // Update status
-        if (elements.statusText) {
-            const statusMap = {
-                'starting': 'Initializing...',
-                'generating_code': 'Generating code...',
-                'code_complete': 'Code generated ✓',
-                'generating_explanation': 'Generating explanation...',
-                'complete': 'Complete!',
-                'error': 'Error occurred'
-            };
-            elements.statusText.textContent = statusMap[state.status] || state.status;
-        }
+            // Update status
+            if (elements.statusText) {
+                const statusMap = {
+                    'starting': 'Initializing...',
+                    'generating_code': 'Generating code...',
+                    'code_complete': 'Code generated ✓',
+                    'generating_explanation': 'Generating explanation...',
+                    'complete': 'Complete!',
+                    'error': 'Error occurred'
+                };
+                elements.statusText.textContent = statusMap[state.status] || state.status;
+            }
 
-        // Update step description
-        if (elements.stepDesc && state.stepDescription) {
-            elements.stepDesc.textContent = state.stepDescription;
-        }
+            // Update step description
+            if (elements.stepDesc && state.stepDescription) {
+                elements.stepDesc.textContent = state.stepDescription;
+            }
 
-        // Show/hide outputs
-        if (state.codeContent && elements.codeOutput) {
-            elements.codeOutput.style.display = 'block';
-            elements.codeContent.textContent = state.codeContent;
-        }
+            // Show/hide outputs
+            if (state.codeContent && elements.codeOutput) {
+                elements.codeOutput.style.display = 'block';
+                elements.codeContent.textContent = state.codeContent;
+            }
 
-        if (state.explanationContent && elements.explanationOutput) {
-            elements.explanationOutput.style.display = 'block';
-            elements.explanationContent.innerHTML = this.renderMarkdown(state.explanationContent);
-            // Ensure the explanation content has proper dark mode styling
-            elements.explanationContent.classList.add('text-light');
-        }
+            if (state.explanationContent && elements.explanationOutput) {
+                elements.explanationOutput.style.display = 'block';
+                elements.explanationContent.innerHTML = this.renderMarkdown(state.explanationContent);
+                elements.explanationContent.classList.add('markdown-dark-mode');
+            }
 
-        // Show actions when complete
-        if (state.status === 'complete' && elements.actions) {
-            elements.actions.style.display = 'block';
-        }
+            // Show actions when complete
+            if (state.status === 'complete' && elements.actions) {
+                elements.actions.style.display = 'block';
+            }
 
-        // Update token benefits
-        if (elements.tokenBenefits && state.optimizations) {
-            const benefits = [];
-            if (state.optimizations.token_efficient) benefits.push('~40% fewer tokens');
-            if (state.optimizations.context_pruned) benefits.push('context optimized');
-            if (state.optimizations.streaming_enabled) benefits.push('real-time streaming');
+            // Update token benefits
+            if (elements.tokenBenefits && state.optimizations) {
+                const benefits = [];
+                if (state.optimizations.token_efficient) benefits.push('~40% fewer tokens');
+                if (state.optimizations.context_pruned) benefits.push('context optimized');
+                if (state.optimizations.streaming_enabled) benefits.push('real-time streaming');
 
-            elements.tokenBenefits.textContent = `Optimized: ${benefits.join(', ')}`;
-        }
+                elements.tokenBenefits.textContent = `Optimized: ${benefits.join(', ')}`;
+            }
+            
+            ui.renderPending = false;
+        });
     }
 
     /**
@@ -582,26 +540,10 @@ class StreamingAIManager {
         const ui = this.getStreamingUI(sessionId);
         if (ui && ui.state.codeContent) {
             try {
-                // Get the code content, handling both textContent and innerHTML
-                let codeText = ui.state.codeContent;
-
-                // If the code is in a <code> element, get the text content
-                if (ui.elements.codeContent) {
-                    const codeElement = ui.elements.codeContent;
-                    codeText = codeElement.textContent || codeElement.innerText || codeElement.innerHTML || ui.state.codeContent;
-                }
-
-                await navigator.clipboard.writeText(codeText);
+                await navigator.clipboard.writeText(ui.state.codeContent);
                 this.showCopyFeedback(ui.elements.codeOutput, 'Code copied!');
             } catch (error) {
                 console.error('Failed to copy code:', error);
-                // Fallback to raw content if HTML parsing fails
-                try {
-                    await navigator.clipboard.writeText(ui.state.codeContent);
-                    this.showCopyFeedback(ui.elements.codeOutput, 'Code copied!');
-                } catch (fallbackError) {
-                    console.error('Failed to copy code (fallback):', fallbackError);
-                }
             }
         }
     }
@@ -613,25 +555,13 @@ class StreamingAIManager {
         const ui = this.getStreamingUI(sessionId);
         if (ui && ui.state.explanationContent) {
             try {
-                // Get the rendered HTML content instead of raw markdown
-                const renderedContent = ui.elements.explanationContent.innerHTML || this.renderMarkdown(ui.state.explanationContent);
-
-                // Create a temporary element to get plain text from HTML
+                // Strip HTML for plain text clipboard
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = renderedContent;
-                const plainText = tempDiv.textContent || tempDiv.innerText || '';
-
-                await navigator.clipboard.writeText(plainText);
+                tempDiv.innerHTML = this.renderMarkdown(ui.state.explanationContent);
+                await navigator.clipboard.writeText(tempDiv.textContent || tempDiv.innerText || '');
                 this.showCopyFeedback(ui.elements.explanationOutput, 'Explanation copied!');
             } catch (error) {
                 console.error('Failed to copy explanation:', error);
-                // Fallback to raw content if HTML parsing fails
-                try {
-                    await navigator.clipboard.writeText(ui.state.explanationContent);
-                    this.showCopyFeedback(ui.elements.explanationOutput, 'Explanation copied!');
-                } catch (fallbackError) {
-                    console.error('Failed to copy explanation (fallback):', fallbackError);
-                }
             }
         }
     }
@@ -640,27 +570,17 @@ class StreamingAIManager {
      * Show copy feedback
      */
     showCopyFeedback(element, message) {
-        // Create a temporary feedback element instead of modifying the content
         const feedback = document.createElement('div');
         feedback.className = 'copy-feedback alert alert-success py-1 px-2 mb-2';
         feedback.style.fontSize = '0.875rem';
-        feedback.style.margin = '0';
-        feedback.style.transition = 'opacity 0.3s ease';
         feedback.textContent = message;
 
-        // Insert feedback at the top of the container
         const container = element.closest('.card-body') || element.parentElement;
         if (container) {
             container.insertBefore(feedback, container.firstChild);
-
-            // Fade out and remove after 2 seconds
             setTimeout(() => {
                 feedback.style.opacity = '0';
-                setTimeout(() => {
-                    if (feedback.parentNode) {
-                        feedback.parentNode.removeChild(feedback);
-                    }
-                }, 300);
+                setTimeout(() => feedback.remove(), 300);
             }, 2000);
         }
     }
@@ -689,7 +609,6 @@ class StreamingAIManager {
      */
     generateNew(sessionId) {
         this.stopStream(sessionId);
-        // Reset form or redirect to generate page
         window.location.reload();
     }
 
@@ -698,15 +617,9 @@ class StreamingAIManager {
      */
     async retryGeneration(sessionId) {
         const ui = this.getStreamingUI(sessionId);
-        if (!ui || !ui.originalPrompt) {
-            console.error('No UI or original prompt found for session:', sessionId);
-            return;
-        }
-
-        console.log('Retrying generation with prompt:', ui.originalPrompt);
+        if (!ui || !ui.originalPrompt) return;
 
         try {
-            // Show loading state
             this.updateUIState(ui, {
                 status: 'starting',
                 currentStep: 0,
@@ -715,41 +628,17 @@ class StreamingAIManager {
                 explanationContent: ''
             });
 
-            // Clear previous results
-            ui.elements.codeContent.textContent = '';
-            ui.elements.explanationContent.innerHTML = '';
             ui.elements.codeOutput.style.display = 'none';
             ui.elements.explanationOutput.style.display = 'none';
             ui.elements.actions.style.display = 'none';
 
-            // Restart streaming with the same prompt
             await this.startChainedStreaming(ui.originalPrompt, {
                 sessionId: sessionId,
                 containerId: ui.container.id
             });
 
         } catch (error) {
-            console.error('Retry generation failed:', error);
             this.handleStreamError(sessionId, error);
-        }
-    }
-
-    /**
-     * Share results
-     */
-    shareResults(sessionId) {
-        const results = this.sessionData.get(sessionId);
-        if (results && navigator.share) {
-            navigator.share({
-                title: 'AI Generated Code',
-                text: 'Check out this AI-generated code with streaming optimization!',
-                url: window.location.href
-            });
-        } else {
-            // Fallback to copying URL
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                alert('URL copied to clipboard!');
-            });
         }
     }
 
@@ -757,11 +646,7 @@ class StreamingAIManager {
      * Pause stream
      */
     pauseStream(sessionId) {
-        const ui = this.getStreamingUI(sessionId);
-        if (ui) {
-            // Implementation would depend on stream control capabilities
-            console.log('Pausing stream:', sessionId);
-        }
+        console.log('Pausing stream:', sessionId);
     }
 
     /**
@@ -772,7 +657,6 @@ class StreamingAIManager {
         if (ui) {
             ui.container.remove();
             this.activeStreams.delete(sessionId);
-            console.log('Stopped stream:', sessionId);
         }
     }
 
@@ -798,7 +682,6 @@ class StreamingAIManager {
      * Resume all streams
      */
     resumeAllStreams() {
-        // Implementation for resuming streams
         console.log('Resuming all streams');
     }
 
@@ -815,80 +698,12 @@ class StreamingAIManager {
     renderMarkdown(content) {
         if (typeof marked !== 'undefined') {
             try {
-                let html = marked.parse(content);
-                // Add dark mode compatible classes to markdown-rendered content
-                html = this.addDarkModeClasses(html);
-                return html;
+                return marked.parse(content);
             } catch (error) {
                 console.warn('Markdown rendering failed:', error);
             }
         }
         return content.replace(/\n/g, '<br>');
-    }
-
-    /**
-     * Add dark mode compatible classes to HTML content
-     */
-    addDarkModeClasses(html) {
-        // Create a temporary DOM element to manipulate the HTML
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-
-        // Find all elements and add appropriate dark mode classes
-        const elements = tempDiv.querySelectorAll('*');
-        elements.forEach(element => {
-            // Add text-light class to all text elements for dark mode
-            if (element.children.length === 0) { // Text nodes
-                element.classList.add('text-light');
-            }
-
-            // Handle specific markdown elements
-            if (element.tagName === 'H1' || element.tagName === 'H2' ||
-                element.tagName === 'H3' || element.tagName === 'H4' ||
-                element.tagName === 'H5' || element.tagName === 'H6') {
-                element.classList.add('text-light', 'fw-bold');
-            }
-
-            if (element.tagName === 'P') {
-                element.classList.add('text-light');
-            }
-
-            if (element.tagName === 'CODE') {
-                element.classList.add('bg-secondary', 'text-light', 'px-1', 'py-0', 'rounded');
-            }
-
-            if (element.tagName === 'PRE') {
-                element.classList.add('bg-secondary', 'text-light', 'p-2', 'rounded');
-            }
-
-            if (element.tagName === 'UL' || element.tagName === 'OL') {
-                element.classList.add('text-light');
-            }
-
-            if (element.tagName === 'LI') {
-                element.classList.add('text-light');
-            }
-
-            if (element.tagName === 'BLOCKQUOTE') {
-                element.classList.add('text-light', 'border-start', 'border-secondary', 'ps-3');
-            }
-
-            if (element.tagName === 'A') {
-                element.classList.add('text-info', 'text-decoration-none');
-                element.addEventListener('mouseenter', () => element.classList.add('text-light'));
-                element.addEventListener('mouseleave', () => element.classList.remove('text-light'));
-            }
-
-            if (element.tagName === 'STRONG' || element.tagName === 'B') {
-                element.classList.add('text-light', 'fw-bold');
-            }
-
-            if (element.tagName === 'EM' || element.tagName === 'I') {
-                element.classList.add('text-light', 'fst-italic');
-            }
-        });
-
-        return tempDiv.innerHTML;
     }
 
     /**
@@ -916,31 +731,10 @@ class StreamingAIManager {
             });
         }
     }
-
-    /**
-     * Get session results
-     */
-    getSessionResults(sessionId) {
-        return this.sessionData.get(sessionId);
-    }
-
-    /**
-     * Clear session data
-     */
-    clearSession(sessionId) {
-        sessionStorage.removeItem(`streaming_result_${sessionId}`);
-        this.sessionData.delete(sessionId);
-        this.stopStream(sessionId);
-    }
 }
 
-// Initialize streaming AI manager when DOM is loaded
+// Initialize streaming AI manager
 document.addEventListener('DOMContentLoaded', () => {
     window.streamingAI = new StreamingAIManager();
     window.streamingAI.init();
 });
-
-// Export for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = StreamingAIManager;
-}
