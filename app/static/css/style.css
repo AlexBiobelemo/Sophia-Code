@@ -1433,3 +1433,98 @@ button:hover,
 :root[data-bs-theme='light'] *[style*="color: black"] {
     color: var(--bs-body-color) !important;
 }
+/* Markdown Dark Mode Styles - Optimized for Streaming AI */
+.markdown-dark-mode {
+    color: #e6e6e6 !important;
+}
+
+.markdown-dark-mode h1, 
+.markdown-dark-mode h2, 
+.markdown-dark-mode h3, 
+.markdown-dark-mode h4, 
+.markdown-dark-mode h5, 
+.markdown-dark-mode h6 {
+    color: #ffffff !important;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.markdown-dark-mode p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.markdown-dark-mode code {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.markdown-dark-mode pre {
+    background-color: #1e1e1e;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.markdown-dark-mode pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.markdown-dark-mode ul, 
+.markdown-dark-mode ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.markdown-dark-mode li {
+    margin-bottom: 0.5rem;
+}
+
+.markdown-dark-mode blockquote {
+    border-left: 4px solid #4a4a4a;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    color: #b0b0b0;
+    font-style: italic;
+}
+
+.markdown-dark-mode a {
+    color: #3d8bfd;
+    text-decoration: none;
+}
+
+.markdown-dark-mode a:hover {
+    text-decoration: underline;
+}
+
+.markdown-dark-mode table {
+    width: 100%;
+    margin-bottom: 1rem;
+    border-collapse: collapse;
+}
+
+.markdown-dark-mode th, 
+.markdown-dark-mode td {
+    border: 1px solid #4a4a4a;
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.markdown-dark-mode th {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.streaming-ai-container {
+    animation: fadeIn 0.5s ease-in-out;
+}
