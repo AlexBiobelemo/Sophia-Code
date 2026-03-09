@@ -357,6 +357,43 @@ with app.app_context():
 3. Add indexes to frequently searched fields
 4. Consider upgrading to PostgreSQL for large datasets
 
+## Performance & Optimization Issues
+
+### Stale Tooltip Settings
+
+**Error:** Tooltips still appear after disabling them, or the delay doesn't change immediately.
+
+**Solution:**
+1. The tooltip system caches your preferences for 60 seconds to improve performance.
+2. Wait 1 minute for the cache to expire, or refresh the page to force an update.
+3. Check that "Enable Tooltips" is correctly saved in User Settings.
+
+### AI Streaming is "Jerky" or Laggy
+
+**Error:** The AI response appears in chunks rather than smoothly.
+
+**Solution:**
+1. This is often due to network latency from the AI provider (Gemini/Minimax).
+2. The UI uses `requestAnimationFrame` to smooth out rendering, but it cannot overcome slow network responses.
+3. Try a faster model like `gemini-1.5-flash` in User Settings.
+
+### Delayed Tooltip Appearance
+
+**Error:** Tooltips take a moment to appear when hovering over new elements.
+
+**Solution:**
+1. To prevent high CPU usage, the system scans for new elements every 250ms.
+2. If you've just added a snippet or performed a search, wait a fraction of a second for the tooltips to initialize.
+
+### High CPU Usage During Generation
+
+**Error:** Browser becomes unresponsive during long AI streaming tasks.
+
+**Solution:**
+1. The system uses a high-performance CSS-based styling method (`markdown-dark-mode`) to minimize CPU load.
+2. If you still experience issues, try disabling "UI Animations" in User Settings.
+3. Close other intensive browser tabs.
+
 ## Export/Import Issues
 
 ### Export Fails
