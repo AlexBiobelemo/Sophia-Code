@@ -1,137 +1,64 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="ai-generate-page">
-    <!-- Hero Section -->
-    <div class="ai-hero-section text-center mb-5">
-        <div class="ai-hero-icon mb-3">
-            <i class="bi bi-magic"></i>
-        </div>
-        <h1 class="ai-hero-title mb-3">AI Code Generation</h1>
-        <p class="ai-hero-subtitle mb-4">
-            Transform your ideas into production-ready code with our advanced AI-powered generation engine.
-            <br class="d-none d-md-block">
-            Describe what you need, and watch as intelligent code unfolds in real-time.
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="bi bi-magic me-2"></i>AI Code Generation
+        </h1>
+        <p class="page-subtitle">
+            Describe what you need. Get production-ready code with explanations.
         </p>
-        
-        <!-- Efficiency Badge -->
-        <div class="ai-efficiency-badge d-inline-flex align-items-center gap-2 px-4 py-2 mb-4">
-            <i class="bi bi-lightning-charge-fill text-warning"></i>
-            <span class="fw-semibold">Token-Efficient Streaming</span>
-            <span class="badge bg-success bg-opacity-75">~40% fewer tokens</span>
-            <span class="text-muted small">•</span>
-            <span class="text-muted small">Real-time results</span>
-            <span class="text-muted small">•</span>
-            <span class="text-muted small">Auto dark mode</span>
-        </div>
     </div>
 
-    <!-- Feature Cards -->
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="ai-feature-card h-100">
-                <div class="ai-feature-icon-wrapper mb-3">
-                    <i class="bi bi-lightning-charge text-warning"></i>
-                </div>
-                <h5 class="ai-feature-title mb-2">Lightning Fast</h5>
-                <p class="ai-feature-description mb-0">
-                    Real-time streaming generation with optimized token usage for faster results
-                </p>
-            </div>
+    <!-- Page Help -->
+    <div class="page-help">
+        <div class="page-help-title">
+            <i class="bi bi-lightbulb me-1"></i>Quick Tip
         </div>
-        <div class="col-md-4">
-            <div class="ai-feature-card h-100">
-                <div class="ai-feature-icon-wrapper mb-3">
-                    <i class="bi bi-code-slash text-info"></i>
-                </div>
-                <h5 class="ai-feature-title mb-2">Clean Code</h5>
-                <p class="ai-feature-description mb-0">
-                    Production-ready code with proper formatting, comments, and best practices
-                </p>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="ai-feature-card h-100">
-                <div class="ai-feature-icon-wrapper mb-3">
-                    <i class="bi bi-journal-text text-success"></i>
-                </div>
-                <h5 class="ai-feature-title mb-2">Detailed Explanations</h5>
-                <p class="ai-feature-description mb-0">
-                    Comprehensive explanations help you understand every line of generated code
-                </p>
-            </div>
-        </div>
+        <p class="page-help-text">
+            Be specific about language, functionality, and constraints. Add test cases for better results.
+        </p>
     </div>
 
     <!-- Main Generation Card -->
-    <div class="card ai-generation-card mb-4">
+    <div class="card mb-4">
         <div class="card-body p-4 p-md-5">
             <form id="ai-generate-form" method="POST" action="">
                 {{ form.hidden_tag() }}
 
                 <!-- Prompt Input -->
                 <div class="mb-4">
-                    <label for="prompt" class="form-label ai-input-label">
-                        <i class="bi bi-chat-dots me-2"></i>Describe the code you need
+                    <label for="prompt" class="form-label">
+                        <i class="bi bi-chat-dots me-2"></i>What do you want to build?
                     </label>
-                    {{ form.prompt(class="form-control ai-prompt-input", rows=5, 
-                        placeholder="e.g., 'Create a Python function to parse JSON and validate email addresses with regex pattern matching'") }}
+                    {{ form.prompt(class="form-control form-control-lg", rows=5, 
+                        placeholder="e.g., Create a Python function to validate email addresses using regex") }}
                     {% for error in form.prompt.errors %}
                     <div class="text-danger small mt-1">{{ error }}</div>
                     {% endfor %}
-                    <div class="form-text mt-2">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Be specific about language, functionality, and any constraints
-                    </div>
                 </div>
 
                 <!-- Test Cases Input -->
                 <div class="mb-4">
-                    <label for="test_cases" class="form-label ai-input-label">
-                        <i class="bi bi-check-circle me-2"></i>Test Cases <span class="text-muted fw-normal">(Optional)</span>
+                    <label for="test_cases" class="form-label">
+                        <i class="bi bi-check-circle me-2"></i>Test Cases
+                        <span class="text-muted fw-normal ms-1">(Optional)</span>
                     </label>
-                    <textarea class="form-control ai-test-input" id="test_cases" name="test_cases" rows="3"
-                        placeholder="Provide specific test cases or expected outputs to help verify the solution...
-Example:
-Input: {'email': 'test@example.com'}
-Expected Output: True"></textarea>
+                    <textarea class="form-control" id="test_cases" name="test_cases" rows="3"
+                        placeholder="Input: test@example.com&#10;Expected: True"></textarea>
                     <div class="form-text mt-2">
-                        <i class="bi bi-lightbulb me-1"></i>
-                        Include sample inputs and expected outputs for better validation
-                    </div>
-                </div>
-
-                <!-- Quick Examples -->
-                <div class="mb-4">
-                    <label class="form-label ai-input-label mb-2">
-                        <i class="bi bi-stars me-2"></i>Quick Examples
-                    </label>
-                    <div class="d-flex flex-wrap gap-2" id="quick-examples">
-                        <button type="button" class="btn btn-sm btn-outline-primary ai-example-btn" 
-                                data-example="Create a Python decorator that measures function execution time and logs it">
-                            <i class="bi bi-clock me-1"></i>Timer Decorator
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary ai-example-btn"
-                                data-example="Write a JavaScript function to debounce API calls with configurable delay">
-                            <i class="bi bi-activity me-1"></i>Debounce Function
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary ai-example-btn"
-                                data-example="Create a SQL query to find duplicate records in a table">
-                            <i class="bi bi-database me-1"></i>Find Duplicates
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary ai-example-btn"
-                                data-example="Write a Python script to recursively search for files by extension">
-                            <i class="bi bi-file-earmark-search me-1"></i>File Search
-                        </button>
+                        <i class="bi bi-info-circle me-1"></i>Include sample inputs and expected outputs
                     </div>
                 </div>
 
                 <!-- Generate Button -->
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg ai-generate-btn" id="generateButton">
+                    <button type="submit" class="btn btn-primary btn-lg" id="generateButton">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
                         <span id="generateButtonText">
-                            <i class="bi bi-magic me-2"></i>Generate Code with AI
+                            <i class="bi bi-lightning-charge me-2"></i>Generate Code
                         </span>
                     </button>
                 </div>
@@ -139,55 +66,86 @@ Expected Output: True"></textarea>
         </div>
     </div>
 
-    <!-- Streaming Results Container -->
-    <div id="streaming-container" class="mt-5"></div>
+    <!-- Quick Examples -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="bi bi-stars me-2"></i>Quick Examples
+        </div>
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-2" id="quick-examples">
+                <button type="button" class="btn btn-outline-primary btn-sm ai-example-btn" 
+                        data-example="Create a Python decorator that measures function execution time">
+                    <i class="bi bi-clock me-1"></i>Timer Decorator
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm ai-example-btn"
+                        data-example="Write a JavaScript debounce function for API calls">
+                    <i class="bi bi-activity me-1"></i>Debounce Function
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm ai-example-btn"
+                        data-example="Create a SQL query to find duplicate records">
+                    <i class="bi bi-database me-1"></i>Find Duplicates
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm ai-example-btn"
+                        data-example="Write a Python script to search files by extension">
+                    <i class="bi bi-file-earmark-search me-1"></i>File Search
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm ai-example-btn"
+                        data-example="Create a REST API endpoint with Flask">
+                    <i class="bi bi-server me-1"></i>Flask API Endpoint
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <!-- How It Works Section -->
-    <div class="card ai-how-it-works mt-5 mb-4">
-        <div class="card-body p-4 p-md-5">
-            <h4 class="mb-4 text-center">
-                <i class="bi bi-gear-wide-connected me-2"></i>How It Works
-            </h4>
+    <!-- How It Works -->
+    <div class="card">
+        <div class="card-header">
+            <i class="bi bi-gear-wide-connected me-2"></i>How It Works
+        </div>
+        <div class="card-body">
             <div class="row g-4">
                 <div class="col-md-3">
-                    <div class="ai-step text-center">
-                        <div class="ai-step-number mb-3">1</div>
-                        <h6 class="ai-step-title mb-2">Describe</h6>
-                        <p class="ai-step-description small text-muted mb-0">
-                            Tell us what code you need in natural language
-                        </p>
+                    <div class="text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-pencil-square display-6 text-primary"></i>
+                        </div>
+                        <h6 class="fw-semibold">1. Describe</h6>
+                        <p class="text-muted small mb-0">Tell us what you need</p>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="ai-step text-center">
-                        <div class="ai-step-number mb-3">2</div>
-                        <h6 class="ai-step-title mb-2">Generate</h6>
-                        <p class="ai-step-description small text-muted mb-0">
-                            AI processes your request with optimized token usage
-                        </p>
+                    <div class="text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-cpu display-6 text-primary"></i>
+                        </div>
+                        <h6 class="fw-semibold">2. Generate</h6>
+                        <p class="text-muted small mb-0">AI writes the code</p>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="ai-step text-center">
-                        <div class="ai-step-number mb-3">3</div>
-                        <h6 class="ai-step-title mb-2">Review</h6>
-                        <p class="ai-step-description small text-muted mb-0">
-                            Watch code generate in real-time with explanations
-                        </p>
+                    <div class="text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-eye display-6 text-primary"></i>
+                        </div>
+                        <h6 class="fw-semibold">3. Review</h6>
+                        <p class="text-muted small mb-0">Check code & explanation</p>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="ai-step text-center">
-                        <div class="ai-step-number mb-3">4</div>
-                        <h6 class="ai-step-title mb-2">Save</h6>
-                        <p class="ai-step-description small text-muted mb-0">
-                            Save directly to your snippets collection
-                        </p>
+                    <div class="text-center">
+                        <div class="mb-2">
+                            <i class="bi bi-save display-6 text-primary"></i>
+                        </div>
+                        <h6 class="fw-semibold">4. Save</h6>
+                        <p class="text-muted small mb-0">Add to your snippets</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Streaming Results Container -->
+    <div id="streaming-container" class="mt-4"></div>
 </div>
 
 <script>
@@ -204,109 +162,71 @@ Expected Output: True"></textarea>
         exampleBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const example = this.getAttribute('data-example');
-                if (example) {
-                    // Animate button click
-                    this.classList.add('active');
-                    setTimeout(() => this.classList.remove('active'), 200);
-                    
-                    // Fill prompt with example
-                    promptInput.value = example;
-                    
-                    // Focus and highlight
-                    promptInput.focus();
-                    promptInput.classList.add('highlight-animation');
-                    setTimeout(() => promptInput.classList.remove('highlight-animation'), 500);
-                }
+                promptInput.value = example;
+                promptInput.focus();
+                
+                // Visual feedback
+                this.classList.add('active');
+                setTimeout(() => this.classList.remove('active'), 200);
             });
         });
 
-        // Form submission handler
+        // Form submission
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            executeStreamingGeneration();
-        });
-
-        function executeStreamingGeneration() {
+            
             const prompt = promptInput.value.trim();
             const testCases = document.getElementById('test_cases').value.trim();
 
             if (!prompt) {
-                // Show validation animation
-                promptInput.classList.add('shake-animation');
-                setTimeout(() => promptInput.classList.remove('shake-animation'), 500);
+                promptInput.classList.add('is-invalid');
                 promptInput.focus();
+                setTimeout(() => promptInput.classList.remove('is-invalid'), 2000);
                 return;
             }
 
-            // Ensure streaming AI manager is available
             if (!window.streamingAI) {
-                alert('Streaming AI manager not available. Please refresh the page.');
+                alert('Streaming AI not available. Please refresh the page.');
                 return;
             }
 
-            // Combine prompt and test cases
             const fullPrompt = testCases ? `${prompt}\n\nTest Cases:\n${testCases}` : prompt;
 
-            console.log('Starting token-efficient streaming generation...');
-
             try {
-                // Disable form during generation
-                if (window.setLoadingState) {
-                    window.setLoadingState(submitButton, true, 'Streaming in progress...');
-                }
-
                 // Update button state
                 generateButtonText.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Generating...';
                 submitButton.disabled = true;
+                submitButton.querySelector('.spinner-border').style.display = 'inline-block';
 
-                // Start streaming generation
+                // Start streaming
                 window.streamingAI.startChainedStreaming(fullPrompt, {
                     containerId: 'streaming-container'
-                }).then(sessionId => {
-                    console.log('Streaming session started:', sessionId);
-                    if (window.setLoadingState) {
-                        window.setLoadingState(submitButton, true, 'Streaming in progress...');
-                    }
                 }).catch(error => {
-                    console.error('Failed to start streaming:', error);
-                    alert('Failed to start streaming generation: ' + error.message);
-                    if (window.setLoadingState) {
-                        window.setLoadingState(submitButton, false);
-                    }
-                    generateButtonText.innerHTML = '<i class="bi bi-magic me-2"></i>Generate Code with AI';
-                    submitButton.disabled = false;
+                    console.error('Streaming error:', error);
+                    alert('Failed to start generation: ' + error.message);
+                    resetButton();
                 });
 
             } catch (error) {
-                console.error('Streaming generation error:', error);
+                console.error('Generation error:', error);
                 alert('An error occurred: ' + error.message);
-                if (window.setLoadingState) {
-                    window.setLoadingState(submitButton, false);
-                }
-                generateButtonText.innerHTML = '<i class="bi bi-magic me-2"></i>Generate Code with AI';
-                submitButton.disabled = false;
+                resetButton();
             }
-        }
 
-        // Input character counter and validation
-        promptInput.addEventListener('input', function() {
-            const length = this.value.length;
-            if (length > 0 && length < 10) {
-                this.classList.add('warning-border');
-            } else {
-                this.classList.remove('warning-border');
+            function resetButton() {
+                generateButtonText.innerHTML = '<i class="bi bi-lightning-charge me-2"></i>Generate Code';
+                submitButton.disabled = false;
+                submitButton.querySelector('.spinner-border').style.display = 'none';
             }
         });
 
-        // Auto-resize textarea based on content
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-        }
-
+        // Auto-resize textarea
         [promptInput, document.getElementById('test_cases')].forEach(el => {
             if (el) {
-                el.addEventListener('input', () => autoResize(el));
+                el.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = this.scrollHeight + 'px';
+                });
             }
         });
     });
