@@ -844,14 +844,25 @@ def intelligent_search():
     return render_template('intelligent_search.html', title='Intelligent Search', results=[], highlights={}, query=text_query, languages=languages, selected_language=selected_language, selected_tag=selected_tag, selected_sort=selected_sort, text_query=text_query)
 
 
-@bp.route('/search')
+@bp.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
     """Multi-approach search: structured filters + keyword + semantic with weighted ranking."""
     import math, re, html
     from datetime import datetime, timezone
 
-    q_text = (request.args.get('q') or '').strip()
+    # Support both GET and POST methods to handle large queries
+    if request.method == 'POST':
+        q_text = (request.form.get('q') or '').strip()
+        language = request.form.get('language') or ''
+        tag = request.form.get('tag') or ''
+        sort = request.form.get('sort') or 'date_desc'
+    else:
+        q_text = (request.args.get('q') or '').strip()
+        language = request.args.get('language') or ''
+        tag = request.args.get('tag') or ''
+        sort = request.args.get('sort') or 'date_desc'
+    
     if not q_text:
         return redirect(url_for('main.intelligent_search'))
 
@@ -1121,11 +1132,17 @@ def search():
         .distinct().order_by(Snippet.language.asc()).all()
     ) if row[0]]
 
-    # Get selected values from query parameters
-    selected_language = request.args.get('language') or ''
-    selected_tag = request.args.get('tag') or ''
-    selected_sort = request.args.get('sort') or 'date_desc'
-    text_query = request.args.get('q') or ''
+    # Get selected values from request (support both GET and POST)
+    if request.method == 'POST':
+        selected_language = request.form.get('language') or ''
+        selected_tag = request.form.get('tag') or ''
+        selected_sort = request.form.get('sort') or 'date_desc'
+        text_query = request.form.get('q') or ''
+    else:
+        selected_language = request.args.get('language') or ''
+        selected_tag = request.args.get('tag') or ''
+        selected_sort = request.args.get('sort') or 'date_desc'
+        text_query = request.args.get('q') or ''
 
     return render_template('intelligent_search.html', title='Intelligent Search', results=results, highlights=highlights, query=q_text, hi_title=hi_title, hi_desc=hi_desc, hi_text=hi_text, languages=languages, selected_language=selected_language, selected_tag=selected_tag, selected_sort=selected_sort, text_query=text_query)
 
@@ -1751,23 +1768,39 @@ def download_selected_snippets():
     )
 
 
-@bp.route('/search_combined')
+@bp.route('/search_combined', methods=['GET', 'POST'])
 @login_required
 def search_combined():
     """Combined search: runs snippet and solution searches and presents both sections."""
-    q_text = (request.args.get('q') or '').strip()
+    # Support both GET and POST methods to handle large queries
+    if request.method == 'POST':
+        q_text = (request.form.get('q') or '').strip()
+    else:
+        q_text = (request.args.get('q') or '').strip()
+    
     if not q_text:
         return redirect(url_for('main.index'))
     return redirect(url_for('main.search', q=q_text))
 
-@bp.route('/search_solutions')
+@bp.route('/search_solutions', methods=['GET', 'POST'])
 @login_required
 def search_solutions():
     """Multi-approach search for approved Leetcode solutions with weighted ranking and highlights."""
     import math
     from datetime import datetime, timezone
 
-    q_text = (request.args.get('q') or '').strip()
+    # Support both GET and POST methods to handle large queries
+    if request.method == 'POST':
+        q_text = (request.form.get('q') or '').strip()
+        language = request.form.get('language') or ''
+        tag = request.form.get('tag') or ''
+        sort = request.form.get('sort') or 'date_desc'
+    else:
+        q_text = (request.args.get('q') or '').strip()
+        language = request.args.get('language') or ''
+        tag = request.args.get('tag') or ''
+        sort = request.args.get('sort') or 'date_desc'
+    
     if not q_text:
         return redirect(url_for('main.index'))
 

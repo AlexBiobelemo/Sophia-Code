@@ -17,7 +17,8 @@
                         <!-- Advanced Search Form -->
                         <div class="search-form-card card shadow-lg">
                             <div class="card-body p-4">
-                                <form id="intelligent-search-form" action="{{ url_for('main.search') }}" method="get">
+                                <form id="intelligent-search-form" action="{{ url_for('main.search') }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <div class="row g-3">
                                         <div class="col-12">
                                             <div class="input-group input-group-lg">

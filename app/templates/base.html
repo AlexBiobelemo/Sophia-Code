@@ -601,7 +601,8 @@
                         <!-- Search Container -->
                         <div class="search-container">
                             <form id="global-search-form" class="d-flex" action="{{ url_for('main.search') }}"
-                                method="get">
+                                method="POST">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <div class="search-input-wrapper">
                                     <input id="navbar-search" class="search-input" type="search" name="q"
                                         placeholder="Search snippets/solutions (supports tag:, lang:, in:, before:, after:)"
@@ -763,6 +764,68 @@
         }
 
         /* Assistant remains neutral (no bubble) */
+        
+        /* Responsive adjustments for Sophia widget */
+        @media (max-width: 767.98px) {
+            #sophiaFab {
+                right: 12px;
+                bottom: 12px;
+                padding-right: 0;
+            }
+            
+            #sophiaFab .label {
+                display: none;
+            }
+            
+            #sophiaDock {
+                right: 0;
+                bottom: 0;
+                width: 100%;
+                max-width: 100%;
+                height: 85vh;
+                border-radius: 1rem 1rem 0 0;
+            }
+            
+            #sophiaDock .card-header {
+                padding: 0.75rem 1rem;
+            }
+            
+            #sophiaDock .card-footer {
+                padding: 0.75rem;
+                flex-wrap: wrap;
+            }
+            
+            #sophiaDock .card-footer #sophia-input {
+                flex: 1 1 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            #sophiaDock .card-footer #sophia-send,
+            #sophiaDock .card-footer #sophia-stop {
+                flex: 1;
+                min-width: calc(50% - 0.25rem);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #sophiaFab {
+                right: 8px;
+                bottom: 8px;
+            }
+            
+            #sophiaDock {
+                width: 100%;
+                height: 90vh;
+            }
+        }
+        
+        @media (min-width: 768px) and (max-width: 1024px) {
+            #sophiaDock {
+                width: 380px;
+                right: 12px;
+                bottom: 80px;
+            }
+        }
     </style>
 
     <button id="sophiaFab" type="button" class="btn btn-warning rounded-pill">
@@ -1132,13 +1195,33 @@
             function performMobileSearch() {
                 const query = mobileSearchInput.value.trim();
                 if (query) {
+                    // For mobile search, create a temporary form and submit via POST
                     let actionUrl = "{{ url_for('main.search') }}";
                     if (mobileSearchScope === 'solutions') {
                         actionUrl = "{{ url_for('main.search_solutions') }}";
                     } else if (mobileSearchScope === 'both') {
                         actionUrl = "{{ url_for('main.search_combined') }}";
                     }
-                    window.location.href = `${actionUrl}?q=${encodeURIComponent(query)}`;
+                    
+                    // Create hidden form for POST submission
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = actionUrl;
+                    
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrf_token';
+                    csrfInput.value = '{{ csrf_token() }}';
+                    
+                    const queryInput = document.createElement('input');
+                    queryInput.type = 'hidden';
+                    queryInput.name = 'q';
+                    queryInput.value = query;
+                    
+                    form.appendChild(csrfInput);
+                    form.appendChild(queryInput);
+                    document.body.appendChild(form);
+                    form.submit();
                 }
             }
 
@@ -1184,6 +1267,7 @@
                     } else {
                         form.action = "{{ url_for('main.search') }}";
                     }
+                    // Form already uses POST method, so no need to change
                 });
             }
 
