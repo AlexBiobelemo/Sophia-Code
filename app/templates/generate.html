@@ -86,8 +86,8 @@
                 <!-- Streaming Container -->
                 <div id="streaming-container"></div>
 
-                <!-- Multi-Step Progress Display -->
-                <div id="multiStepProgress" class="mt-4" style="display: none;">
+                <!-- Multi-Step Progress Display (hidden by default, shown when enabled) -->
+                <div id="multiStepProgress" class="mt-4" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Multi-Step Solving Process</h5>
@@ -96,8 +96,8 @@
                             </div>
                             <div id="layerStatus">
                                 <p class="mb-1"><strong>Current Step:</strong> <span
-                                        id="currentLayer">Preparing...</span></p>
-                                <p class="mb-0 text-muted small" id="layerDescription"></p>
+                                        id="currentLayer">Waiting to start...</span></p>
+                                <p class="mb-0 text-muted small" id="layerDescription">Enable Multi-Step Thinking to see detailed progress</p>
                             </div>
                         </div>
                     </div>
@@ -135,7 +135,11 @@
                         multiStepToggle.addEventListener('change', function () {
                             if (this.checked) {
                                 multiStepFields.style.display = 'block';
+                                // Smooth fade in for progress display
                                 multiStepProgress.style.display = 'block';
+                                setTimeout(() => {
+                                    multiStepProgress.style.opacity = '1';
+                                }, 10);
                                 generateButtonText.textContent = 'Generate with Multi-Step Thinking';
 
                                 // Disable streaming when multi-step is enabled
@@ -143,8 +147,12 @@
                                     streamingToggle.checked = false;
                                 }
                             } else {
-                                multiStepFields.style.display = 'none';
-                                multiStepProgress.style.display = 'none';
+                                // Smooth fade out for progress display
+                                multiStepProgress.style.opacity = '0';
+                                setTimeout(() => {
+                                    multiStepFields.style.display = 'none';
+                                    multiStepProgress.style.display = 'none';
+                                }, 300);
                                 generateButtonText.textContent = streamingToggle.checked ? 'Generate with Streaming' : 'Generate';
                             }
                         });

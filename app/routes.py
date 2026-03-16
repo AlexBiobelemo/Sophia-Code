@@ -386,22 +386,13 @@ def create_snippet():
         if generated_code_key:
             generated_code = session.get(f'generated_code_{generated_code_key}')
             generated_explanation = session.get(f'generated_explanation_{generated_code_key}')
+            thinking_steps = session.get(f'generated_thinking_steps_{generated_code_key}')
             if generated_code:
                 form.code.data = generated_code
             if generated_explanation:
                 form.description.data = generated_explanation
-            # Clean up session data after use
-            session.pop(f'generated_code_{generated_code_key}', None)
-            session.pop(f'generated_explanation_{generated_code_key}', None)
-            session.pop(f'generated_code_timestamp_{generated_code_key}', None)
-        else:
-            # Fallback to old URL parameter method (for backward compatibility)
-            generated_code = request.args.get('generated_code')
-            generated_explanation = request.args.get('generated_explanation')
-            if generated_code:
-                form.code.data = generated_code
-            if generated_explanation:
-                form.description.data = generated_explanation
+            # Store the key in a hidden form field for POST submission
+            # Don't clean up session yet - we need thinking_steps for POST
 
     if form.validate_on_submit():
         collection_id = form.collection.data if form.collection.data != 0 else None
@@ -414,15 +405,25 @@ def create_snippet():
             language=form.language.data,
             collection_id=collection_id
         )
-        # Handle thinking_steps if provided from multi-step generation
-        thinking_steps = request.args.get('thinking_steps')
-        if thinking_steps:
-            try:
-                import json
-                snippet.thought_steps = json.loads(thinking_steps)
-            except (json.JSONDecodeError, TypeError):
-                # If invalid JSON, store as None or empty dict
-                snippet.thought_steps = None
+        # Handle thinking_steps from session (for multi-step generation)
+        # Check if there's a pending code key in the request
+        generated_code_key = request.args.get('generated_code_key') or request.form.get('generated_code_key')
+        if generated_code_key:
+            thinking_steps = session.get(f'generated_thinking_steps_{generated_code_key}')
+            if thinking_steps:
+                snippet.thought_steps = thinking_steps
+                # Clean up thinking steps after use
+                session.pop(f'generated_thinking_steps_{generated_code_key}', None)
+        else:
+            # Fallback to old URL parameter method (for backward compatibility)
+            thinking_steps = request.args.get('thinking_steps')
+            if thinking_steps:
+                try:
+                    import json
+                    snippet.thought_steps = json.loads(thinking_steps)
+                except (json.JSONDecodeError, TypeError):
+                    # If invalid JSON, store as None or empty dict
+                    snippet.thought_steps = None
         try:
             snippet.generate_and_set_embedding()
         except Exception as e:
@@ -442,18 +443,25 @@ def create_snippet():
         db.session.commit()
         current_app.award_points(current_user, 10, "Snippet Created") # Award points for creating a snippet
         check_and_award_badges(current_user) # Check and award badges
-        
+
+        # Clean up session data after successful snippet creation
+        if generated_code_key:
+            session.pop(f'generated_code_{generated_code_key}', None)
+            session.pop(f'generated_explanation_{generated_code_key}', None)
+            session.pop(f'generated_code_timestamp_{generated_code_key}', None)
+            session.pop(f'generated_thinking_steps_{generated_code_key}', None)
+
         # Trigger backup after snippet creation
         try:
             from database_backup import increment_snippet_save_counter
             increment_snippet_save_counter()
         except Exception as e:
             current_app.logger.warning(f"Backup trigger failed (create_snippet): {e}")
-            
+
         flash('Your snippet has been saved!', 'success')
         return redirect(url_for('main.index'))
 
-    return render_template('create_snippet.html', title='Create Snippet', form=form)
+    return render_template('create_snippet.html', title='Create Snippet', form=form, generated_code_key=generated_code_key)
 
 
 @bp.route('/snippet/<int:snippet_id>/edit', methods=['GET', 'POST'])
@@ -772,18 +780,64 @@ def multi_step_results(result_id):
                 MultiStepResult.user_id == current_user.id
             )
         )
-        
+
         if not result_record:
             current_app.logger.warning(f"Result ID {result_id} not found in database")
             flash('Results not found or expired.', 'warning')
             return redirect(url_for('main.generate'))
-        
+
         return render_template('multi_step_results.html', title='Multi-Step Results', result=result_record)
-        
+
     except Exception as e:
         current_app.logger.error(f"Failed to display multi-step results: {e}")
         flash('Error loading results.', 'danger')
         return redirect(url_for('main.generate'))
+
+
+@bp.route('/save_multi_step_as_snippet', methods=['POST'])
+@login_required
+def save_multi_step_as_snippet():
+    """Handle saving multi-step AI generated code as a snippet (avoids URL size limits)."""
+    from flask import session
+    import hashlib
+    
+    result_id = request.form.get('result_id')
+    full_description = request.form.get('full_description')
+    
+    if not result_id:
+        flash('Invalid request - missing result ID.', 'danger')
+        return redirect(url_for('main.generate'))
+    
+    # Query database for multi-step result
+    result_record = db.session.scalar(
+        sa.select(MultiStepResult).where(
+            MultiStepResult.result_id == result_id,
+            MultiStepResult.user_id == current_user.id
+        )
+    )
+    
+    if not result_record or not result_record.final_code:
+        flash('Results not found or no code to save.', 'warning')
+        return redirect(url_for('main.generate'))
+    
+    # Store in session to avoid URL size limits
+    code_key = hashlib.sha256(f"{current_user.id}-{time.time()}".encode()).hexdigest()[:16]
+    session[f'generated_code_{code_key}'] = result_record.final_code
+    session[f'generated_explanation_{code_key}'] = full_description or 'Multi-Step AI Generated Solution'
+    session[f'generated_code_timestamp_{code_key}'] = time.time()
+    
+    # Also store thinking steps if available
+    thinking_steps = {
+        'layer1': result_record.layer1_architecture,
+        'layer2': result_record.layer2_coder,
+        'layer3': result_record.layer3_tester,
+        'layer4': result_record.layer4_refiner
+    }
+    session[f'generated_thinking_steps_{code_key}'] = thinking_steps
+    
+    # Redirect to create snippet with the key
+    return redirect(url_for('main.create_snippet', generated_code_key=code_key))
+
 
 
 @bp.route('/explain', methods=['POST'])

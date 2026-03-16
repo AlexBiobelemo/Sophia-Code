@@ -73,6 +73,9 @@
 
                 <form method="POST" action="" novalidate>
                     {{ form.hidden_tag() }}
+                    {% if generated_code_key %}
+                    <input type="hidden" name="generated_code_key" value="{{ generated_code_key }}">
+                    {% endif %}
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             {{ form.title.label(class="form-label") }}

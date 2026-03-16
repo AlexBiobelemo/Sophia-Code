@@ -173,14 +173,15 @@
                         'layer3': result.layer3_tester,
                         'layer4': result.layer4_refiner
                         } %}
-                        <a href="{{ url_for('main.create_snippet',
-                                             generated_code=result.final_code,
-                                             generated_explanation=full_description,
-                                             thinking_steps=thinking_steps|tojson) }}"
-                            class="btn btn-success btn-lg me-3" data-bs-toggle="tooltip"
-                            title="Save this AI-generated solution as a code snippet for future reference">
-                            <i class="fas fa-save me-2"></i>Save as Snippet
-                        </a>
+                        <!-- Save as Snippet button - uses session storage to avoid URL size limits -->
+                        <form method="POST" action="{{ url_for('main.save_multi_step_as_snippet') }}" style="display: inline;">
+                            <input type="hidden" name="result_id" value="{{ result.result_id }}">
+                            <input type="hidden" name="full_description" value="{{ full_description }}">
+                            <button type="submit" class="btn btn-success btn-lg me-3" data-bs-toggle="tooltip"
+                                title="Save this AI-generated solution as a code snippet for future reference">
+                                <i class="fas fa-save me-2"></i>Save as Snippet
+                            </button>
+                        </form>
                         {% endif %}
                         <button class="btn btn-outline-secondary btn-lg me-3" onclick="shareResults()"
                             data-bs-toggle="tooltip" title="Share these results with others via link or social media">
