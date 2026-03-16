@@ -2869,3 +2869,38 @@ a:focus-visible {
 .btn-group .btn {
     text-align: center;
 }
+
+/* ========================================
+   COLLECTIONS PAGE
+   ======================================== */
+
+.collections-list {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.list-group-item {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.3);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    border-left: none;
+    border-right: none;
+    padding: 1rem 1.25rem;
+    transition: all var(--transition-fast);
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:hover {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+}
+
+.collection-actions .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.collection-actions .btn i {
+    font-size: 0.875rem;
+}
