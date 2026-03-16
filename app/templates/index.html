@@ -349,53 +349,79 @@
     </div>
 
     <!-- Action Bar -->
-    <div class="d-flex justify-content-center mb-4">
-        <a href="{{ url_for('main.create_snippet') }}" class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-lg me-2"></i>New Snippet
-        </a>
+    <div class="card ai-snippet-card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ url_for('main.create_snippet') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-2"></i>New Snippet
+                </a>
+                <span class="badge bg-primary bg-opacity-10 text-primary">{{ snippets.total }} total</span>
+            </div>
+            <!-- View Toggle -->
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary view-toggle-btn active" data-view="grid" title="Grid view">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary view-toggle-btn" data-view="list" title="List view">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+            </div>
+        </div>
     </div>
 
     {% if snippets and snippets.items %}
-    <div class="row g-4">
+    <!-- Snippets Container -->
+    <div class="snippets-container grid-view" id="snippets-container">
         {% for snippet in snippets.items %}
-        <div class="col-md-6 col-lg-4">
-            <div class="card ai-snippet-card h-100 hover-lift">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 text-truncate" style="max-width: 70%;">{{ snippet.title }}</h5>
-                    {% if snippet.collection %}
-                    <span class="badge bg-primary bg-opacity-10 text-primary">{{ snippet.collection.name }}</span>
-                    {% endif %}
+        <div class="snippet-item" data-snippet-id="{{ snippet.id }}">
+            <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="snippet-link">
+                <div class="snippet-icon">
+                    <i class="bi bi-filetype-{{ snippet.language }} text-primary"></i>
                 </div>
-                <div class="card-body">
-                    <p class="card-text text-muted mb-3">
-                        {{ snippet.description | striptags | truncate(120) or 'No description provided.' }}
-                    </p>
-                    <div class="d-flex gap-2 flex-wrap mb-3">
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary">
-                            <i class="bi bi-filetype-{{ snippet.language }} me-1"></i>{{ snippet.language }}
+                <div class="snippet-info">
+                    <div class="snippet-title" title="{{ snippet.title }}">
+                        {{ snippet.title }}
+                    </div>
+                    <div class="snippet-meta">
+                        {% if snippet.collection %}
+                        <span class="snippet-collection">
+                            <i class="bi bi-folder me-1"></i>{{ snippet.collection.name }}
                         </span>
-                        {% if snippet.tags %}
-                        {% for tag in snippet.tags.split(',')[:3] %}
-                        <span class="badge bg-outline-secondary text-muted">{{ tag.strip() }}</span>
-                        {% endfor %}
                         {% endif %}
+                        <span class="snippet-language">{{ snippet.language }}</span>
                     </div>
                 </div>
-                <div class="card-footer bg-transparent border-0 pb-3">
-                    <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-outline-primary btn-sm w-100">
-                        <i class="bi bi-eye me-2"></i>View Snippet
-                    </a>
-                </div>
+            </a>
+            <div class="snippet-actions">
+                <a href="{{ url_for('main.edit_snippet', snippet_id=snippet.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                </a>
+                <form action="{{ url_for('main.delete_snippet', snippet_id=snippet.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this snippet?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
             </div>
         </div>
         {% endfor %}
     </div>
 
-    {% if snippets.pages > 1 %}
-    {% with pagination=snippets, endpoint='main.index' %}
-    {% include '_pagination.html' %}
-    {% endwith %}
-    {% endif %}
+    <!-- Infinite Scroll Loader -->
+    <div class="text-center py-4" id="infinite-scroll-loader" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-2">Loading more snippets...</p>
+    </div>
+
+    <!-- Load More Button (fallback) -->
+    <div class="text-center py-4" id="load-more-container">
+        {% if snippets.pages > 1 %}
+        <button id="load-more-btn" class="btn btn-outline-primary btn-lg" data-page="1">
+            <i class="bi bi-arrow-down-circle me-2"></i>Load More
+        </button>
+        {% endif %}
+    </div>
 
     {% else %}
     <!-- Empty State -->
@@ -415,5 +441,396 @@
     </div>
     {% endif %}
 </div>
+
+<style>
+    /* Snippets Container */
+    .snippets-container {
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+    }
+
+    /* Grid View (Default) */
+    .snippets-container.grid-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .snippets-container.grid-view .snippet-item {
+        display: flex;
+        flex-direction: column;
+        background: rgba(var(--bs-card-bg-rgb), 0.5);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        transition: all var(--transition-base);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .snippets-container.grid-view .snippet-item:hover {
+        transform: translateY(-4px);
+        border-color: rgba(var(--bs-primary-rgb), 0.3);
+        box-shadow: 0 8px 24px rgba(var(--bs-primary-rgb), 0.15);
+    }
+
+    .snippets-container.grid-view .snippet-link {
+        display: flex;
+        gap: 1rem;
+        text-decoration: none;
+        color: var(--bs-body-color);
+        margin-bottom: 1rem;
+    }
+
+    .snippets-container.grid-view .snippet-icon {
+        font-size: 2.5rem;
+        width: 3.5rem;
+        height: 3.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--bs-primary-rgb), 0.1);
+        border-radius: var(--radius-lg);
+        flex-shrink: 0;
+    }
+
+    .snippets-container.grid-view .snippet-info {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .snippets-container.grid-view .snippet-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--bs-body-color);
+    }
+
+    .snippets-container.grid-view .snippet-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .snippets-container.grid-view .snippet-collection,
+    .snippets-container.grid-view .snippet-language {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .snippets-container.grid-view .snippet-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+        margin-top: auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    }
+
+    /* List View */
+    .snippets-container.list-view {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .snippets-container.list-view .snippet-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.25rem;
+        background: rgba(var(--bs-secondary-bg-rgb), 0.3);
+        border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+        border-radius: var(--radius-md);
+        transition: all var(--transition-fast);
+    }
+
+    .snippets-container.list-view .snippet-item:hover {
+        background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+        border-color: rgba(var(--bs-primary-rgb), 0.3);
+    }
+
+    .snippets-container.list-view .snippet-link {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-grow: 1;
+        text-decoration: none;
+        color: var(--bs-body-color);
+        min-width: 0;
+    }
+
+    .snippets-container.list-view .snippet-icon {
+        font-size: 1.5rem;
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--bs-primary-rgb), 0.1);
+        border-radius: var(--radius-md);
+        flex-shrink: 0;
+    }
+
+    .snippets-container.list-view .snippet-info {
+        flex-grow: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .snippets-container.list-view .snippet-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex-grow: 1;
+        color: var(--bs-body-color);
+    }
+
+    .snippets-container.list-view .snippet-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: var(--bs-secondary-color);
+        flex-shrink: 0;
+    }
+
+    .snippets-container.list-view .snippet-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    /* Marquee Title for Long Titles */
+    .snippet-title-marquee {
+        overflow: hidden;
+        white-space: nowrap;
+        position: relative;
+    }
+
+    .snippet-title-marquee .marquee-text {
+        display: inline-block;
+        animation: marquee 15s linear infinite;
+        padding-left: 0;
+    }
+
+    .snippet-title-marquee:hover .marquee-text {
+        animation-play-state: paused;
+    }
+
+    @keyframes marquee {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    /* View Toggle Buttons */
+    .view-toggle-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .view-toggle-btn.active {
+        background: rgba(var(--bs-primary-rgb), 0.2);
+        border-color: var(--bs-primary);
+        color: var(--bs-primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .snippets-container.grid-view {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .snippets-container.list-view .snippet-item {
+            flex-wrap: wrap;
+        }
+        
+        .snippets-container.list-view .snippet-info {
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+        
+        .snippets-container.list-view .snippet-meta {
+            width: 100%;
+            justify-content: flex-start;
+        }
+        
+        .snippets-container.list-view .snippet-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+</style>
+
+<script>
+    // View Toggle (Grid/List)
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtns = document.querySelectorAll('.view-toggle-btn');
+        const container = document.getElementById('snippets-container');
+
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                
+                // Update active state
+                toggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Toggle view
+                if (view === 'list') {
+                    container.classList.remove('grid-view');
+                    container.classList.add('list-view');
+                } else {
+                    container.classList.remove('list-view');
+                    container.classList.add('grid-view');
+                }
+                
+                // Save preference
+                localStorage.setItem('snippets_view', view);
+            });
+        });
+
+        // Restore saved preference
+        const savedView = localStorage.getItem('snippets_view');
+        if (savedView === 'list') {
+            const listBtn = document.querySelector('[data-view="list"]');
+            if (listBtn) listBtn.click();
+        }
+        
+        // Apply marquee effect to long titles
+        applyMarqueeToLongTitles();
+    });
+
+    // Apply marquee effect to titles longer than 50 characters
+    function applyMarqueeToLongTitles() {
+        const titles = document.querySelectorAll('.snippet-title');
+        const MAX_LENGTH = 50; // Characters before marquee kicks in
+        
+        titles.forEach(titleEl => {
+            const text = titleEl.textContent.trim();
+            if (text.length > MAX_LENGTH && !titleEl.classList.contains('snippet-title-marquee')) {
+                titleEl.classList.add('snippet-title-marquee');
+                // Duplicate text for seamless scrolling
+                const marqueeText = document.createElement('span');
+                marqueeText.className = 'marquee-text';
+                marqueeText.textContent = text + '  •  ' + text;
+                titleEl.innerHTML = '';
+                titleEl.appendChild(marqueeText);
+            }
+        });
+    }
+
+    // Infinite Scroll Pagination
+    document.addEventListener('DOMContentLoaded', () => {
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const loader = document.getElementById('infinite-scroll-loader');
+        const container = document.getElementById('snippets-container');
+        
+        if (!loadMoreBtn || !container) return;
+
+        let currentPage = parseInt(loadMoreBtn.dataset.page) || 1;
+        let isLoading = false;
+
+        // Load more function
+        async function loadMoreSnippets() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            loader.style.display = 'block';
+            loadMoreBtn.disabled = true;
+
+            try {
+                currentPage++;
+                const url = window.location.pathname + `?page=${currentPage}&partial=1`;
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const html = await response.text();
+                
+                // Parse the response and extract snippet items
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newItems = doc.querySelectorAll('.snippet-item');
+                
+                if (newItems.length > 0) {
+                    newItems.forEach(item => {
+                        const clone = item.cloneNode(true);
+                        container.appendChild(clone);
+                        
+                        // Apply marquee to new items
+                        const titleEl = clone.querySelector('.snippet-title');
+                        if (titleEl) {
+                            const text = titleEl.textContent.trim();
+                            const MAX_LENGTH = 50;
+                            if (text.length > MAX_LENGTH && !titleEl.classList.contains('snippet-title-marquee')) {
+                                titleEl.classList.add('snippet-title-marquee');
+                                const marqueeText = document.createElement('span');
+                                marqueeText.className = 'marquee-text';
+                                marqueeText.textContent = text + '  •  ' + text;
+                                titleEl.innerHTML = '';
+                                titleEl.appendChild(marqueeText);
+                            }
+                        }
+                    });
+                    loadMoreBtn.dataset.page = currentPage;
+                    
+                    // Check if there are more pages
+                    const hasNextPage = doc.querySelector('#load-more-btn');
+                    if (!hasNextPage) {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                } else {
+                    loadMoreBtn.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading more snippets:', error);
+                alert('Failed to load more snippets. Please try again.');
+            } finally {
+                isLoading = false;
+                loader.style.display = 'none';
+                loadMoreBtn.disabled = false;
+            }
+        }
+
+        // Infinite scroll using Intersection Observer
+        const observer = new IntersectionObserver((entries) => {
+            const entry = entries[0];
+            if (entry.isIntersecting && loadMoreBtn.style.display !== 'none') {
+                loadMoreSnippets();
+            }
+        }, {
+            rootMargin: '200px'
+        });
+
+        // Observe the load more button
+        observer.observe(loadMoreBtn);
+
+        // Also allow manual click
+        loadMoreBtn.addEventListener('click', loadMoreSnippets);
+    });
+</script>
 {% endblock %}
 {% endif %}

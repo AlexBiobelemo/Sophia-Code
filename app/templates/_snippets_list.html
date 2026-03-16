@@ -1,20 +1,33 @@
+{# Partial template for infinite scroll pagination #}
 {% for snippet in snippets %}
-<div class="card mb-3 snippet-card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <div class="form-check">
-      <input class="form-check-input snippet-checkbox" type="checkbox" name="snippet_ids" value="{{ snippet.id }}" id="snippet-{{ snippet.id }}">
-      <label class="form-check-label" for="snippet-{{ snippet.id }}">
-        {{ snippet.title }}
-      </label>
+<div class="snippet-item" data-snippet-id="{{ snippet.id }}">
+    <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="snippet-link">
+        <div class="snippet-icon">
+            <i class="bi bi-filetype-{{ snippet.language }} text-primary"></i>
+        </div>
+        <div class="snippet-info">
+            <div class="snippet-title" title="{{ snippet.title }}">
+                {{ snippet.title }}
+            </div>
+            <div class="snippet-meta">
+                {% if snippet.collection %}
+                <span class="snippet-collection">
+                    <i class="bi bi-folder me-1"></i>{{ snippet.collection.name }}
+                </span>
+                {% endif %}
+                <span class="snippet-language">{{ snippet.language }}</span>
+            </div>
+        </div>
+    </a>
+    <div class="snippet-actions">
+        <a href="{{ url_for('main.edit_snippet', snippet_id=snippet.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+            <i class="bi bi-pencil"></i>
+        </a>
+        <form action="{{ url_for('main.delete_snippet', snippet_id=snippet.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this snippet?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+            </button>
+        </form>
     </div>
-    <small class="text-muted d-flex gap-2">
-      {% if snippet.language %}<span>{{ snippet.language }}</span>{% endif %}
-      {% if snippet.collection %}<span>In: {{ snippet.collection.name }}</span>{% endif %}
-    </small>
-  </div>
-  <div class="card-body">
-    <p class="card-text">{{ snippet.description | striptags | truncate(150) or 'No description provided.' }}</p>
-    <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-primary">View Snippet</a>
-  </div>
 </div>
 {% endfor %}
