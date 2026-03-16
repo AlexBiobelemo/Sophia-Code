@@ -341,14 +341,16 @@
 {% block content %}
 <div class="page-container">
     <!-- Page Header -->
-    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-        <div>
-            <h1 class="page-title mb-1">
-                <i class="bi bi-collection me-2"></i>Your Snippets
-            </h1>
-            <p class="page-subtitle">Manage and organize your code collection</p>
-        </div>
-        <a href="{{ url_for('main.create_snippet') }}" class="btn btn-primary">
+    <div class="page-header text-center mb-4">
+        <h1 class="page-title">
+            <i class="bi bi-collection me-2"></i>Your Snippets
+        </h1>
+        <p class="page-subtitle">Manage and organize your code collection</p>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="d-flex justify-content-center mb-4">
+        <a href="{{ url_for('main.create_snippet') }}" class="btn btn-primary btn-lg">
             <i class="bi bi-plus-lg me-2"></i>New Snippet
         </a>
     </div>
@@ -357,7 +359,7 @@
     <div class="row g-4">
         {% for snippet in snippets.items %}
         <div class="col-md-6 col-lg-4">
-            <div class="card h-100 hover-lift">
+            <div class="card ai-snippet-card h-100 hover-lift">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-truncate" style="max-width: 70%;">{{ snippet.title }}</h5>
                     {% if snippet.collection %}
@@ -368,13 +370,13 @@
                     <p class="card-text text-muted mb-3">
                         {{ snippet.description | striptags | truncate(120) or 'No description provided.' }}
                     </p>
-                    <div class="d-flex gap-2 flex-wrap">
+                    <div class="d-flex gap-2 flex-wrap mb-3">
                         <span class="badge bg-secondary bg-opacity-10 text-secondary">
                             <i class="bi bi-filetype-{{ snippet.language }} me-1"></i>{{ snippet.language }}
                         </span>
                         {% if snippet.tags %}
                         {% for tag in snippet.tags.split(',')[:3] %}
-                        <span class="badge bg-outline-info text-info">{{ tag.strip() }}</span>
+                        <span class="badge bg-outline-secondary text-muted">{{ tag.strip() }}</span>
                         {% endfor %}
                         {% endif %}
                     </div>
@@ -397,7 +399,7 @@
 
     {% else %}
     <!-- Empty State -->
-    <div class="card">
+    <div class="card ai-snippet-card">
         <div class="card-body text-center py-5">
             <div class="empty-state">
                 <div class="empty-state-icon">

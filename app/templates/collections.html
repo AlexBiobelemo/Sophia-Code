@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-container">
     <!-- Page Header -->
-    <div class="page-header mb-4">
+    <div class="page-header text-center mb-4">
         <h1 class="page-title">
             <i class="bi bi-folder2-open me-2"></i>Collections
         </h1>
@@ -48,30 +48,40 @@
             </div>
         </div>
 
-        <!-- Collections List -->
+        <!-- Collections List/Grid -->
         <div class="col-lg-8">
             <div class="card ai-form-card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-collection me-2"></i>My Collections</span>
-                    <span class="badge bg-primary bg-opacity-10 text-primary">
-                        {{ total_snippets_count }} problems solved
-                    </span>
+                    <div>
+                        <i class="bi bi-collection me-2"></i>My Collections
+                        <span class="badge bg-primary bg-opacity-10 text-primary ms-2">
+                            {{ total_snippets_count }} problems solved
+                        </span>
+                    </div>
+                    <!-- View Toggle -->
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary view-toggle-btn active" data-view="list" title="List view">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary view-toggle-btn" data-view="grid" title="Grid view">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     {% if collections %}
-                        <div class="list-group list-group-flush" id="collections-list">
+                        <div class="collections-container list-view" id="collections-container">
                             {% for item in collections %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center gap-3" data-collection-id="{{ item.collection.id }}">
-                                    <a href="{{ url_for('main.view_collection', collection_id=item.collection.id) }}" class="text-decoration-none flex-grow-1">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <i class="bi bi-folder-fill text-warning fs-5"></i>
-                                            <div>
-                                                <div class="fw-semibold">{{ item.collection.name }}</div>
-                                                <small class="text-muted">{{ item.snippet_count }} snippets</small>
-                                            </div>
+                                <div class="collection-item" data-collection-id="{{ item.collection.id }}">
+                                    <a href="{{ url_for('main.view_collection', collection_id=item.collection.id) }}" class="collection-link">
+                                        <div class="collection-icon">
+                                            <i class="bi bi-folder-fill text-warning"></i>
+                                        </div>
+                                        <div class="collection-info">
+                                            <div class="collection-name">{{ item.collection.name }}</div>
+                                            <div class="collection-count">{{ item.snippet_count }} snippets</div>
                                         </div>
                                     </a>
-                                    
                                     <div class="collection-actions d-flex gap-2">
                                         <button class="btn btn-sm btn-outline-secondary move-up-btn" title="Move up">
                                             <i class="bi bi-arrow-up"></i>
@@ -123,20 +133,55 @@
         }
     });
 
+    // View Toggle (List/Grid)
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtns = document.querySelectorAll('.view-toggle-btn');
+        const container = document.getElementById('collections-container');
+
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const view = btn.dataset.view;
+                
+                // Update active state
+                toggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Toggle view
+                if (view === 'grid') {
+                    container.classList.remove('list-view');
+                    container.classList.add('grid-view');
+                } else {
+                    container.classList.remove('grid-view');
+                    container.classList.add('list-view');
+                }
+                
+                // Save preference
+                localStorage.setItem('collections_view', view);
+            });
+        });
+
+        // Restore saved preference
+        const savedView = localStorage.getItem('collections_view');
+        if (savedView === 'grid') {
+            const gridBtn = document.querySelector('[data-view="grid"]');
+            if (gridBtn) gridBtn.click();
+        }
+    });
+
     // Collection reordering
     document.addEventListener('DOMContentLoaded', () => {
-        const collectionList = document.getElementById('collections-list');
+        const collectionContainer = document.getElementById('collections-container');
 
-        if (collectionList) {
-            collectionList.addEventListener('click', async (event) => {
+        if (collectionContainer) {
+            collectionContainer.addEventListener('click', async (event) => {
                 const target = event.target.closest('button');
                 if (!target) return;
 
-                const listItem = target.closest('.list-group-item');
-                if (!listItem) return;
+                const collectionItem = target.closest('.collection-item');
+                if (!collectionItem) return;
 
-                const collectionId = listItem.dataset.collectionId;
-                const currentOrder = Array.from(collectionList.children).map(item => item.dataset.collectionId);
+                const collectionId = collectionItem.dataset.collectionId;
+                const currentOrder = Array.from(collectionContainer.children).map(item => item.dataset.collectionId);
                 let newOrder = [...currentOrder];
                 const currentIndex = newOrder.indexOf(collectionId);
 
@@ -151,10 +196,10 @@
                 // Update DOM
                 const fragment = document.createDocumentFragment();
                 newOrder.forEach(id => {
-                    const item = collectionList.querySelector(`[data-collection-id="${id}"]`);
+                    const item = collectionContainer.querySelector(`[data-collection-id="${id}"]`);
                     if (item) fragment.appendChild(item);
                 });
-                collectionList.appendChild(fragment);
+                collectionContainer.appendChild(fragment);
 
                 updateButtonStates();
 
@@ -178,7 +223,7 @@
             });
 
             function updateButtonStates() {
-                const items = Array.from(collectionList.children);
+                const items = Array.from(collectionContainer.children);
                 items.forEach((item, index) => {
                     const moveUpBtn = item.querySelector('.move-up-btn');
                     const moveDownBtn = item.querySelector('.move-down-btn');

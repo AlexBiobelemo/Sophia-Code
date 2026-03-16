@@ -333,7 +333,7 @@
             <div class="sidebar-header">
                 <a href="{{ url_for('main.index') }}" class="sidebar-brand">
                     <i class="bi bi-lightbulb"></i>
-                    Sophia
+                    <span class="sidebar-brand-text">Sophia</span>
                 </a>
                 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
                     <i class="bi bi-chevron-left"></i>
@@ -1045,58 +1045,78 @@
             const toastContainer = document.querySelector('.toast-container');
 
             // HYBRID NAVIGATION JAVASCRIPT
-            // Collapsible Desktop Sidebar
+            // Collapsible Desktop Sidebar with Auto-Expand on Hover
             const sidebar = document.querySelector('.sidebar');
             const sidebarToggle = document.getElementById('sidebarToggle');
             const mainWrapper = document.querySelector('.main-wrapper');
 
             let autoCollapseTimeout;
+            let autoExpandTimeout;
+            let isManuallyCollapsed = false;
 
             // Auto-collapse functionality
             function startAutoCollapseTimer() {
                 clearTimeout(autoCollapseTimeout);
+                clearTimeout(autoExpandTimeout);
+                
+                if (isManuallyCollapsed) return; // Don't auto-collapse if manually collapsed
+                
                 autoCollapseTimeout = setTimeout(() => {
                     if (window.innerWidth >= 992 && !sidebar.classList.contains('collapsed')) {
-                        toggleDesktopSidebar();
+                        sidebar.classList.add('collapsed');
+                        updateSidebarState(true);
                     }
                 }, 5000);
             }
 
+            // Auto-expand on hover (after 2 seconds)
+            function startAutoExpandTimer() {
+                if (isManuallyCollapsed) return; // Don't auto-expand if manually collapsed
+                
+                clearTimeout(autoExpandTimeout);
+                autoExpandTimeout = setTimeout(() => {
+                    if (window.innerWidth >= 992 && sidebar.classList.contains('collapsed')) {
+                        sidebar.classList.remove('collapsed');
+                        updateSidebarState(false);
+                    }
+                }, 2000);
+            }
+
             function resetAutoCollapseTimer() {
+                clearTimeout(autoExpandTimeout);
                 startAutoCollapseTimer();
             }
 
-            function toggleDesktopSidebar() {
-                sidebar.classList.toggle('collapsed');
-                const isCollapsed = sidebar.classList.contains('collapsed');
-
+            function updateSidebarState(isCollapsed) {
                 // Update toggle button icon
                 const toggleIcon = sidebarToggle.querySelector('i');
-                if (isCollapsed) {
-                    toggleIcon.className = 'bi bi-chevron-right';
-                } else {
-                    toggleIcon.className = 'bi bi-chevron-left';
-                }
+                toggleIcon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
 
                 // Save state to localStorage
                 localStorage.setItem('sidebarCollapsed', isCollapsed);
+                localStorage.setItem('sidebarManuallyCollapsed', isManuallyCollapsed);
 
-                // Update main wrapper margins (only margin-left, let CSS handle width)
+                // Update main wrapper margins
                 if (window.innerWidth >= 992) {
-                    if (isCollapsed) {
-                        mainWrapper.style.marginLeft = '60px';
-                        // Clear auto-collapse when manually collapsed
-                        clearTimeout(autoCollapseTimeout);
-                    } else {
-                        mainWrapper.style.marginLeft = '280px';
-                        // Reset auto-collapse timer when expanded
-                        startAutoCollapseTimer();
-                    }
+                    mainWrapper.style.marginLeft = isCollapsed ? '60px' : '280px';
+                }
+            }
+
+            function toggleDesktopSidebar() {
+                isManuallyCollapsed = !sidebar.classList.contains('collapsed');
+                sidebar.classList.toggle('collapsed');
+                updateSidebarState(isManuallyCollapsed);
+                
+                if (!isManuallyCollapsed) {
+                    startAutoCollapseTimer();
                 }
             }
 
             function initializeSidebarState() {
                 const savedState = localStorage.getItem('sidebarCollapsed');
+                const savedManualState = localStorage.getItem('sidebarManuallyCollapsed');
+                isManuallyCollapsed = savedManualState === 'true';
+                
                 if (savedState === 'true') {
                     sidebar.classList.add('collapsed');
                     const toggleIcon = sidebarToggle.querySelector('i');
@@ -1117,16 +1137,9 @@
             function handleResize() {
                 if (window.innerWidth >= 992) {
                     const isCollapsed = sidebar.classList.contains('collapsed');
-                    if (isCollapsed) {
-                        mainWrapper.style.marginLeft = '60px';
-                        mainWrapper.style.width = 'calc(100% - 60px)';
-                    } else {
-                        mainWrapper.style.marginLeft = '280px';
-                        mainWrapper.style.width = 'calc(100% - 280px)';
-                    }
+                    mainWrapper.style.marginLeft = isCollapsed ? '60px' : '280px';
                 } else {
                     mainWrapper.style.marginLeft = '0';
-                    mainWrapper.style.width = '100%';
                 }
             }
 
@@ -1135,8 +1148,16 @@
                 initializeSidebarState();
                 sidebarToggle.addEventListener('click', toggleDesktopSidebar);
 
+                // Auto-expand on hover
+                sidebar.addEventListener('mouseenter', startAutoExpandTimer);
+                sidebar.addEventListener('mouseleave', () => {
+                    clearTimeout(autoExpandTimeout);
+                    if (!isManuallyCollapsed) {
+                        startAutoCollapseTimer();
+                    }
+                });
+
                 // Track user activity and reset auto-collapse timer
-                sidebar.addEventListener('mouseenter', resetAutoCollapseTimer);
                 sidebar.addEventListener('mousemove', resetAutoCollapseTimer);
                 sidebar.addEventListener('click', resetAutoCollapseTimer);
 
