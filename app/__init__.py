@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_moment import Moment # Import Flask-Moment
+from flask_wtf.csrf import CSRFProtect
 import sqlalchemy as sa # Import sqlalchemy
 import time, uuid
 import markdown
@@ -25,6 +26,7 @@ login_manager = LoginManager()
 login_manager.login_view = 'main.login' # The route for the login page
 login_manager.login_message_category = 'info' # Flash message category
 moment = Moment() # Initialize Flask-Moment
+csrf = CSRFProtect() # Initialize CSRFProtect
 
 
 def create_app(config_class=Config):
@@ -42,6 +44,7 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     login_manager.init_app(app)
     moment.init_app(app) # Initialize Flask-Moment
+    csrf.init_app(app) # Initialize CSRFProtect
 
     # Register custom Jinja filters
     @app.template_filter('markdown_to_html')
