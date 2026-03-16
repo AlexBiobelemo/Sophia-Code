@@ -2904,3 +2904,78 @@ a:focus-visible {
 .collection-actions .btn i {
     font-size: 0.875rem;
 }
+
+/* ========================================
+   VIEW SNIPPET PAGE
+   ======================================== */
+
+.ai-snippet-card {
+    background: rgba(var(--bs-card-bg-rgb), 0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+}
+
+.ai-snippet-card .card-header {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    font-weight: 600;
+}
+
+/* Code Block Styling */
+.ai-snippet-card pre {
+    margin: 0;
+    border-radius: 0;
+    background: rgba(var(--bs-secondary-bg-rgb), 0.3);
+}
+
+.ai-snippet-card code {
+    font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+/* Version History */
+.list-group-item {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.3);
+    border-color: rgba(var(--bs-border-color-rgb), 0.3);
+}
+
+/* Markdown Content */
+.markdown-content {
+    color: var(--bs-body-color);
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+
+.markdown-content code {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+    font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+.markdown-content pre {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+
+.markdown-content blockquote {
+    border-left: 4px solid var(--bs-primary);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--bs-secondary-color);
+}
