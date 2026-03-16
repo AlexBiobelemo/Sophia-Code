@@ -2513,24 +2513,243 @@ a:focus-visible {
 }
 
 /* ========================================
-   AI GENERATE PAGE (Simplified)
-   Clean, Focused, No Gradients
+   AI GENERATE PAGE
+   Clean with Brilliant Micro-interactions
    ======================================== */
 
-/* Example buttons */
+/* Glass Card Effect */
+.ai-generate-card {
+    background: rgba(var(--bs-card-bg-rgb), 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.5);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    transition: all var(--transition-slow);
+    position: relative;
+    overflow: hidden;
+}
+
+.ai-generate-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(var(--bs-primary-rgb), 0.03),
+        transparent
+    );
+    transition: left 0.8s ease;
+    pointer-events: none;
+}
+
+.ai-generate-card:hover {
+    border-color: rgba(var(--bs-primary-rgb), 0.3);
+    box-shadow: 0 12px 48px rgba(var(--bs-primary-rgb), 0.15);
+    transform: translateY(-2px);
+}
+
+.ai-generate-card:hover::before {
+    left: 100%;
+}
+
+/* Input Fields with Glow */
+.ai-input {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    border: 2px solid rgba(var(--bs-border-color-rgb), 0.5);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    transition: all var(--transition-base);
+    resize: vertical;
+}
+
+.ai-input:focus {
+    background: rgba(var(--bs-body-bg-rgb), 0.8);
+    border-color: rgba(var(--bs-primary-rgb), 0.5);
+    box-shadow: 
+        0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.1),
+        0 0 20px rgba(var(--bs-primary-rgb), 0.15);
+    outline: none;
+}
+
+.ai-input:hover:not(:focus) {
+    border-color: rgba(var(--bs-primary-rgb), 0.3);
+}
+
+/* Generate Button with Advanced Micro-interactions */
+.ai-generate-btn {
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border: 2px solid rgba(var(--bs-primary-rgb), 0.5);
+    color: var(--bs-primary);
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-base);
+}
+
+.ai-generate-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(var(--bs-primary-rgb), 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s ease, height 0.6s ease;
+}
+
+.ai-generate-btn:hover::before {
+    width: 400px;
+    height: 400px;
+}
+
+.ai-generate-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transform: skewX(-25deg);
+    transition: left 0.8s ease;
+}
+
+.ai-generate-btn:hover::after {
+    left: 150%;
+}
+
+.ai-generate-btn:hover {
+    background: rgba(var(--bs-primary-rgb), 0.2);
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+    box-shadow: 
+        0 0 30px rgba(var(--bs-primary-rgb), 0.3),
+        inset 0 0 20px rgba(var(--bs-primary-rgb), 0.05);
+    transform: translateY(-2px);
+}
+
+.ai-generate-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 0 15px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+/* Example Buttons with Glass Effect */
+.ai-examples-card {
+    background: rgba(var(--bs-card-bg-rgb), 0.4);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    border-radius: var(--radius-lg);
+}
+
+.ai-examples-card .card-header {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    font-weight: 600;
+}
+
 .ai-example-btn {
     border-radius: var(--radius-md);
+    padding: 0.5rem 1.25rem;
+    font-size: 0.875rem;
+    background: rgba(var(--bs-secondary-bg-rgb), 0.3);
+    border-color: rgba(var(--bs-border-color-rgb), 0.4);
     transition: all var(--transition-fast);
+    position: relative;
+    overflow: hidden;
 }
 
-.ai-example-btn:hover,
+.ai-example-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        135deg,
+        rgba(var(--bs-primary-rgb), 0.2),
+        transparent
+    );
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.ai-example-btn:hover::before,
+.ai-example-btn.active::before {
+    opacity: 1;
+}
+
+.ai-example-btn:hover {
+    background: rgba(var(--bs-primary-rgb), 0.15);
+    border-color: rgba(var(--bs-primary-rgb), 0.5);
+    color: var(--bs-primary);
+    box-shadow: 
+        0 4px 12px rgba(var(--bs-primary-rgb), 0.15),
+        inset 0 0 10px rgba(var(--bs-primary-rgb), 0.05);
+    transform: translateY(-2px);
+}
+
+.ai-example-btn:active {
+    transform: translateY(0);
+}
+
 .ai-example-btn.active {
-    background: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), 0.2);
     border-color: var(--bs-primary);
-    color: white;
+    color: var(--bs-primary);
 }
 
-/* Streaming container */
+/* Input Label Animations */
+.form-label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    transition: color var(--transition-fast);
+}
+
+.form-label i {
+    transition: transform var(--transition-fast);
+}
+
+.ai-input:focus + .form-label i,
+.ai-input:focus ~ .form-label i {
+    transform: scale(1.1);
+}
+
+/* Ripple Effect on Click */
+@keyframes ripple {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(4);
+        opacity: 0;
+    }
+}
+
+.ai-generate-btn .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    animation: ripple 0.6s ease-out;
+    pointer-events: none;
+}
+
+/* Streaming Container with Glass Effect */
 #streaming-container {
     position: relative;
 }
@@ -2538,26 +2757,78 @@ a:focus-visible {
 .streaming-ai-panel {
     border-radius: var(--radius-lg);
     overflow: hidden;
-    box-shadow: var(--shadow-md);
+    background: rgba(var(--bs-card-bg-rgb), 0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .streaming-ai-panel .card-header {
-    background: var(--bs-secondary-bg);
-    border-bottom: 1px solid var(--bs-border-color);
-    padding: var(--space-md) var(--space-lg);
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
 }
 
-/* Animations */
-.shake-animation {
-    animation: shake 0.5s ease-in-out;
+/* Loading Pulse Animation */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(var(--bs-primary-rgb), 0.2);
+    }
+    50% {
+        box-shadow: 0 0 40px rgba(var(--bs-primary-rgb), 0.4);
+    }
 }
 
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
+.ai-generate-btn:disabled {
+    animation: pulse 2s ease-in-out infinite;
 }
 
-.streaming-ai-container {
-    animation: fadeIn 0.5s ease-in-out;
+/* Focus Glow */
+.ai-input:focus,
+.ai-example-btn:focus {
+    outline: none;
+}
+
+.ai-input:focus-visible,
+.ai-example-btn:focus-visible {
+    box-shadow: 
+        0 0 0 3px rgba(var(--bs-primary-rgb), 0.2),
+        0 0 20px rgba(var(--bs-primary-rgb), 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ai-generate-card .card-body {
+        padding: var(--space-lg) !important;
+    }
+    
+    .ai-generate-btn {
+        padding: 0.875rem 1.5rem;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .ai-generate-card::before,
+    .ai-generate-btn::after,
+    .ai-example-btn::before {
+        display: none;
+    }
+    
+    .ai-generate-btn,
+    .ai-example-btn,
+    .ai-generate-card {
+        transition: none;
+    }
 }

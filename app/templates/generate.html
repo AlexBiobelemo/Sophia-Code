@@ -8,22 +8,12 @@
             <i class="bi bi-magic me-2"></i>AI Code Generation
         </h1>
         <p class="page-subtitle">
-            Describe what you need. Get production-ready code with explanations.
-        </p>
-    </div>
-
-    <!-- Page Help -->
-    <div class="page-help">
-        <div class="page-help-title">
-            <i class="bi bi-lightbulb me-1"></i>Quick Tip
-        </div>
-        <p class="page-help-text">
-            Be specific about language, functionality, and constraints. Add test cases for better results.
+            Describe what you need. Get production-ready code instantly.
         </p>
     </div>
 
     <!-- Main Generation Card -->
-    <div class="card mb-4">
+    <div class="card ai-generate-card mb-4">
         <div class="card-body p-4 p-md-5">
             <form id="ai-generate-form" method="POST" action="">
                 {{ form.hidden_tag() }}
@@ -33,7 +23,7 @@
                     <label for="prompt" class="form-label">
                         <i class="bi bi-chat-dots me-2"></i>What do you want to build?
                     </label>
-                    {{ form.prompt(class="form-control form-control-lg", rows=5, 
+                    {{ form.prompt(class="form-control form-control-lg ai-input", rows=5, 
                         placeholder="e.g., Create a Python function to validate email addresses using regex") }}
                     {% for error in form.prompt.errors %}
                     <div class="text-danger small mt-1">{{ error }}</div>
@@ -46,16 +36,13 @@
                         <i class="bi bi-check-circle me-2"></i>Test Cases
                         <span class="text-muted fw-normal ms-1">(Optional)</span>
                     </label>
-                    <textarea class="form-control" id="test_cases" name="test_cases" rows="3"
+                    <textarea class="form-control ai-input" id="test_cases" name="test_cases" rows="3"
                         placeholder="Input: test@example.com&#10;Expected: True"></textarea>
-                    <div class="form-text mt-2">
-                        <i class="bi bi-info-circle me-1"></i>Include sample inputs and expected outputs
-                    </div>
                 </div>
 
                 <!-- Generate Button -->
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg" id="generateButton">
+                    <button type="submit" class="btn btn-primary btn-lg ai-generate-btn" id="generateButton">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
                         <span id="generateButtonText">
                             <i class="bi bi-lightning-charge me-2"></i>Generate Code
@@ -67,7 +54,7 @@
     </div>
 
     <!-- Quick Examples -->
-    <div class="card mb-4">
+    <div class="card ai-examples-card">
         <div class="card-header">
             <i class="bi bi-stars me-2"></i>Quick Examples
         </div>
@@ -93,53 +80,6 @@
                         data-example="Create a REST API endpoint with Flask">
                     <i class="bi bi-server me-1"></i>Flask API Endpoint
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- How It Works -->
-    <div class="card">
-        <div class="card-header">
-            <i class="bi bi-gear-wide-connected me-2"></i>How It Works
-        </div>
-        <div class="card-body">
-            <div class="row g-4">
-                <div class="col-md-3">
-                    <div class="text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-pencil-square display-6 text-primary"></i>
-                        </div>
-                        <h6 class="fw-semibold">1. Describe</h6>
-                        <p class="text-muted small mb-0">Tell us what you need</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-cpu display-6 text-primary"></i>
-                        </div>
-                        <h6 class="fw-semibold">2. Generate</h6>
-                        <p class="text-muted small mb-0">AI writes the code</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-eye display-6 text-primary"></i>
-                        </div>
-                        <h6 class="fw-semibold">3. Review</h6>
-                        <p class="text-muted small mb-0">Check code & explanation</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-center">
-                        <div class="mb-2">
-                            <i class="bi bi-save display-6 text-primary"></i>
-                        </div>
-                        <h6 class="fw-semibold">4. Save</h6>
-                        <p class="text-muted small mb-0">Add to your snippets</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
