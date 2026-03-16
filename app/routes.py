@@ -854,6 +854,80 @@ def explain():
     return jsonify({'explanation': explanation})
 
 
+@bp.route('/api/save_streaming_result', methods=['POST'])
+@login_required
+def api_save_streaming_result():
+    """API endpoint to save streaming AI results to server session (avoids URL size limits)."""
+    from flask import session
+    import hashlib
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Missing data'}), 400
+    
+    code = data.get('code')
+    explanation = data.get('explanation')
+    session_id = data.get('session_id')
+    
+    if not code:
+        return jsonify({'error': 'Missing code'}), 400
+    
+    # Generate a unique key for this session
+    code_key = hashlib.sha256(f"{current_user.id}-{session_id}-{time.time()}".encode()).hexdigest()[:16]
+    
+    # Store in Flask session
+    session[f'streaming_code_{code_key}'] = code
+    session[f'streaming_explanation_{code_key}'] = explanation or ''
+    session[f'streaming_code_timestamp_{code_key}'] = time.time()
+    
+    # Clean up old streaming results (older than 1 hour)
+    current_time = time.time()
+    keys_to_remove = [key for key in session.keys() 
+                     if key.startswith('streaming_code_') and 
+                     current_time - session.get(key.replace('streaming_code_', 'streaming_code_timestamp_'), 0) > 3600]
+    for key in keys_to_remove:
+        session.pop(key, None)
+        session.pop(key.replace('streaming_code_', 'streaming_explanation_'), None)
+        session.pop(key.replace('streaming_code_', 'streaming_code_timestamp_'), None)
+    
+    return jsonify({'success': True, 'code_key': code_key})
+
+
+@bp.route('/save_streaming_as_snippet', methods=['POST'])
+@login_required
+def save_streaming_as_snippet():
+    """Handle saving streaming AI generated code as a snippet (avoids URL size limits)."""
+    from flask import session
+    import hashlib
+    
+    code_key = request.form.get('code_key')
+    code = request.form.get('code')
+    explanation = request.form.get('explanation')
+    
+    # Try to get from session first (if code_key provided)
+    if code_key:
+        code = session.get(f'streaming_code_{code_key}') or code
+        explanation = session.get(f'streaming_explanation_{code_key}') or explanation
+        
+        # Clean up session
+        session.pop(f'streaming_code_{code_key}', None)
+        session.pop(f'streaming_explanation_{code_key}', None)
+        session.pop(f'streaming_code_timestamp_{code_key}', None)
+    
+    if not code:
+        flash('No code to save. Please generate code first.', 'warning')
+        return redirect(url_for('main.generate'))
+    
+    # Store in session for create_snippet to retrieve
+    snippet_key = hashlib.sha256(f"{current_user.id}-{time.time()}".encode()).hexdigest()[:16]
+    session[f'generated_code_{snippet_key}'] = code
+    session[f'generated_explanation_{snippet_key}'] = explanation or 'AI Generated Code with Streaming'
+    session[f'generated_code_timestamp_{snippet_key}'] = time.time()
+    
+    return redirect(url_for('main.create_snippet', generated_code_key=snippet_key))
+
+
+
 @bp.route('/suggest-tags', methods=['POST'])
 @login_required
 def suggest_tags():

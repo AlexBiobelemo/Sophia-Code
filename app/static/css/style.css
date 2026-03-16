@@ -1279,6 +1279,114 @@ button:hover,
     border-color: var(--bs-border-color) !important;
 }
 
+/* Markdown dark mode class - explicit styles */
+.markdown-dark-mode {
+    color: #e6e6e6 !important;
+}
+
+.markdown-dark-mode h1,
+.markdown-dark-mode h2,
+.markdown-dark-mode h3,
+.markdown-dark-mode h4,
+.markdown-dark-mode h5,
+.markdown-dark-mode h6 {
+    color: #ffffff !important;
+}
+
+.markdown-dark-mode p,
+.markdown-dark-mode span,
+.markdown-dark-mode div {
+    color: #e6e6e6 !important;
+}
+
+.markdown-dark-mode li {
+    color: #e6e6e6 !important;
+}
+
+.markdown-dark-mode a {
+    color: #59a3ff !important;
+}
+
+.markdown-dark-mode strong,
+.markdown-dark-mode b {
+    color: #ffffff !important;
+}
+
+.markdown-dark-mode code {
+    background-color: var(--bs-secondary-bg) !important;
+    color: #e6e6e6 !important;
+}
+
+.markdown-dark-mode pre {
+    background-color: #1a1a1a !important;
+    color: #e0e0e0 !important;
+}
+
+.markdown-dark-mode pre code {
+    background-color: transparent !important;
+    color: #e0e0e0 !important;
+}
+
+.markdown-dark-mode blockquote {
+    color: #b0b0b0 !important;
+    background-color: var(--bs-secondary-bg) !important;
+    border-left-color: var(--bs-primary) !important;
+}
+
+/* Markdown light mode class - explicit styles */
+.markdown-light-mode {
+    color: #212529 !important;
+}
+
+.markdown-light-mode h1,
+.markdown-light-mode h2,
+.markdown-light-mode h3,
+.markdown-light-mode h4,
+.markdown-light-mode h5,
+.markdown-light-mode h6 {
+    color: #212529 !important;
+}
+
+.markdown-light-mode p,
+.markdown-light-mode span,
+.markdown-light-mode div {
+    color: #212529 !important;
+}
+
+.markdown-light-mode li {
+    color: #212529 !important;
+}
+
+.markdown-light-mode a {
+    color: #0d6efd !important;
+}
+
+.markdown-light-mode strong,
+.markdown-light-mode b {
+    color: #212529 !important;
+}
+
+.markdown-light-mode code {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+.markdown-light-mode pre {
+    background-color: #f8f9fa !important;
+    color: #495057 !important;
+}
+
+.markdown-light-mode pre code {
+    background-color: transparent !important;
+    color: #495057 !important;
+}
+
+.markdown-light-mode blockquote {
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+    border-left-color: var(--bs-primary) !important;
+}
+
 /* Dark mode markdown content fixes for streaming */
 :root[data-bs-theme='dark'] .streaming-ai-panel .markdown-content h1,
 :root[data-bs-theme='dark'] .streaming-ai-panel .markdown-content h2,

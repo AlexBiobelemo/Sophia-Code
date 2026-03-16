@@ -13,6 +13,8 @@ class StreamingAIManager {
             retryDelay: 1000,
             backoffMultiplier: 2
         };
+        // Detect current theme
+        this.isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
     }
 
     /**
@@ -22,6 +24,83 @@ class StreamingAIManager {
         console.log('Streaming AI Manager initialized');
         this.setupEventListeners();
         this.loadModelTieringConfig();
+        // Watch for theme changes
+        this.watchThemeChanges();
+    }
+
+    /**
+     * Watch for theme changes and update accordingly
+     */
+    watchThemeChanges() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    this.isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+                    this.updateThemeForActiveStreams();
+                }
+            });
+        });
+        
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-bs-theme']
+        });
+    }
+
+    /**
+     * Update theme for all active streams
+     */
+    updateThemeForActiveStreams() {
+        this.activeStreams.forEach((ui) => {
+            this.applyThemeToElements(ui);
+        });
+    }
+
+    /**
+     * Apply current theme to streaming UI elements
+     */
+    applyThemeToElements(ui) {
+        if (!ui || !ui.elements) return;
+        
+        const elements = ui.elements;
+        const themeClass = this.isDarkMode ? 'text-light' : 'text-dark';
+        const oppositeClass = this.isDarkMode ? 'text-dark' : 'text-light';
+        
+        // Update step description
+        if (elements.stepDesc) {
+            elements.stepDesc.classList.remove(oppositeClass);
+            elements.stepDesc.classList.add(themeClass);
+        }
+        
+        // Update status text
+        if (elements.statusText) {
+            elements.statusText.classList.remove(oppositeClass);
+            elements.statusText.classList.add(themeClass);
+        }
+        
+        // Update explanation content
+        if (elements.explanationContent) {
+            elements.explanationContent.classList.remove(oppositeClass);
+            elements.explanationContent.classList.add(themeClass);
+            
+            // Update markdown content container
+            const markdownContainer = elements.explanationContent.parentElement;
+            if (markdownContainer) {
+                if (this.isDarkMode) {
+                    markdownContainer.classList.add('markdown-dark-mode');
+                    markdownContainer.classList.remove('markdown-light-mode');
+                } else {
+                    markdownContainer.classList.add('markdown-light-mode');
+                    markdownContainer.classList.remove('markdown-dark-mode');
+                }
+            }
+        }
+        
+        // Update code content
+        if (elements.codeContent) {
+            elements.codeContent.classList.remove(oppositeClass);
+            elements.codeContent.classList.add(themeClass);
+        }
     }
 
     /**
@@ -283,11 +362,13 @@ class StreamingAIManager {
      */
     createStreamingElements(ui) {
         const { container } = ui;
+        const themeClass = this.isDarkMode ? 'text-light' : 'text-dark';
+        const markdownThemeClass = this.isDarkMode ? 'markdown-dark-mode' : 'markdown-light-mode';
 
         container.innerHTML = `
             <div class="streaming-ai-panel card">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                    <h5 class="mb-0">
+                    <h5 class="mb-0 ${themeClass}">
                         <i class="fas fa-stream me-2"></i>Token-Efficient AI Generation
                         <small class="text-muted ms-2">(Streaming)</small>
                     </h5>
@@ -302,34 +383,34 @@ class StreamingAIManager {
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="card-body">
                     <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="step-indicator text-light">
-                                <span class="step-number text-light">1</span> Code Generation
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <span class="step-indicator ${themeClass}">
+                                <span class="step-number">1</span> Code Generation
                                 <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                                <span class="step-number text-light">2</span> Explanation
+                                <span class="step-number">2</span> Explanation
                             </span>
-                            <span class="status-text" id="status-${ui.sessionId}">Initializing...</span>
+                            <span class="status-text ${themeClass}" id="status-${ui.sessionId}">Initializing...</span>
                         </div>
                         <div class="progress" style="height: 6px;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
                                  role="progressbar" style="width: 0%" id="progress-${ui.sessionId}"></div>
                         </div>
                     </div>
 
-                    <div class="step-description mb-3 text-light">
+                    <div class="step-description mb-3 ${themeClass}">
                         <i class="fas fa-info-circle text-primary me-2"></i>
-                        <span id="step-desc-${ui.sessionId}" class="text-light">Preparing pipeline...</span>
+                        <span id="step-desc-${ui.sessionId}" class="${themeClass}">Preparing pipeline...</span>
                     </div>
 
                     <div class="token-efficiency mb-3">
-                        <div class="alert alert-info py-2 mb-0">
-                            <small class="text-dark">
+                        <div class="alert ${this.isDarkMode ? 'alert-info' : 'alert-light'} py-2 mb-0">
+                            <small class="${this.isDarkMode ? 'text-dark' : 'text-dark'}">
                                 <i class="fas fa-lightbulb me-1"></i>
-                                <strong>Token-Efficient Mode:</strong> 
-                                <span id="token-benefits-${ui.sessionId}" class="text-dark">
+                                <strong>Token-Efficient Mode:</strong>
+                                <span id="token-benefits-${ui.sessionId}">
                                     Generating optimized prompts to reduce token usage by ~40%
                                 </span>
                             </small>
@@ -338,29 +419,29 @@ class StreamingAIManager {
 
                     <div class="code-output mb-3" style="display: none;">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0">
+                            <h6 class="mb-0 ${themeClass}">
                                 <i class="fas fa-code me-2 text-success"></i>Generated Code
                             </h6>
                             <button class="btn btn-sm btn-outline-success" onclick="streamingAI.copyCode('${ui.sessionId}')">
                                 <i class="fas fa-copy me-1"></i>Copy
                             </button>
                         </div>
-                        <pre class="bg-dark text-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
-                            <code id="code-content-${ui.sessionId}"></code>
+                        <pre class="${this.isDarkMode ? 'bg-dark text-light' : 'bg-light text-dark'} p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                            <code id="code-content-${ui.sessionId}" class="${themeClass}"></code>
                         </pre>
                     </div>
 
                     <div class="explanation-output" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-                            <h6 class="mb-0 text-light">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <h6 class="mb-0 ${themeClass}">
                                 <i class="fas fa-book me-2 text-info"></i>Explanation
                             </h6>
                             <button class="btn btn-sm btn-outline-info" onclick="streamingAI.copyExplanation('${ui.sessionId}')">
                                 <i class="fas fa-copy me-1"></i>Copy
                             </button>
                         </div>
-                        <div class="markdown-content bg-dark text-light p-3 rounded border" style="max-height: 400px; overflow-y: auto; border-color: var(--bs-border-color) !important;">
-                            <div id="explanation-content-${ui.sessionId}" class="text-light" style="color: inherit !important;"></div>
+                        <div class="markdown-content ${this.isDarkMode ? 'bg-dark text-light' : 'bg-light text-dark'} p-3 rounded border ${markdownThemeClass}" style="max-height: 400px; overflow-y: auto; border-color: var(--bs-border-color) !important;">
+                            <div id="explanation-content-${ui.sessionId}" class="${themeClass}" style="color: inherit !important;"></div>
                         </div>
                     </div>
 
@@ -379,8 +460,8 @@ class StreamingAIManager {
                     </div>
 
                     <div class="error-display alert alert-danger" style="display: none;" id="error-${ui.sessionId}">
-                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Generation Error</h6>
-                        <p class="mb-0" id="error-message-${ui.sessionId}"></p>
+                        <h6 class="${themeClass}"><i class="fas fa-exclamation-triangle me-2"></i>Generation Error</h6>
+                        <p class="mb-0 ${themeClass}" id="error-message-${ui.sessionId}"></p>
                     </div>
                 </div>
             </div>
@@ -522,8 +603,40 @@ class StreamingAIManager {
             optimizations: data.optimizations
         };
 
+        // Store in sessionStorage for client-side access
         sessionStorage.setItem(`streaming_result_${sessionId}`, JSON.stringify(results));
         this.sessionData.set(sessionId, results);
+        
+        // Also save to server session via API to avoid URL size limits
+        this.saveToServerSession(sessionId, results);
+    }
+
+    /**
+     * Save results to server session storage
+     */
+    async saveToServerSession(sessionId, data) {
+        try {
+            const response = await fetch('/api/save_streaming_result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    code: data.code,
+                    explanation: data.explanation
+                })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                // Store the code key for later retrieval
+                this.serverSessionKey = result.code_key;
+                console.log('Saved to server session with key:', result.code_key);
+            }
+        } catch (error) {
+            console.error('Failed to save to server session:', error);
+        }
     }
 
     /**
@@ -586,21 +699,62 @@ class StreamingAIManager {
     }
 
     /**
-     * Save as snippet
+     * Save as snippet - uses server session to avoid URL size limits
      */
     saveAsSnippet(sessionId) {
         const results = this.sessionData.get(sessionId);
-        if (results) {
-            const params = new URLSearchParams({
-                generated_code: results.code,
-                generated_explanation: results.explanation,
-                thinking_steps: JSON.stringify({
-                    streaming_optimization: results.optimizations,
-                    timestamp: results.timestamp
-                })
-            });
-
-            window.location.href = `/create_snippet?${params.toString()}`;
+        if (!results) {
+            alert('No generated code found. Please wait for generation to complete.');
+            return;
+        }
+        
+        // If we have a server session key, use it to save
+        if (this.serverSessionKey) {
+            // Create a form and submit with the key
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/save_streaming_as_snippet';
+            
+            const keyInput = document.createElement('input');
+            keyInput.type = 'hidden';
+            keyInput.name = 'code_key';
+            keyInput.value = this.serverSessionKey;
+            
+            const codeInput = document.createElement('input');
+            codeInput.type = 'hidden';
+            codeInput.name = 'code';
+            codeInput.value = results.code;
+            
+            const explanationInput = document.createElement('input');
+            explanationInput.type = 'hidden';
+            explanationInput.name = 'explanation';
+            explanationInput.value = results.explanation;
+            
+            form.appendChild(keyInput);
+            form.appendChild(codeInput);
+            form.appendChild(explanationInput);
+            document.body.appendChild(form);
+            form.submit();
+        } else {
+            // Fallback: save directly via POST with form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/save_streaming_as_snippet';
+            
+            const codeInput = document.createElement('input');
+            codeInput.type = 'hidden';
+            codeInput.name = 'code';
+            codeInput.value = results.code;
+            
+            const explanationInput = document.createElement('input');
+            explanationInput.type = 'hidden';
+            explanationInput.name = 'explanation';
+            explanationInput.value = results.explanation;
+            
+            form.appendChild(codeInput);
+            form.appendChild(explanationInput);
+            document.body.appendChild(form);
+            form.submit();
         }
     }
 
