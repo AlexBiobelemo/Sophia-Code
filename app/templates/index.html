@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/button-glass.css') }}">
 
-    <!-- Premium very-dark theme overrides -->
     <style>
         :root[data-bs-theme='dark'] {
             --bs-body-bg: #070b10;
@@ -21,7 +20,6 @@
             --bs-secondary-bg: #0b1118;
             --bs-card-bg: #0c1219;
             --bs-border-color: #1a2430;
-            --bs-border-color-translucent: rgba(26, 36, 48, .6);
             --bs-primary: #1e5bb8;
             --bs-secondary: #6c757d;
             --bs-success: #198754;
@@ -30,8 +28,6 @@
             --bs-danger: #a23a3a;
             --bs-light: #1b232d;
             --bs-dark: #0b1118;
-            --bs-link-color: #59a3ff;
-            --bs-link-hover-color: #8abfff;
         }
 
         body {
@@ -39,133 +35,236 @@
             color: var(--bs-body-color);
         }
 
+        /* Hero Section */
         .hero-section {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
         }
 
         .hero-content {
-            max-width: 800px;
-            padding: 2rem;
+            max-width: 900px;
+            padding: 3rem 2rem;
+        }
+
+        .hero-logo {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
         }
 
         .hero-title {
-            font-size: 4rem;
+            font-size: 3.5rem;
             font-weight: 700;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--bs-primary), var(--bs-info));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 1rem;
+            color: var(--bs-body-color);
         }
 
         .hero-subtitle {
-            font-size: 1.5rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
+            font-size: 1.25rem;
+            color: var(--bs-secondary-color);
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
         }
 
+        /* Hero Buttons */
         .hero-buttons {
-            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 4rem;
         }
 
-        .btn-login {
-            padding: 1rem 2rem;
+        .btn-hero {
+            padding: 1rem 2.5rem;
             font-size: 1.1rem;
-            margin: 0.5rem;
-            border-radius: 50px;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            border-radius: var(--radius-lg);
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-register {
-            padding: 1rem 2rem;
-            font-size: 1.1rem;
-            margin: 0.5rem;
-            border-radius: 50px;
-            transition: all 0.3s ease;
+        .btn-hero::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
         }
 
+        .btn-hero:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(var(--bs-primary-rgb), 0.3);
+        }
+
+        /* Feature Cards */
         .feature-cards {
-            margin-top: 4rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
         }
 
         .feature-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: rgba(var(--bs-card-bg-rgb), 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+            border-radius: var(--radius-lg);
             padding: 2rem;
-            margin: 1rem 0;
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease;
+            transition: all var(--transition-base);
+            text-align: center;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--bs-primary), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-base);
         }
 
         .feature-card:hover {
             transform: translateY(-5px);
+            border-color: rgba(var(--bs-primary-rgb), 0.3);
+            box-shadow: 0 12px 40px rgba(var(--bs-primary-rgb), 0.15);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
         }
 
         .feature-icon {
             font-size: 3rem;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
             color: var(--bs-primary);
+            display: inline-block;
+            transition: transform var(--transition-base);
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--bs-body-color);
+        }
+
+        .feature-description {
+            color: var(--bs-secondary-color);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-hero {
+                width: 100%;
+                max-width: 300px;
+            }
         }
     </style>
 </head>
 
-<body class="bg-body-tertiary">
-    <div id="particles-js" style="min-height: 100vh; min-width: 100vw;"></div>
+<body>
+    <div id="particles-js" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"></div>
 
-    <!-- Clean Landing Page Layout -->
+    <!-- Hero Section -->
     <div class="hero-section">
         <div class="hero-content">
-            <h1 class="hero-title">
-                <i class="bi bi-lightbulb"></i> Sophia
-            </h1>
+            <div class="hero-logo">
+                <i class="bi bi-lightbulb-fill text-warning"></i>
+            </div>
+            
+            <h1 class="hero-title">Sophia</h1>
+            
             <p class="hero-subtitle">
-                Your personal, AI-powered knowledge base. Login to manage your code snippets.
+                Your intelligent code snippet manager.<br>
+                Organize, search, and generate code with AI assistance.
             </p>
 
             <div class="hero-buttons">
-                <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-login">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                <a href="{{ url_for('main.login') }}" class="btn btn-primary btn-hero">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Login</span>
                 </a>
-                <a href="{{ url_for('main.register') }}" class="btn btn-outline-light btn-register">
-                    <i class="bi bi-person-plus me-2"></i>Register
+                <a href="{{ url_for('main.register') }}" class="btn btn-outline-primary btn-hero">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Create Account</span>
                 </a>
             </div>
 
             <!-- Feature Cards -->
             <div class="feature-cards">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="bi bi-code-square"></i>
-                            </div>
-                            <h5>Code Snippets</h5>
-                            <p>Organize and manage your code snippets with intelligent categorization.</p>
-                        </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-code-square"></i>
                     </div>
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="bi bi-search"></i>
-                            </div>
-                            <h5>Smart Search</h5>
-                            <p>Find code using natural language with AI-powered semantic search.</p>
-                        </div>
+                    <h3 class="feature-title">Code Snippets</h3>
+                    <p class="feature-description">
+                        Organize and manage your code with intelligent categorization and collections.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-search"></i>
                     </div>
-                    <div class="col-md-4">
-                        <div class="feature-card">
-                            <div class="feature-icon">
-                                <i class="bi bi-magic"></i>
-                            </div>
-                            <h5>AI Assistant</h5>
-                            <p>Generate, explain, and refactor code with Sophia's AI capabilities.</p>
-                        </div>
+                    <h3 class="feature-title">Smart Search</h3>
+                    <p class="feature-description">
+                        Find code instantly with AI-powered semantic search and natural language queries.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-magic"></i>
                     </div>
+                    <h3 class="feature-title">AI Assistant</h3>
+                    <p class="feature-description">
+                        Generate, explain, and refactor code with advanced AI capabilities.
+                    </p>
                 </div>
             </div>
         </div>
@@ -176,11 +275,10 @@
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
-        // Initialize particles
         particlesJS('particles-js', {
             "particles": {
                 "number": {
-                    "value": 100,
+                    "value": 80,
                     "density": {
                         "enable": true,
                         "value_area": 1000
@@ -193,23 +291,23 @@
                     "type": "circle"
                 },
                 "opacity": {
-                    "value": 0.6,
+                    "value": 0.5,
                     "random": true
                 },
                 "size": {
-                    "value": 4,
+                    "value": 3,
                     "random": true
                 },
                 "line_linked": {
                     "enable": true,
                     "distance": 150,
                     "color": "#59a3ff",
-                    "opacity": 0.4,
+                    "opacity": 0.3,
                     "width": 1
                 },
                 "move": {
                     "enable": true,
-                    "speed": 2,
+                    "speed": 1.5,
                     "direction": "none",
                     "random": false,
                     "straight": false,
@@ -241,34 +339,79 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Your Snippets</h2>
-{% if snippets and snippets.items %}
-{% for snippet in snippets.items %}
-<div class="card mb-3">
-    <div class="card-header d-flex justify-content-between">
-        {{ snippet.title }}
-        {% if snippet.collection %}
-        <small class="text-muted">In: {{ snippet.collection.name }}</small>
-        {% endif %}
+<div class="page-container">
+    <!-- Page Header -->
+    <div class="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="page-title mb-1">
+                <i class="bi bi-collection me-2"></i>Your Snippets
+            </h1>
+            <p class="page-subtitle">Manage and organize your code collection</p>
+        </div>
+        <a href="{{ url_for('main.create_snippet') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>New Snippet
+        </a>
     </div>
-    <div class="card-body">
-        <p class="card-text">{{ snippet.description | striptags | truncate(150) or 'No description provided.' }}</p>
-        <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-primary">View Snippet</a>
-    </div>
-</div>
-{% endfor %}
-{% else %}
-<div class="text-center py-5">
-    <h3 class="text-muted">No snippets yet!</h3>
-    <p>Why not create your first one?</p>
-    <a href="{{ url_for('main.create_snippet') }}" class="btn btn-success">Create New Snippet</a>
-</div>
-{% endif %}
 
-{% if snippets and snippets.pages > 1 %}
-{% with pagination=snippets, endpoint='main.index' %}
-{% include '_pagination.html' %}
-{% endwith %}
-{% endif %}
+    {% if snippets and snippets.items %}
+    <div class="row g-4">
+        {% for snippet in snippets.items %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 hover-lift">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-truncate" style="max-width: 70%;">{{ snippet.title }}</h5>
+                    {% if snippet.collection %}
+                    <span class="badge bg-primary bg-opacity-10 text-primary">{{ snippet.collection.name }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted mb-3">
+                        {{ snippet.description | striptags | truncate(120) or 'No description provided.' }}
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                            <i class="bi bi-filetype-{{ snippet.language }} me-1"></i>{{ snippet.language }}
+                        </span>
+                        {% if snippet.tags %}
+                        {% for tag in snippet.tags.split(',')[:3] %}
+                        <span class="badge bg-outline-info text-info">{{ tag.strip() }}</span>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-eye me-2"></i>View Snippet
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if snippets.pages > 1 %}
+    {% with pagination=snippets, endpoint='main.index' %}
+    {% include '_pagination.html' %}
+    {% endwith %}
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-code-slash"></i>
+                </div>
+                <h3 class="empty-state-title">No snippets yet</h3>
+                <p class="empty-state-text mb-4">Start building your code library by creating your first snippet.</p>
+                <a href="{{ url_for('main.create_snippet') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-lg me-2"></i>Create Your First Snippet
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}
 {% endif %}

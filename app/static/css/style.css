@@ -2044,7 +2044,9 @@ h6 { font-size: 1rem; }
     transition: all var(--transition-fast);
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    text-align: center;
 }
 
 .btn i {
@@ -2831,4 +2833,39 @@ a:focus-visible {
     .ai-generate-card {
         transition: none;
     }
+}
+
+/* ========================================
+   CREATE SNIPPET PAGE
+   ======================================== */
+
+/* AI Alert */
+.ai-alert {
+    background: rgba(var(--bs-info-rgb), 0.1);
+    border: 1px solid rgba(var(--bs-info-rgb), 0.3);
+    border-radius: var(--radius-lg);
+}
+
+/* Form Card */
+.ai-form-card {
+    background: rgba(var(--bs-card-bg-rgb), 0.5);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+}
+
+/* Refine Card */
+.ai-refine-card {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.3);
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+}
+
+.ai-refine-card .card-header {
+    background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+    border-bottom: 1px solid rgba(var(--bs-border-color-rgb), 0.3);
+    font-weight: 600;
+}
+
+/* Form Actions */
+.btn-group .btn {
+    text-align: center;
 }
