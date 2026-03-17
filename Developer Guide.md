@@ -62,8 +62,7 @@ Project-Sophia/
 │   ├── routes.py            # All route handlers and view functions
 │   ├── models.py            # SQLAlchemy database models
 │   ├── forms.py             # WTForms for input validation
-│   ├── ai_services.py       # AI service router and implementations
-│   ├── ai_services_minimax.py # Minimax AI provider implementation
+│   ├── ai_services.py       # Gemini AI service implementation
 │   ├── badge_system.py      # Gamification and badge logic
 │   ├── utils/               # Utility functions and helpers
 │   │   └── state_manager.py # Client-side state management
@@ -99,11 +98,12 @@ All database models are defined in `app/models.py` using SQLAlchemy ORM. Key mod
 
 #### AI Services
 
-The AI functionality is abstracted through `app/ai_services.py`, which provides:
-- Multi-provider support (Gemini, Minimax)
+The AI functionality is implemented in `app/ai_services.py`, which provides:
+- Google Gemini integration
 - Model tiering and fallback
 - Streaming responses
 - Token-efficient processing
+- All AI-powered features (code generation, explanation, formatting, etc.)
 
 #### Route Organization
 

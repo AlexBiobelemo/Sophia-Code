@@ -20,9 +20,8 @@ Project Sophia addresses the common problem developers face in managing an ever-
 - **Backend:** Flask (Python)
 - **Database:** SQLite (SQLAlchemy ORM)
 - **Frontend:** HTML, CSS (Bootstrap + custom styles), JavaScript
-- **AI Integration:** 
-  - Google Gemini API (gemini-2.5-flash, gemini-1.5-flash, gemini-2.5-pro)
-  - Minimax API (minimax-m2:free)
+- **AI Integration:**
+  - Google Gemini API (gemini-2.5-flash, gemini-2.5-pro, gemini-3-pro)
 - **Authentication:** Flask-Login with password hashing (Werkzeug)
 - **Forms:** WTForms with validation
 - **Database Migrations:** Alembic/Flask-Migrate
@@ -71,12 +70,10 @@ Project Sophia addresses the common problem developers face in managing an ever-
    SECRET_KEY='your_secret_key_here'
    DATABASE_URL='sqlite:///app.db'
    GEMINI_API_KEY='your_gemini_api_key_here'
-   MINIMAX_API_KEY='your_minimax_api_key_here'  # Optional
    FLASK_APP=run.py
    FLASK_ENV=development
    ```
    - Replace `GEMINI_API_KEY` with your actual Google Gemini API key
-   - `MINIMAX_API_KEY` is optional for using the Minimax AI provider
 
 5. **Initialize the database:**
    ```bash
@@ -162,17 +159,12 @@ The application will typically be available at `http://127.0.0.1:5000/`. Open th
 
 ## API Configuration
 
-Project Sophia supports multiple AI providers:
+Project Sophia uses Google Gemini for all AI-powered features:
 
-### Google Gemini (Default)
+### Google Gemini
 - Set `GEMINI_API_KEY` environment variable
 - Default model: `gemini-2.5-flash`
-- Supports: gemini-1.5-flash, gemini-2.5-flash, gemini-2.5-pro
-
-### Minimax (Optional)
-- Set `MINIMAX_API_KEY` environment variable
-- Model: `minimax-m2:free`
-- Fallback to Gemini if Minimax is unavailable
+- Available models: gemini-2.5-flash, gemini-2.5-pro, gemini-3-pro
 
 Users can select their preferred AI model in the User Settings.
 
@@ -185,8 +177,7 @@ Project-Sophia/
 │   ├── routes.py            # All route handlers
 │   ├── models.py            # SQLAlchemy models
 │   ├── forms.py             # WTForms forms
-│   ├── ai_services.py       # AI service router
-│   ├── ai_services_minimax.py  # Minimax AI implementation
+│   ├── ai_services.py       # Gemini AI service implementation
 │   ├── badge_system.py      # Badge and gamification
 │   ├── utils/               # Utility functions
 │   ├── static/              # Static assets (CSS, JS, uploads)

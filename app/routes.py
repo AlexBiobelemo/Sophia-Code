@@ -854,6 +854,32 @@ def explain():
     return jsonify({'explanation': explanation})
 
 
+@bp.route('/snippet/<int:snippet_id>/update_description', methods=['POST'])
+@login_required
+def update_snippet_description(snippet_id):
+    """API endpoint to update snippet description with AI explanation."""
+    snippet = db.get_or_404(Snippet, snippet_id)
+    
+    # Check ownership
+    if snippet.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    if not data or 'description' not in data:
+        return jsonify({'error': 'Missing description in request.'}), 400
+    
+    # Update description
+    snippet.description = data['description']
+    snippet.updated_at = sa.func.now()
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Description updated successfully',
+        'description': snippet.description
+    })
+
+
 @bp.route('/api/save_streaming_result', methods=['POST'])
 @login_required
 def api_save_streaming_result():

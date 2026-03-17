@@ -310,7 +310,6 @@ class SettingsForm(FlaskForm):
         ('gemini-2.5-flash', 'Gemini 2.5 Flash (Fast, Good for simple tasks)'),
         ('gemini-2.5-pro', 'Gemini 2.5 Pro (Balanced, Good for most tasks)'),
         ('gemini-3-pro', 'Gemini 3 Pro (Advanced, Best for complex tasks)'),
-        ('minimax-m2', 'Minimax M2 (Free, Good for code generation)')
     ], validators=[DataRequired()])
     
     code_generation_style = SelectField('Code Generation Style', choices=[

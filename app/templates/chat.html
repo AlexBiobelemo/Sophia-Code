@@ -253,41 +253,110 @@
 
             async function sendMessage(){
                 const msg = input.value.trim();
-                if (!msg || !sessionId) return;
-                
+                if (!msg) return;
+
                 append('user', msg);
                 input.value = '';
                 sendBtn.disabled = true;
-                
+
                 abortCtrl = new AbortController();
-                
+
+                // Get CSRF token from cookie or meta tag
+                let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    // Fallback: get from cookie
+                    csrfToken = getCookie('csrf_token');
+                }
+
                 try {
-                    const res = await fetch('/chat/send', {
+                    // Use /api/chat/stream for streaming response
+                    const res = await fetch('/api/chat/stream', {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({session_id: sessionId, message: msg}),
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken || ''
+                        },
+                        body: JSON.stringify({session_id: sessionId || null, message: msg}),
                         signal: abortCtrl.signal
                     });
-                    
-                    const data = await res.json();
-                    if (data.response) {
-                        append('assistant', data.response);
+
+                    if (!res.ok) {
+                        const error = await res.json();
+                        throw new Error(error.error || 'Request failed');
                     }
+
+                    // Read streaming response
+                    const reader = res.body.getReader();
+                    const decoder = new TextDecoder();
+                    let assistantMsg = '';
+                    
+                    while (true) {
+                        const {done, value} = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value);
+                        assistantMsg += chunk;
+                        
+                        // Update or create assistant message
+                        const lastMsg = chatLog.querySelector('.msg-assistant:last-child');
+                        if (lastMsg) {
+                            lastMsg.querySelector('.content').textContent = assistantMsg;
+                        } else {
+                            append('assistant', assistantMsg);
+                        }
+                        
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                    }
+                    
                 } catch(e) {
+                    console.error('Chat error:', e);
                     if (e.name !== 'AbortError') {
-                        append('assistant', 'Sorry, there was an error processing your request.');
+                        append('assistant', 'Sorry, there was an error processing your request: ' + e.message);
                     }
                 } finally {
                     sendBtn.disabled = false;
                     input.focus();
                 }
             }
+            
+            // Helper function to get cookie by name
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
 
             sendBtn.addEventListener('click', sendMessage);
             input.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }});
-            
-            newBtn.addEventListener('click', ()=>{ 
-                window.location.href = '/chat'; 
+
+            newBtn.addEventListener('click', async ()=>{
+                // Create new chat session via API
+                let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (!csrfToken) {
+                    csrfToken = getCookie('csrf_token');
+                }
+                
+                try {
+                    const res = await fetch('/api/chat/new', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken || ''
+                        },
+                        body: JSON.stringify({title: 'New Chat'})
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        window.location.href = `/chat/${data.session_id}`;
+                    } else {
+                        alert('Failed to create new chat. Please try again.');
+                    }
+                } catch(e) {
+                    console.error('New chat error:', e);
+                    alert('Failed to create new chat. Please try again.');
+                }
             });
 
             sessionsEl.addEventListener('click', (e)=>{
@@ -301,7 +370,14 @@
                     e.stopPropagation();
                     const id = li.dataset.sessionId;
                     if (confirm('Delete this conversation?')) {
-                        fetch(`/chat/${id}`, {method: 'DELETE'})
+                        // Get CSRF token for DELETE request
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        fetch(`/chat/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRFToken': csrfToken || ''
+                            }
+                        })
                             .then(response => {
                                 if (response.ok) {
                                     li.remove();
@@ -331,9 +407,13 @@
             document.getElementById('rename-chat')?.addEventListener('click', async ()=>{
                 const name = prompt('Enter new conversation name:', document.getElementById('chat-title').textContent);
                 if (name && sessionId) {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
                     await fetch(`/chat/${sessionId}/rename`, {
                         method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken || ''
+                        },
                         body: JSON.stringify({title: name})
                     });
                     document.getElementById('chat-title').textContent = name;

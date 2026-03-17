@@ -6,6 +6,10 @@ from app.models import User, Snippet, LeetcodeProblem, LeetcodeSolution
 import database_backup
 
 load_dotenv() # Load environment variables from .env file
+
+# Production mode (set to True for debugging)
+DEBUG_MODE = False
+
 app = create_app()
 
 # Initialize backup system and run startup backup
@@ -16,3 +20,7 @@ backup_system.run_server_startup_backup()
 def make_shell_context():
     """Provides a shell context for 'flask shell' command."""
     return {'db': db, 'User': User, 'Snippet': Snippet, 'LeetcodeProblem': LeetcodeProblem, 'LeetcodeSolution': LeetcodeSolution}
+
+# Run the app
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=DEBUG_MODE, use_reloader=DEBUG_MODE)

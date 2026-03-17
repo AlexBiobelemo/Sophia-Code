@@ -42,9 +42,9 @@
 
                 <!-- Generate Button -->
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary btn-lg ai-generate-btn" id="generateButton">
+                    <button type="submit" class="btn btn-primary btn-lg ai-generate-btn" id="generateButton" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important; border: none !important; color: #ffffff !important; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
                         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="display: none;"></span>
-                        <span id="generateButtonText">
+                        <span id="generateButtonText" style="color: #ffffff !important;">
                             <i class="bi bi-lightning-charge me-2"></i>Generate Code
                         </span>
                     </button>
@@ -97,6 +97,20 @@
         const exampleBtns = document.querySelectorAll('.ai-example-btn');
 
         if (!form || !submitButton) return;
+        
+        // Force white text on button
+        submitButton.style.color = '#ffffff';
+        if (generateButtonText) {
+            generateButtonText.style.color = '#ffffff';
+        }
+        
+        // Ensure text stays white on hover
+        submitButton.addEventListener('mouseenter', () => {
+            submitButton.style.color = '#ffffff';
+            if (generateButtonText) {
+                generateButtonText.style.color = '#ffffff';
+            }
+        });
 
         // Handle quick example buttons
         exampleBtns.forEach(btn => {

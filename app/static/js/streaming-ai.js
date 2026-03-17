@@ -180,19 +180,37 @@ class StreamingAIManager {
             explanation_model: explanationModel
         };
 
+        // Get CSRF token from meta tag or cookie
+        let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (!csrfToken) {
+            csrfToken = this.getCookie('csrf_token');
+        }
+
         const response = await fetch('/api/chained-streaming-generation', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken || ''
             },
             body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
         }
 
         return response.body.getReader();
+    }
+    
+    /**
+     * Get cookie by name
+     */
+    getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
     }
 
     /**
@@ -243,6 +261,7 @@ class StreamingAIManager {
         const ui = this.getStreamingUI(sessionId);
         if (!ui) return;
 
+        // Handle the actual event types sent by the backend
         switch (data.type) {
             case 'pipeline_start':
                 this.updateUIState(ui, {
@@ -252,14 +271,52 @@ class StreamingAIManager {
                 });
                 break;
 
-            case 'code_progress':
+            case 'chunk':
+                // Handle code generation chunks
+                if (ui.state.currentStep === 1 || !ui.state.currentStep) {
+                    ui.state.currentStep = 1;
+                    ui.state.codeContent = (ui.state.codeContent || '') + (data.content || '');
+                    this.updateUIState(ui, {
+                        status: 'generating_code',
+                        currentStep: 1,
+                        codeContent: ui.state.codeContent
+                    });
+                    this.emitEvent('codeProgress', { sessionId, data });
+                }
+                // Handle explanation chunks
+                else if (ui.state.currentStep === 2) {
+                    ui.state.explanationContent = (ui.state.explanationContent || '') + (data.content || '');
+                    this.updateUIState(ui, {
+                        status: 'generating_explanation',
+                        currentStep: 2,
+                        explanationContent: ui.state.explanationContent
+                    });
+                    this.emitEvent('explanationProgress', { sessionId, data });
+                }
+                break;
+
+            case 'code_complete':
                 this.updateUIState(ui, {
-                    status: 'generating_code',
-                    currentStep: 1,
-                    codeContent: data.accumulated,
-                    progress: data.progress
+                    status: 'code_complete',
+                    currentStep: 2,
+                    codeContent: data.content,
+                    stepDescription: 'Code generated! Generating explanation...'
                 });
-                this.emitEvent('codeProgress', { sessionId, data });
+                break;
+
+            case 'explanation_complete':
+                this.updateUIState(ui, {
+                    status: 'complete',
+                    currentStep: 2,
+                    codeContent: ui.state.codeContent,
+                    explanationContent: data.content,
+                    stepDescription: 'Generation complete!'
+                });
+                this.saveFinalResults(sessionId, {
+                    code: ui.state.codeContent,
+                    explanation: data.content
+                });
+                this.emitEvent('pipelineComplete', { sessionId, data });
                 break;
 
             case 'step_complete':
@@ -305,6 +362,10 @@ class StreamingAIManager {
 
             case 'error':
                 this.handleStreamError(sessionId, new Error(data.error));
+                break;
+                
+            case 'stream_end':
+                this.handleStreamComplete(sessionId);
                 break;
         }
     }
@@ -358,127 +419,92 @@ class StreamingAIManager {
     }
 
     /**
-     * Create streaming UI elements
+     * Create streaming UI elements with MODERN design and micro-animations
      */
     createStreamingElements(ui) {
         const { container } = ui;
-        const themeClass = this.isDarkMode ? 'text-light' : 'text-dark';
-        const markdownThemeClass = this.isDarkMode ? 'markdown-dark-mode' : 'markdown-light-mode';
 
         container.innerHTML = `
-            <div class="streaming-ai-panel card">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
-                    <h5 class="mb-0 ${themeClass}">
-                        <i class="fas fa-stream me-2"></i>Token-Efficient AI Generation
-                        <small class="text-muted ms-2">(Streaming)</small>
-                    </h5>
-                    <div class="streaming-controls d-flex gap-2">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="streamingAI.pauseStream('${ui.sessionId}')"
-                                data-bs-toggle="tooltip" title="Pause the streaming generation">
-                            <i class="fas fa-pause"></i>
+            <div class="ai-generation-result">
+                <!-- Success Header -->
+                <div class="result-success-header">
+                    <div class="success-badge">
+                        <div class="checkmark-icon">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <span>Generation Complete!</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-outline-light btn-sm" onclick="streamingAI.copyCode('${ui.sessionId}')">
+                            <i class="bi bi-clipboard me-1"></i>Copy Code
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="streamingAI.stopStream('${ui.sessionId}')"
-                                data-bs-toggle="tooltip" title="Stop the streaming generation">
-                            <i class="fas fa-stop"></i>
+                        <button class="btn btn-outline-info btn-sm" onclick="streamingAI.copyExplanation('${ui.sessionId}')">
+                            <i class="bi bi-clipboard me-1"></i>Copy Explanation
                         </button>
                     </div>
                 </div>
 
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                            <span class="step-indicator ${themeClass}">
-                                <span class="step-number">1</span> Code Generation
-                                <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                                <span class="step-number">2</span> Explanation
-                            </span>
-                            <span class="status-text ${themeClass}" id="status-${ui.sessionId}">Initializing...</span>
+                <!-- Content Sections -->
+                <div class="result-content-section">
+                    <!-- Code Section -->
+                    <div class="content-section code-section" style="display: none;">
+                        <div class="section-title">
+                            <i class="bi bi-code-slash"></i>
+                            <span>Generated Code</span>
                         </div>
-                        <div class="progress" style="height: 6px;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                 role="progressbar" style="width: 0%" id="progress-${ui.sessionId}"></div>
-                        </div>
-                    </div>
-
-                    <div class="step-description mb-3 ${themeClass}">
-                        <i class="fas fa-info-circle text-primary me-2"></i>
-                        <span id="step-desc-${ui.sessionId}" class="${themeClass}">Preparing pipeline...</span>
-                    </div>
-
-                    <div class="token-efficiency mb-3">
-                        <div class="alert ${this.isDarkMode ? 'alert-info' : 'alert-light'} py-2 mb-0">
-                            <small class="${this.isDarkMode ? 'text-dark' : 'text-dark'}">
-                                <i class="fas fa-lightbulb me-1"></i>
-                                <strong>Token-Efficient Mode:</strong>
-                                <span id="token-benefits-${ui.sessionId}">
-                                    Generating optimized prompts to reduce token usage by ~40%
-                                </span>
-                            </small>
+                        <div class="code-block-wrapper">
+                            <div class="code-block-header">
+                                <span class="code-language-badge">Python</span>
+                                <button class="copy-code-btn" onclick="streamingAI.copyCode('${ui.sessionId}')">
+                                    <i class="bi bi-clipboard"></i>
+                                    <span>Copy</span>
+                                </button>
+                            </div>
+                            <pre><code id="code-content-${ui.sessionId}" class="language-python"></code></pre>
                         </div>
                     </div>
 
-                    <div class="code-output mb-3" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0 ${themeClass}">
-                                <i class="fas fa-code me-2 text-success"></i>Generated Code
-                            </h6>
-                            <button class="btn btn-sm btn-outline-success" onclick="streamingAI.copyCode('${ui.sessionId}')">
-                                <i class="fas fa-copy me-1"></i>Copy
-                            </button>
+                    <!-- Explanation Section -->
+                    <div class="content-section explanation-section" style="display: none;">
+                        <div class="section-title">
+                            <i class="bi bi-lightbulb"></i>
+                            <span>Explanation</span>
                         </div>
-                        <pre class="${this.isDarkMode ? 'bg-dark text-light' : 'bg-light text-dark'} p-3 rounded" style="max-height: 300px; overflow-y: auto;">
-                            <code id="code-content-${ui.sessionId}" class="${themeClass}"></code>
-                        </pre>
+                        <div class="explanation-content markdown-content">
+                            <div id="explanation-content-${ui.sessionId}"></div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="explanation-output" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                            <h6 class="mb-0 ${themeClass}">
-                                <i class="fas fa-book me-2 text-info"></i>Explanation
-                            </h6>
-                            <button class="btn btn-sm btn-outline-info" onclick="streamingAI.copyExplanation('${ui.sessionId}')">
-                                <i class="fas fa-copy me-1"></i>Copy
-                            </button>
-                        </div>
-                        <div class="markdown-content ${this.isDarkMode ? 'bg-dark text-light' : 'bg-light text-dark'} p-3 rounded border ${markdownThemeClass}" style="max-height: 400px; overflow-y: auto; border-color: var(--bs-border-color) !important;">
-                            <div id="explanation-content-${ui.sessionId}" class="${themeClass}" style="color: inherit !important;"></div>
-                        </div>
-                    </div>
+                <!-- Action Buttons -->
+                <div class="result-action-buttons" id="actions-${ui.sessionId}" style="display: none;">
+                    <button class="btn btn-save" onclick="streamingAI.saveAsSnippet('${ui.sessionId}')">
+                        <i class="bi bi-save me-2"></i>Save as Snippet
+                    </button>
+                    <button class="btn btn-retry" onclick="streamingAI.retryGeneration('${ui.sessionId}')">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Retry Generation
+                    </button>
+                    <button class="btn btn-generate-another" onclick="streamingAI.generateNew('${ui.sessionId}')">
+                        <i class="bi bi-plus-circle me-1"></i>Generate Another
+                    </button>
+                </div>
 
-                    <div class="action-buttons mt-3" style="display: none;" id="actions-${ui.sessionId}">
-                        <div class="d-flex flex-wrap gap-2">
-                            <button class="btn btn-success" onclick="streamingAI.saveAsSnippet('${ui.sessionId}')">
-                                <i class="fas fa-save me-1"></i>Save as Snippet
-                            </button>
-                            <button class="btn btn-warning" onclick="streamingAI.retryGeneration('${ui.sessionId}')">
-                                <i class="fas fa-redo me-1"></i>Retry Generation
-                            </button>
-                            <button class="btn btn-outline-primary" onclick="streamingAI.generateNew('${ui.sessionId}')">
-                                <i class="fas fa-plus me-1"></i>Generate Another
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="error-display alert alert-danger" style="display: none;" id="error-${ui.sessionId}">
-                        <h6 class="${themeClass}"><i class="fas fa-exclamation-triangle me-2"></i>Generation Error</h6>
-                        <p class="mb-0 ${themeClass}" id="error-message-${ui.sessionId}"></p>
-                    </div>
+                <!-- Error Display -->
+                <div class="alert alert-danger m-3" id="error-${ui.sessionId}" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-message-${ui.sessionId}"></span>
                 </div>
             </div>
         `;
 
         ui.elements = {
-            progressBar: container.querySelector(`#progress-${ui.sessionId}`),
-            statusText: container.querySelector(`#status-${ui.sessionId}`),
-            stepDesc: container.querySelector(`#step-desc-${ui.sessionId}`),
-            codeOutput: container.querySelector('.code-output'),
-            explanationOutput: container.querySelector('.explanation-output'),
+            codeSection: container.querySelector('.code-section'),
+            explanationSection: container.querySelector('.explanation-section'),
             codeContent: container.querySelector(`#code-content-${ui.sessionId}`),
             explanationContent: container.querySelector(`#explanation-content-${ui.sessionId}`),
             actions: container.querySelector(`#actions-${ui.sessionId}`),
             errorDisplay: container.querySelector(`#error-${ui.sessionId}`),
-            errorMessage: container.querySelector(`#error-message-${ui.sessionId}`),
-            tokenBenefits: container.querySelector(`#token-benefits-${ui.sessionId}`)
+            errorMessage: container.querySelector(`#error-message-${ui.sessionId}`)
         };
     }
 
@@ -491,7 +517,7 @@ class StreamingAIManager {
     }
 
     /**
-     * Render current UI state
+     * Render current UI state - MODERN VERSION
      */
     renderUIState(ui) {
         const { elements, state } = ui;
@@ -500,60 +526,32 @@ class StreamingAIManager {
         // Throttle UI updates to once per frame
         if (ui.renderPending) return;
         ui.renderPending = true;
-        
+
         requestAnimationFrame(() => {
-            // Update progress
-            if (elements.progressBar) {
-                const progressPercent = state.currentStep === 1 ? 50 : 100;
-                elements.progressBar.style.width = `${progressPercent}%`;
-                elements.progressBar.setAttribute('aria-valuenow', progressPercent);
+            // Show code section when content exists
+            if (state.codeContent && state.codeContent.trim().length > 0 && elements.codeSection) {
+                elements.codeSection.style.display = 'block';
+                if (elements.codeContent) {
+                    elements.codeContent.textContent = state.codeContent;
+                    if (window.Prism) {
+                        Prism.highlightElement(elements.codeContent);
+                    }
+                }
             }
 
-            // Update status
-            if (elements.statusText) {
-                const statusMap = {
-                    'starting': 'Initializing...',
-                    'generating_code': 'Generating code...',
-                    'code_complete': 'Code generated ✓',
-                    'generating_explanation': 'Generating explanation...',
-                    'complete': 'Complete!',
-                    'error': 'Error occurred'
-                };
-                elements.statusText.textContent = statusMap[state.status] || state.status;
-            }
-
-            // Update step description
-            if (elements.stepDesc && state.stepDescription) {
-                elements.stepDesc.textContent = state.stepDescription;
-            }
-
-            // Show/hide outputs
-            if (state.codeContent && elements.codeOutput) {
-                elements.codeOutput.style.display = 'block';
-                elements.codeContent.textContent = state.codeContent;
-            }
-
-            if (state.explanationContent && elements.explanationOutput) {
-                elements.explanationOutput.style.display = 'block';
-                elements.explanationContent.innerHTML = this.renderMarkdown(state.explanationContent);
-                elements.explanationContent.classList.add('markdown-dark-mode');
+            // Show explanation section when content exists
+            if (state.explanationContent && state.explanationContent.trim().length > 0 && elements.explanationSection) {
+                elements.explanationSection.style.display = 'block';
+                if (elements.explanationContent) {
+                    elements.explanationContent.innerHTML = this.renderMarkdown(state.explanationContent);
+                }
             }
 
             // Show actions when complete
             if (state.status === 'complete' && elements.actions) {
-                elements.actions.style.display = 'block';
+                elements.actions.style.display = 'flex';
             }
 
-            // Update token benefits
-            if (elements.tokenBenefits && state.optimizations) {
-                const benefits = [];
-                if (state.optimizations.token_efficient) benefits.push('~40% fewer tokens');
-                if (state.optimizations.context_pruned) benefits.push('context optimized');
-                if (state.optimizations.streaming_enabled) benefits.push('real-time streaming');
-
-                elements.tokenBenefits.textContent = `Optimized: ${benefits.join(', ')}`;
-            }
-            
             ui.renderPending = false;
         });
     }
