@@ -1,5 +1,46 @@
 # Features
 
+## 🤖 AI-Powered Features (NEW in v2.0)
+
+### AI Code Generation
+**Description:** Generate production-ready code from natural language descriptions with real-time streaming display.
+**Features:**
+- Modern gradient UI with micro-animations
+- Real-time streaming code display (typewriter effect)
+- Syntax highlighting with Prism.js
+- Copy code and explanation buttons
+- Save directly as snippet
+- Retry and generate another options
+
+### AI Code Explanation
+**Description:** Get detailed, formatted explanations for any code snippet.
+**Features:**
+- Markdown-rendered explanations
+- Copy explanation to clipboard
+- Apply to snippet description (one-click replace)
+- Scrollable content with custom styling
+- Step-by-step breakdown
+
+### Smart Tag Suggestions
+**Description:** Automatically generate relevant tags for your code snippets.
+**Features:**
+- AI-powered code analysis
+- 100+ programming term vocabulary
+- Intelligent tag extraction
+- Comma-separated format
+- Fallback on AI errors
+
+### AI Chat Assistant
+**Description:** Context-aware coding assistant for your knowledge base.
+**Features:**
+- Streaming responses
+- Multiple chat sessions
+- Refers to your snippets
+- Conversation history
+- Copy responses
+
+---
+
 ## Core Capabilities
 
 ### User Authentication and Profile Management

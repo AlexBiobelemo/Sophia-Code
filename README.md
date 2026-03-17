@@ -1,8 +1,26 @@
-# Project Sophia
+# Project Sophia v2.0
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 Project Sophia is a comprehensive knowledge management system designed to help developers organize, manage, and share code snippets, solutions, and technical insights. It combines powerful AI capabilities with robust organization features to streamline your coding workflow.
+
+## 🌟 What's New in v2.0
+
+### AI-Powered Features
+- ✨ **Modern Code Generation UI** - Beautiful gradient design with micro-animations
+- ✨ **Streaming Code Display** - Real-time typewriter effect for generated code
+- ✨ **Enhanced Code Explanation** - Formatted markdown with copy & apply features
+- ✨ **Smart Tag Suggestions** - AI-powered tag generation with intelligent filtering
+- ✨ **Chat Assistant** - Context-aware coding assistant with streaming responses
+
+### UI/UX Improvements
+- 🎨 Modern glassmorphism design
+- 🎨 Micro-animations throughout
+- 🎨 Syntax-highlighted code blocks
+- 🎨 Custom scrollbars and themes
+- 🎨 Responsive mobile design
 
 ## About the Project
 
