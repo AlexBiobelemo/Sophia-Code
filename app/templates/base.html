@@ -339,6 +339,11 @@
                     <i class="bi bi-chevron-left"></i>
                 </button>
             </div>
+            
+            <!-- Hamburger button for collapsed state (visible only when collapsed) -->
+            <button class="sidebar-expand-btn" id="sidebarExpandBtn" aria-label="Expand sidebar" style="display: none;">
+                <i class="bi bi-list"></i>
+            </button>
 
             {% if not current_user.is_anonymous %}
             <div class="sidebar-nav">
@@ -1050,47 +1055,69 @@
             const sidebarToggle = document.getElementById('sidebarToggle');
             const mainWrapper = document.querySelector('.main-wrapper');
 
-            let autoCollapseTimeout;
-            let autoExpandTimeout;
+            let autoCollapseTimeout = null;
+            let autoExpandTimeout = null;
             let isManuallyCollapsed = false;
+            let hoverTimeout = null;
 
             // Auto-collapse functionality
             function startAutoCollapseTimer() {
-                clearTimeout(autoCollapseTimeout);
-                clearTimeout(autoExpandTimeout);
-                
+                if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
+                if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
+
                 if (isManuallyCollapsed) return; // Don't auto-collapse if manually collapsed
-                
+
                 autoCollapseTimeout = setTimeout(() => {
                     if (window.innerWidth >= 992 && !sidebar.classList.contains('collapsed')) {
                         sidebar.classList.add('collapsed');
                         updateSidebarState(true);
+                        console.log('Auto-collapsed sidebar');
                     }
                 }, 5000);
             }
 
             // Auto-expand on hover (after 2 seconds)
             function startAutoExpandTimer() {
+                if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
+                if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
+
                 if (isManuallyCollapsed) return; // Don't auto-expand if manually collapsed
-                
-                clearTimeout(autoExpandTimeout);
+                if (!sidebar.classList.contains('collapsed')) return; // Only expand if collapsed
+
+                console.log('Starting auto-expand timer...');
                 autoExpandTimeout = setTimeout(() => {
                     if (window.innerWidth >= 992 && sidebar.classList.contains('collapsed')) {
                         sidebar.classList.remove('collapsed');
                         updateSidebarState(false);
+                        console.log('Auto-expanded sidebar');
                     }
                 }, 2000);
             }
 
+            // Cancel auto-expand
+            function cancelAutoExpand() {
+                if (autoExpandTimeout) {
+                    clearTimeout(autoExpandTimeout);
+                    autoExpandTimeout = null;
+                    console.log('Auto-expand cancelled');
+                }
+                if (!isManuallyCollapsed) {
+                    startAutoCollapseTimer();
+                }
+            }
+
             function resetAutoCollapseTimer() {
-                clearTimeout(autoExpandTimeout);
+                if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
+                if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
                 startAutoCollapseTimer();
             }
 
             function updateSidebarState(isCollapsed) {
                 // Update toggle button icon
                 const toggleIcon = sidebarToggle.querySelector('i');
-                toggleIcon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+                if (toggleIcon) {
+                    toggleIcon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+                }
 
                 // Save state to localStorage
                 localStorage.setItem('sidebarCollapsed', isCollapsed);
@@ -1106,8 +1133,13 @@
                 isManuallyCollapsed = !sidebar.classList.contains('collapsed');
                 sidebar.classList.toggle('collapsed');
                 updateSidebarState(isManuallyCollapsed);
-                
-                if (!isManuallyCollapsed) {
+
+                if (isManuallyCollapsed) {
+                    // Clear all timers when manually collapsed
+                    if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
+                    if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
+                    console.log('Manually collapsed, timers cleared');
+                } else {
                     startAutoCollapseTimer();
                 }
             }
@@ -1116,11 +1148,13 @@
                 const savedState = localStorage.getItem('sidebarCollapsed');
                 const savedManualState = localStorage.getItem('sidebarManuallyCollapsed');
                 isManuallyCollapsed = savedManualState === 'true';
-                
+
                 if (savedState === 'true') {
                     sidebar.classList.add('collapsed');
                     const toggleIcon = sidebarToggle.querySelector('i');
-                    toggleIcon.className = 'bi bi-chevron-right';
+                    if (toggleIcon) {
+                        toggleIcon.className = 'bi bi-chevron-right';
+                    }
 
                     if (window.innerWidth >= 992) {
                         mainWrapper.style.marginLeft = '60px';
@@ -1146,15 +1180,41 @@
             // Initialize sidebar state and add event listeners
             if (sidebarToggle && sidebar) {
                 initializeSidebarState();
+                
+                // Toggle button click
                 sidebarToggle.addEventListener('click', toggleDesktopSidebar);
+                
+                // Expand button click (hamburger for collapsed state)
+                const expandBtn = document.getElementById('sidebarExpandBtn');
+                if (expandBtn) {
+                    expandBtn.addEventListener('click', () => {
+                        if (sidebar.classList.contains('collapsed')) {
+                            toggleDesktopSidebar();
+                        }
+                    });
+                }
 
-                // Auto-expand on hover
-                sidebar.addEventListener('mouseenter', startAutoExpandTimer);
-                sidebar.addEventListener('mouseleave', () => {
-                    clearTimeout(autoExpandTimeout);
-                    if (!isManuallyCollapsed) {
-                        startAutoCollapseTimer();
+                // Auto-expand on hover - use mouseenter on entire sidebar
+                sidebar.addEventListener('mouseenter', function(e) {
+                    console.log('Sidebar mouseenter, collapsed:', sidebar.classList.contains('collapsed'));
+                    if (sidebar.classList.contains('collapsed') && !isManuallyCollapsed) {
+                        startAutoExpandTimer();
                     }
+                });
+                
+                sidebar.addEventListener('mouseleave', function() {
+                    console.log('Sidebar mouseleave');
+                    cancelAutoExpand();
+                });
+
+                // Also add hover detection for nav links when collapsed
+                const navLinks = sidebar.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    link.addEventListener('mouseenter', function() {
+                        if (sidebar.classList.contains('collapsed') && !isManuallyCollapsed) {
+                            startAutoExpandTimer();
+                        }
+                    });
                 });
 
                 // Track user activity and reset auto-collapse timer
@@ -1795,23 +1855,57 @@
         });
     </script>
     <script>
+        // Handle page transitions with proper back/forward support
         document.addEventListener('DOMContentLoaded', () => {
             const pageContent = document.getElementById('page-content');
 
             // Fade in on page load
-            pageContent.classList.add('fade-in');
+            if (pageContent) {
+                pageContent.classList.add('fade-in');
+            }
 
-            // Fade out on link click
+            // Handle back/forward button
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    // Page was loaded from cache (back/forward button)
+                    if (pageContent) {
+                        pageContent.classList.add('fade-in');
+                        pageContent.classList.remove('fade-out');
+                    }
+                }
+            });
+
+            // Fade out on link click (only for internal navigation)
             document.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', e => {
                     const href = link.getAttribute('href');
-                    if (href && href.startsWith('/')) {
+                    const target = link.getAttribute('target');
+                    
+                    // Skip if: external link, new tab, download, hash link, or mailto/tel
+                    if (!href || 
+                        href.startsWith('#') || 
+                        href.startsWith('mailto:') || 
+                        href.startsWith('tel:') ||
+                        target === '_blank' ||
+                        link.hasAttribute('download')) {
+                        return;
+                    }
+                    
+                    // Only apply fade for internal same-origin links
+                    if (href.startsWith('/') && !href.startsWith('//')) {
                         e.preventDefault();
-                        pageContent.classList.remove('fade-in');
-                        pageContent.classList.add('fade-out');
-                        setTimeout(() => {
+                        
+                        // Use history.pushState for smooth transition
+                        if (pageContent) {
+                            pageContent.classList.remove('fade-in');
+                            pageContent.classList.add('fade-out');
+                            
+                            setTimeout(() => {
+                                window.location.href = href;
+                            }, 300); // Reduced timeout
+                        } else {
                             window.location.href = href;
-                        }, 500);
+                        }
                     }
                 });
             });

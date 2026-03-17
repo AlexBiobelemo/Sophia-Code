@@ -2520,6 +2520,29 @@ a:focus-visible {
     display: none;
 }
 
+/* Expand button for collapsed sidebar */
+.sidebar-expand-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--bs-body-color);
+    cursor: pointer;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    width: 100%;
+    font-size: 1.5rem;
+}
+
+.sidebar.collapsed .sidebar-expand-btn {
+    display: block;
+}
+
+.sidebar-expand-btn:hover {
+    background: var(--bs-secondary-bg);
+    color: var(--bs-primary);
+}
+
 .sidebar.collapsed .nav-link {
     justify-content: center;
     padding: var(--space-md);
@@ -2541,6 +2564,24 @@ a:focus-visible {
 .mobile-sidebar {
     background-color: var(--bs-dark);
     border-right: 1px solid var(--bs-border-color);
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+/* Compact mobile sidebar - fit content without scrolling */
+@media (max-height: 700px) {
+    .mobile-sidebar .nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .mobile-sidebar .sidebar-header {
+        padding: 0.75rem 1rem;
+    }
+    
+    .mobile-sidebar .sidebar-brand {
+        font-size: 1.1rem;
+    }
 }
 
 /* Responsive */
@@ -2553,7 +2594,7 @@ a:focus-visible {
         height: 100vh;
         z-index: 1000;
     }
-    
+
     .sidebar.show {
         transform: translateX(0);
     }

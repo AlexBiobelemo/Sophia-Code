@@ -1,5 +1,5 @@
 {# Partial template for infinite scroll pagination #}
-{% for snippet in snippets %}
+{% for snippet in snippets.items %}
 <div class="snippet-item" data-snippet-id="{{ snippet.id }}">
     <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="snippet-link">
         <div class="snippet-icon">
@@ -31,3 +31,9 @@
     </div>
 </div>
 {% endfor %}
+
+{# Include pagination info #}
+<div id="pagination-info" 
+     data-has-next="{{ '1' if snippets.has_next else '0' }}" 
+     data-next-page="{{ snippets.next_num if snippets.has_next else '' }}">
+</div>

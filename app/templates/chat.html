@@ -293,18 +293,34 @@
             sessionsEl.addEventListener('click', (e)=>{
                 const li = e.target.closest('.list-group-item');
                 if (!li) return;
-                
-                if (e.target.closest('.delete-chat')) {
+
+                // Check if delete button was clicked
+                const deleteBtn = e.target.closest('.delete-chat');
+                if (deleteBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     const id = li.dataset.sessionId;
                     if (confirm('Delete this conversation?')) {
-                        fetch(`/chat/${id}`, {method: 'DELETE'}).then(()=>{
-                            li.remove();
-                            if (sessionId == id) window.location.href = '/chat';
-                        });
+                        fetch(`/chat/${id}`, {method: 'DELETE'})
+                            .then(response => {
+                                if (response.ok) {
+                                    li.remove();
+                                    if (sessionId == id) {
+                                        window.location.href = '/chat';
+                                    }
+                                } else {
+                                    alert('Failed to delete conversation. Please try again.');
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Delete error:', error);
+                                alert('Failed to delete conversation. Please try again.');
+                            });
                     }
                     return;
                 }
-                
+
+                // Navigate to chat session
                 sessionId = Number(li.dataset.sessionId);
                 activeLi?.classList.remove('active');
                 activeLi = li;

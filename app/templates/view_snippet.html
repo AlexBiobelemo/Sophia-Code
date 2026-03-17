@@ -189,17 +189,24 @@
         const btn = document.getElementById('explain-btn');
         const resultDiv = document.getElementById('ai-result');
         const spinner = btn.querySelector('.spinner-border');
-        
+
         btn.disabled = true;
         spinner.style.display = 'inline-block';
         resultDiv.style.display = 'none';
-        
+
         try {
-            const response = await fetch('{{ url_for("main.explain_code", snippet_id=snippet.id) }}', {
-                method: 'POST'
+            const response = await fetch('{{ url_for("main.explain") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    code: document.getElementById('snippet-code').textContent,
+                    language: '{{ snippet.language }}'
+                })
             });
             const data = await response.json();
-            
+
             if (data.explanation) {
                 resultDiv.innerHTML = `
                     <div class="alert alert-info">

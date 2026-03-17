@@ -126,7 +126,7 @@ def index():
 
     if partial:
         # Return just the cards for infinite scrolling
-        return render_template('_snippets_list.html', snippets=(pagination.items if pagination else []))
+        return render_template('_snippets_list.html', snippets=pagination)
 
     return render_template(
         'index.html',

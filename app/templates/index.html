@@ -122,9 +122,12 @@
         /* Feature Cards */
         .feature-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
             margin-top: 3rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .feature-card {
@@ -135,6 +138,7 @@
             padding: 2rem;
             transition: all var(--transition-base);
             text-align: center;
+            position: relative;
         }
 
         .feature-card::before {
@@ -332,6 +336,41 @@
             "retina_detect": true
         });
     </script>
+    
+    <style>
+        /* Responsive for Feature Cards */
+        @media (max-width: 992px) {
+            .feature-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .feature-cards {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-hero {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
 </body>
 
 </html>
@@ -406,21 +445,12 @@
         {% endfor %}
     </div>
 
-    <!-- Infinite Scroll Loader -->
-    <div class="text-center py-4" id="infinite-scroll-loader" style="display: none;">
-        <div class="spinner-border text-primary" role="status">
+    <!-- Infinite Scroll Loader - Always Visible -->
+    <div class="text-center py-4" id="infinite-scroll-loader">
+        <div class="spinner-border text-primary" role="status" style="display: none;">
             <span class="visually-hidden">Loading...</span>
         </div>
-        <p class="text-muted mt-2">Loading more snippets...</p>
-    </div>
-
-    <!-- Load More Button (fallback) -->
-    <div class="text-center py-4" id="load-more-container">
-        {% if snippets.pages > 1 %}
-        <button id="load-more-btn" class="btn btn-outline-primary btn-lg" data-page="1">
-            <i class="bi bi-arrow-down-circle me-2"></i>Load More
-        </button>
-        {% endif %}
+        <p class="text-muted mt-2" id="loader-text">Scroll down to load more snippets...</p>
     </div>
 
     {% else %}
@@ -737,49 +767,56 @@
         });
     }
 
-    // Infinite Scroll Pagination
+    // Infinite Scroll Pagination - Fully Automatic on Scroll
     document.addEventListener('DOMContentLoaded', () => {
-        const loadMoreBtn = document.getElementById('load-more-btn');
         const loader = document.getElementById('infinite-scroll-loader');
+        const loaderText = document.getElementById('loader-text');
+        const spinner = loader.querySelector('.spinner-border');
         const container = document.getElementById('snippets-container');
         
-        if (!loadMoreBtn || !container) return;
+        if (!loader || !container) return;
 
-        let currentPage = parseInt(loadMoreBtn.dataset.page) || 1;
+        let currentPage = 1;
         let isLoading = false;
+        let hasMorePages = true;
 
         // Load more function
         async function loadMoreSnippets() {
-            if (isLoading) return;
-            
+            if (isLoading || !hasMorePages) return;
+
             isLoading = true;
-            loader.style.display = 'block';
-            loadMoreBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            loaderText.textContent = 'Loading more snippets...';
 
             try {
                 currentPage++;
                 const url = window.location.pathname + `?page=${currentPage}&partial=1`;
-                
+                console.log('Loading page:', currentPage);
+
                 const response = await fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
-                
+
                 if (!response.ok) throw new Error('Network response was not ok');
-                
+
                 const html = await response.text();
-                
-                // Parse the response and extract snippet items
+                console.log('Received HTML length:', html.length);
+
+                // Parse the response
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const newItems = doc.querySelectorAll('.snippet-item');
-                
+                const paginationInfo = doc.querySelector('#pagination-info');
+
+                console.log('New items count:', newItems.length);
+
                 if (newItems.length > 0) {
                     newItems.forEach(item => {
                         const clone = item.cloneNode(true);
                         container.appendChild(clone);
-                        
+
                         // Apply marquee to new items
                         const titleEl = clone.querySelector('.snippet-title');
                         if (titleEl) {
@@ -795,41 +832,81 @@
                             }
                         }
                     });
-                    loadMoreBtn.dataset.page = currentPage;
                     
                     // Check if there are more pages
-                    const hasNextPage = doc.querySelector('#load-more-btn');
-                    if (!hasNextPage) {
-                        loadMoreBtn.style.display = 'none';
+                    if (paginationInfo) {
+                        hasMorePages = paginationInfo.dataset.hasNext === '1';
+                        console.log('Has more pages:', hasMorePages);
+                    } else {
+                        hasMorePages = false;
+                    }
+                    
+                    if (!hasMorePages) {
+                        spinner.style.display = 'none';
+                        loaderText.textContent = 'All snippets loaded ✓';
+                        loader.style.opacity = '0.6';
+                    } else {
+                        spinner.style.display = 'none';
+                        setTimeout(() => {
+                            loaderText.textContent = 'Scroll down to load more...';
+                        }, 500);
                     }
                 } else {
-                    loadMoreBtn.style.display = 'none';
+                    hasMorePages = false;
+                    spinner.style.display = 'none';
+                    loaderText.textContent = 'No more snippets';
                 }
             } catch (error) {
                 console.error('Error loading more snippets:', error);
-                alert('Failed to load more snippets. Please try again.');
+                spinner.style.display = 'none';
+                loaderText.innerHTML = 'Failed to load. <a href="#" onclick="location.reload()">Refresh</a> to try again.';
+                hasMorePages = false;
             } finally {
                 isLoading = false;
-                loader.style.display = 'none';
-                loadMoreBtn.disabled = false;
             }
         }
 
-        // Infinite scroll using Intersection Observer
+        // Method 1: Intersection Observer
         const observer = new IntersectionObserver((entries) => {
-            const entry = entries[0];
-            if (entry.isIntersecting && loadMoreBtn.style.display !== 'none') {
-                loadMoreSnippets();
-            }
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !isLoading && hasMorePages) {
+                    console.log('👀 Loader in view, loading more...');
+                    loadMoreSnippets();
+                }
+            });
         }, {
-            rootMargin: '200px'
+            rootMargin: '100px'
         });
 
-        // Observe the load more button
-        observer.observe(loadMoreBtn);
+        // Observe the loader element
+        observer.observe(loader);
 
-        // Also allow manual click
-        loadMoreBtn.addEventListener('click', loadMoreSnippets);
+        // Method 2: Scroll event listener (fallback/backup)
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            if (isLoading || !hasMorePages) return;
+            
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const loaderRect = loader.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                
+                // If loader is within 400px of bottom of viewport
+                if (loaderRect.top < windowHeight + 400) {
+                    console.log('📜 Scroll triggered, loading more...');
+                    loadMoreSnippets();
+                }
+            }, 100);
+        });
+
+        // Initial check - load if loader is already in view
+        setTimeout(() => {
+            const loaderRect = loader.getBoundingClientRect();
+            if (loaderRect.top < window.innerHeight) {
+                console.log('🚀 Initial load triggered');
+                loadMoreSnippets();
+            }
+        }, 500);
     });
 </script>
 {% endblock %}
