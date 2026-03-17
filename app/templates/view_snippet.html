@@ -97,11 +97,11 @@
         <div class="card-body">
             {% if snippet.versions and snippet.versions.all() %}
             <div class="list-group">
-                {% for version in snippet.versions.all()|sort(attribute='version_number', reverse=true) %}
+                {% for version in snippet.versions.all()|sort(attribute='created_at', reverse=true) %}
                 <div class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                         <span class="fw-semibold">Version {{ version.version_number }}</span>
-                        <small class="text-muted ms-2">{{ version.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                        <small class="text-muted ms-2">{{ version.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
                         {% if version.change_summary %}
                         <div class="text-muted small mt-1">{{ version.change_summary }}</div>
                         {% endif %}
