@@ -534,10 +534,24 @@
         font-weight: 600;
         font-size: 1rem;
         margin-bottom: 0.5rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
         color: var(--bs-body-color);
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    
+    /* Marquee for grid view titles */
+    .snippets-container.grid-view .snippet-title-marquee {
+        position: relative;
+    }
+    
+    .snippets-container.grid-view .snippet-title-marquee .marquee-text {
+        display: inline-block;
+        animation: marquee 15s linear infinite;
+        padding-left: 0;
+    }
+    
+    .snippets-container.grid-view .snippet-title-marquee:hover .marquee-text {
+        animation-play-state: paused;
     }
 
     .snippets-container.grid-view .snippet-meta {
