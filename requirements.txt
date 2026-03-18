@@ -5,6 +5,7 @@ Flask_Migrate
 flask_sqlalchemy
 flask_wtf
 Flask-Moment
+google-generativeai
 numpy
 protobuf
 pytest
