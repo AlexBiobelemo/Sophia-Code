@@ -35,12 +35,7 @@
             <div class="dot"></div>
         </div>
         <div class="loading-text">
-            <span class="typing-indicator">
-                <span>A</span><span>I</span>
-                <span class="thinking-dot">.</span>
-                <span class="thinking-dot">.</span>
-                <span class="thinking-dot">.</span>
-            </span>
+            <span id="loading-message">Thinking</span><span class="ellipsis">...</span>
         </div>
     </div>
 
@@ -690,11 +685,11 @@
     /* Loading Spinner Styles */
     .chat-loading-spinner {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
-        justify-content: center;
-        gap: 1rem;
-        padding: 2rem;
+        justify-content: flex-start;
+        gap: 0.75rem;
+        padding: 1rem 0;
         animation: fadeIn 0.3s ease;
     }
 
@@ -766,67 +761,23 @@
 
     /* Typing Indicator Text */
     .loading-text {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         color: var(--bs-body-color);
         opacity: 0.8;
         font-weight: 500;
-        letter-spacing: 0.5px;
-    }
-
-    .typing-indicator {
-        display: inline-flex;
+        letter-spacing: 0.3px;
+        display: flex;
         align-items: center;
-        gap: 2px;
     }
 
-    .typing-indicator span {
-        animation: pulse-text 1.5s infinite ease-in-out;
+    .ellipsis {
+        animation: ellipsisPulse 1.5s infinite ease-in-out;
+        display: inline-block;
     }
 
-    .typing-indicator span:nth-child(1) {
-        animation-delay: 0s;
-    }
-
-    .typing-indicator span:nth-child(2) {
-        animation-delay: 0.1s;
-    }
-
-    .typing-indicator .thinking-dot {
-        animation: pulse-dot 1.5s infinite ease-in-out;
-        font-size: 1.2rem;
-        line-height: 1;
-    }
-
-    .typing-indicator .thinking-dot:nth-child(3) {
-        animation-delay: 0.2s;
-    }
-
-    .typing-indicator .thinking-dot:nth-child(4) {
-        animation-delay: 0.3s;
-    }
-
-    .typing-indicator .thinking-dot:nth-child(5) {
-        animation-delay: 0.4s;
-    }
-
-    @keyframes pulse-text {
-        0%, 100% {
-            opacity: 0.4;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 1;
-            transform: scale(1.05);
-        }
-    }
-
-    @keyframes pulse-dot {
-        0%, 100% {
-            opacity: 0.3;
-        }
-        50% {
-            opacity: 1;
-        }
+    @keyframes ellipsisPulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
     }
 </style>
 
@@ -989,18 +940,35 @@
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
 
+            let loadingTimeout = null;
+
             function showLoadingSpinner() {
                 const spinner = document.getElementById('chat-loading');
+                const messageEl = document.getElementById('loading-message');
                 if (spinner) {
                     spinner.style.display = 'flex';
                     spinner.classList.remove('fade-out');
+                    // Reset message to initial state
+                    if (messageEl) messageEl.textContent = 'Thinking';
                     chatLog.scrollTop = chatLog.scrollHeight;
+                    
+                    // Change message after 5 seconds
+                    loadingTimeout = setTimeout(() => {
+                        if (messageEl && spinner.style.display !== 'none') {
+                            messageEl.textContent = 'Hold on tight';
+                        }
+                    }, 5000);
                 }
             }
 
             function hideLoadingSpinner() {
                 const spinner = document.getElementById('chat-loading');
                 if (spinner) {
+                    // Clear the timeout if spinner is hidden before 5 seconds
+                    if (loadingTimeout) {
+                        clearTimeout(loadingTimeout);
+                        loadingTimeout = null;
+                    }
                     spinner.classList.add('fade-out');
                     setTimeout(() => {
                         spinner.style.display = 'none';
