@@ -935,7 +935,7 @@
 
                     if (res.ok) {
                         const data = await res.json();
-                        window.location.href = `/chat/${data.session_id}`;
+                        window.location.href = `/chat?session=${data.session_id}`;
                     } else {
                         alert('Failed to create new chat. Please try again.');
                     }
