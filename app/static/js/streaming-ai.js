@@ -652,7 +652,7 @@ class StreamingAIManager {
         if (ui && ui.state.codeContent) {
             try {
                 await navigator.clipboard.writeText(ui.state.codeContent);
-                this.showCopyFeedback(ui.elements.codeOutput, 'Code copied!');
+                this.showCopyFeedback(ui.elements.codeSection, 'Code copied!');
             } catch (error) {
                 console.error('Failed to copy code:', error);
             }
@@ -670,7 +670,7 @@ class StreamingAIManager {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = this.renderMarkdown(ui.state.explanationContent);
                 await navigator.clipboard.writeText(tempDiv.textContent || tempDiv.innerText || '');
-                this.showCopyFeedback(ui.elements.explanationOutput, 'Explanation copied!');
+                this.showCopyFeedback(ui.elements.explanationSection, 'Explanation copied!');
             } catch (error) {
                 console.error('Failed to copy explanation:', error);
             }
@@ -780,9 +780,15 @@ class StreamingAIManager {
                 explanationContent: ''
             });
 
-            ui.elements.codeOutput.style.display = 'none';
-            ui.elements.explanationOutput.style.display = 'none';
-            ui.elements.actions.style.display = 'none';
+            if (ui.elements.codeSection) {
+                ui.elements.codeSection.style.display = 'none';
+            }
+            if (ui.elements.explanationSection) {
+                ui.elements.explanationSection.style.display = 'none';
+            }
+            if (ui.elements.actions) {
+                ui.elements.actions.style.display = 'none';
+            }
 
             await this.startChainedStreaming(ui.originalPrompt, {
                 sessionId: sessionId,

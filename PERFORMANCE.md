@@ -10,7 +10,7 @@ This document details the performance and optimization improvements made to the 
 - **Impact**: Reduced memory overhead and improved query performance from O(N) to O(1) database operation.
 
 ### 2. Badge Calculation Efficiency
-- **Issue**: `check_and_award_badges()` performed multiple `.count()` queries for the same relationships (snippets, collections, leetcode records) repeatedly.
+- **Issue**: `check_and_award_badges()` performed multiple `.count()` queries for the same relationships (snippets, collections) repeatedly.
 - **Optimization**: Counts are now fetched once at the start of the function and stored in local variables.
 - **Impact**: Reduced the number of database queries during badge checks by ~80% (from 8+ queries to 2-3).
 

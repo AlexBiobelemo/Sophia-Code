@@ -137,27 +137,7 @@ def initialize_default_badges():
             "criteria": "languages:5",
             "image_url": "bi-globe"
         },
-        
-        # LeetCode contributions
-        {
-            "name": "Problem Solver",
-            "description": "Added your first LeetCode problem",
-            "criteria": "problems:1",
-            "image_url": "bi-puzzle"
-        },
-        {
-            "name": "Solution Provider",
-            "description": "Contributed your first solution",
-            "criteria": "solutions:1",
-            "image_url": "bi-lightbulb"
-        },
-        {
-            "name": "Algorithm Expert",
-            "description": "Contributed 5 solutions",
-            "criteria": "solutions:5",
-            "image_url": "bi-cpu"
-        },
-        
+
         # Notes and documentation
         {
             "name": "Note Taker",
@@ -207,13 +187,11 @@ def initialize_default_badges():
 
 def check_and_award_badges(user):
     """Enhanced badge checking and awarding system."""
-    from app.models import Snippet, Collection, LeetcodeProblem, LeetcodeSolution, Note
-    
+    from app.models import Snippet, Collection, Note
+
     # Get user statistics
     snippet_count = user.snippets.count()
     collection_count = user.collections.count()
-    problem_count = user.leetcode_problems.count()
-    solution_count = user.leetcode_solutions.count()
     note_count = user.notes.count()
     total_points = user.get_total_points()
     
@@ -260,12 +238,7 @@ def check_and_award_badges(user):
         # Language badges
         ("Polyglot", language_count >= 3),
         ("Universal Coder", language_count >= 5),
-        
-        # LeetCode badges
-        ("Problem Solver", problem_count >= 1),
-        ("Solution Provider", solution_count >= 1),
-        ("Algorithm Expert", solution_count >= 5),
-        
+
         # Notes badges
         ("Note Taker", note_count >= 1),
         ("Knowledge Keeper", note_count >= 10),

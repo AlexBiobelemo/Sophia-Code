@@ -1,18 +1,11 @@
-65 - [ ] Different explanation styles (brief/detailed)                                                                                   │
-  │    166 - [ ] Syntax highlighting in explanation                                                                                              │
-  │    167 - [ ] Mermaid diagram support  
+Different explanation styles (brief/detailed)                                                                                   Syntax highlighting in explanation                                                                                              
+Mermaid diagram support  
+
+Migrate to new `google-genai` SDK                                                                                               │Expand tag vocabulary to 500+ terms                                                                                             
+Add explanation history                                                                                                         │Support markdown in explanations                                                                                                Add export explanation as PDF                                                                                                   
+Implement explanation templates                                                                                                 Add user feedback on tag quality  
 
 
-  209                                                                                                                                       │
-  │    210 - [ ] Migrate to new `google-genai` SDK                                                                                               │
-  │    211 - [ ] Expand tag vocabulary to 500+ terms                                                                                             │
-  │    212 - [ ] Add explanation history                                                                                                         │
-  │    213 - [ ] Support markdown in explanations                                                                                                │
-  │    214 - [ ] Add export explanation as PDF                                                                                                   │
-  │    215 - [ ] Implement explanation templates                                                                                                 │
-  │    216 - [ ] Add user feedback on tag quality  
+Redesign the notes page
 
-
-
-
-With explanation the markdown headers like ### is not formatted properly, the copy button results in Failed to copy: TypeError: event is undefined
+qwen --resume 4548238b-84b2-4047-a0e3-361ffdd9f483

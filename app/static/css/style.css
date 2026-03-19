@@ -212,7 +212,36 @@ button:hover,
     transform: translateX(0);
     transition: transform 0.3s ease, width 0.3s ease;
     overflow-y: auto;
+    overflow-x: visible;
     padding: 1rem 0;
+}
+
+/* Allow dropdowns to overflow when sidebar is not collapsed */
+.sidebar:not(.collapsed) {
+    overflow-x: visible;
+}
+
+/* Allow dropdowns to overflow when sidebar is collapsed */
+.sidebar.collapsed {
+    overflow-x: visible;
+}
+
+/* Custom scrollbar for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--bs-primary);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-primary-hover);
 }
 
 /* Collapsible Sidebar Functionality */
@@ -240,117 +269,103 @@ button:hover,
     transform: scale(1.1);
 }
 
+/* Sidebar expand button (shown when collapsed) */
+.sidebar-expand-btn {
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bs-primary);
+    border: 2px solid var(--bs-dark);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1051;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+}
+
+.sidebar-expand-btn:hover {
+    background: var(--bs-primary);
+    transform: translateX(-50%) scale(1.1);
+}
+
+/* Show expand button only when sidebar is collapsed */
+.sidebar.collapsed .sidebar-expand-btn {
+    display: flex;
+}
+
+/* Hide header when collapsed */
+.sidebar.collapsed .sidebar-header {
+    display: none;
+}
+
 /* Collapsed sidebar state */
 .sidebar.collapsed {
-    width: 60px;
-    /* Force overflow to hide content when collapsed */
-    overflow-x: hidden;
+    width: 70px;
+}
+
+.sidebar.collapsed .sidebar-brand-text,
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .dropdown-toggle::after,
+.sidebar.collapsed .nav-link .me-2 {
+    display: none;
 }
 
 .sidebar.collapsed .sidebar-brand {
-    display: flex;
-    /* Ensure flexbox for centering */
-    align-items: center;
-    /* Vertically center items */
     justify-content: center;
-    /* Horizontally center items */
-    font-size: 1rem;
-    overflow: hidden;
-    /* Hide overflowing content */
-    white-space: nowrap;
-    /* Prevent text wrapping */
-    width: 100%;
-    /* Ensure it takes full width for overflow to work */
 }
 
-.sidebar.collapsed .sidebar-brand span {
-    display: none;
-}
-
-.sidebar.collapsed .sidebar-brand i {
-    font-size: 1.5rem;
-    margin: 0;
-}
-
-.sidebar.collapsed .sidebar-nav {
-    padding: 0 0.25rem;
-}
-
-.sidebar.collapsed .sidebar-nav .nav-link {
+.sidebar.collapsed .nav-link {
     justify-content: center;
-    padding: 0.75rem 0.5rem;
-    position: relative;
-    /* Ensure proper positioning for tooltip */
+    padding: 0.75rem;
 }
 
-.sidebar.collapsed .sidebar-nav .nav-link span,
-.sidebar.collapsed .sidebar-nav .nav-link .dropdown-toggle::after,
-.sidebar.collapsed .sidebar-nav .nav-link .me-2 {
-    display: none !important;
-    /* Force hide text and spacing */
-}
-
-.sidebar.collapsed .sidebar-nav .nav-link i {
+.sidebar.collapsed .nav-link i {
     margin: 0;
-    width: auto;
-    font-size: 1.2rem;
-    /* Ensure consistent icon sizing */
+    font-size: 1.25rem;
 }
 
-/* Enhanced dropdown handling for collapsed sidebar */
-.sidebar.collapsed .dropdown {
-    position: relative;
-}
-
+/* Collapsed sidebar dropdown - slides out to the right */
 .sidebar.collapsed .dropdown-menu {
     position: absolute !important;
-    left: 60px;
-    /* Position next to the collapsed sidebar */
+    left: 70px;
     top: 0;
-    margin-top: 0;
     min-width: 12rem;
-    z-index: 1060;
-    display: none;
-    /* Hide by default */
+    background-color: var(--bs-secondary-bg);
+    border: 1px solid var(--bs-border-color);
     border-radius: 0.5rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    /* Add a subtle shadow */
-}
-
-/* Show dropdown on hover for collapsed sidebar */
-.sidebar.collapsed .dropdown:hover .dropdown-menu {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1070;
+    padding: 0.5rem 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-20px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     display: block !important;
 }
 
-/* Ensure dropdown items have proper spacing in collapsed state */
-.sidebar.collapsed .dropdown-item {
-    padding: 0.5rem 1rem;
-    white-space: nowrap;
+.sidebar.collapsed .dropdown:hover .dropdown-menu,
+.sidebar.collapsed .dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
 }
 
-/* Fix for user dropdown in collapsed state */
-.sidebar.collapsed .sidebar-nav .nav-item.dropdown .nav-link {
-    padding: 0.75rem 0.5rem;
-}
-
-.sidebar.collapsed .sidebar-nav .nav-item.dropdown .nav-link img,
-.sidebar.collapsed .sidebar-nav .nav-item.dropdown .nav-link i.bi-person-circle {
-    margin: 0 !important;
-}
-
-.sidebar.collapsed .sidebar-toggle {
-    right: -12px;
-}
-
-/* Tooltip for collapsed sidebar items */
-.sidebar.collapsed .sidebar-nav .nav-link {
+/* Collapsed sidebar tooltip */
+.sidebar.collapsed .nav-link {
     position: relative;
 }
 
-.sidebar.collapsed .sidebar-nav .nav-link::after {
+.sidebar.collapsed .nav-link:hover::after {
     content: attr(data-tooltip);
     position: absolute;
-    left: 70px;
+    left: 80px;
     top: 50%;
     transform: translateY(-50%);
     background: var(--bs-dark);
@@ -359,16 +374,14 @@ button:hover,
     border-radius: 0.25rem;
     font-size: 0.875rem;
     white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s, visibility 0.2s;
     z-index: 1070;
     border: 1px solid var(--bs-border-color);
 }
 
-.sidebar.collapsed .sidebar-nav .nav-link:hover::after {
-    opacity: 1;
-    visibility: visible;
+/* Adjust main content when sidebar is collapsed */
+.main-wrapper.collapsed {
+    margin-left: 70px;
+    width: calc(100% - 70px);
 }
 
 .sidebar-header {
@@ -413,9 +426,23 @@ button:hover,
     transform: translateX(4px);
 }
 
+/* Active page highlight */
 .sidebar-nav .nav-link.active {
     background-color: var(--bs-primary);
     color: white;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(30, 91, 184, 0.4);
+}
+
+.sidebar-nav .nav-link.active:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(30, 91, 184, 0.6);
+}
+
+/* Collapsed sidebar active state */
+.sidebar.collapsed .nav-link.active {
+    background-color: rgba(30, 91, 184, 0.2);
+    box-shadow: none;
 }
 
 .sidebar-nav .nav-link i {
@@ -424,22 +451,74 @@ button:hover,
     font-size: 1.1rem;
 }
 
-/* Dropdown in sidebar */
+/* Dropdown in sidebar - default styles */
 .sidebar .dropdown-menu {
     background-color: var(--bs-secondary-bg);
     border: 1px solid var(--bs-border-color);
     border-radius: 0.5rem;
     margin-top: 0.5rem;
     padding: 0.5rem 0;
+    display: block;
+    z-index: 1070;
+}
+
+/* Ensure dropdown list items are visible */
+.sidebar .dropdown-menu > li {
+    display: block;
+}
+
+.sidebar .dropdown-menu .dropdown-divider {
+    display: block;
+    margin: 0.5rem 0;
+}
+
+/* Ensure dropdown container has proper positioning context */
+.sidebar .dropdown {
+    position: relative;
+}
+
+/* Expanded desktop sidebar dropdown - slides out to the right */
+.sidebar:not(.collapsed) .dropdown-menu,
+.sidebar:not(.collapsed) .dropdown-menu.show {
+    position: absolute !important;
+    left: 100%;
+    top: 0;
+    margin-left: 0.5rem;
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    display: block !important;
+}
+
+.sidebar:not(.collapsed) .dropdown.show .dropdown-menu,
+.sidebar:not(.collapsed) .dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
 }
 
 .sidebar .dropdown-item {
     color: var(--bs-body-color);
     padding: 0.5rem 1.5rem;
     transition: all 0.2s ease;
+    display: block;
+    width: 100%;
 }
 
 .sidebar .dropdown-item:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.sidebar .dropdown-item.active {
+    background-color: var(--bs-primary);
+    color: white;
+    font-weight: 600;
+}
+
+.sidebar .dropdown-toggle.active {
     background-color: var(--bs-primary);
     color: white;
 }
@@ -459,8 +538,8 @@ button:hover,
 
 /* Adjust main content when sidebar is collapsed */
 .main-wrapper.collapsed {
-    margin-left: 60px;
-    width: calc(100% - 60px);
+    margin-left: 80px;
+    width: calc(100% - 80px);
 }
 
 /* Top Header - Compact */
@@ -625,10 +704,16 @@ button:hover,
     z-index: 1050;
     transition: transform 0.3s ease;
     overflow-y: auto;
+    overflow-x: visible;
 }
 
 .mobile-sidebar.open {
     transform: translateX(320px);
+}
+
+/* Allow dropdowns to overflow visibly when sidebar is open */
+.mobile-sidebar.open {
+    overflow-x: visible;
 }
 
 .mobile-sidebar-overlay {
@@ -652,6 +737,93 @@ button:hover,
 .mobile-sidebar-overlay.show {
     opacity: 1;
     visibility: visible;
+}
+
+/* Mobile sidebar dropdown - smooth inline expansion */
+.mobile-sidebar .dropdown-menu {
+    position: relative;
+    left: 0;
+    top: 0;
+    margin-left: 0;
+    margin-top: 0;
+    min-width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1060;
+    background-color: var(--bs-secondary-bg);
+    border: 1px solid var(--bs-border-color);
+    padding: 0 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease, visibility 0.3s ease;
+    display: block !important;
+}
+
+/* Ensure mobile dropdown list items are visible */
+.mobile-sidebar .dropdown-menu > li {
+    display: block;
+}
+
+.mobile-sidebar .dropdown-menu .dropdown-divider {
+    display: block;
+    margin: 0.5rem 0;
+}
+
+/* Expanded state for dropdown - works with Bootstrap's .show class */
+.mobile-sidebar .dropdown.show .dropdown-menu,
+.mobile-sidebar .dropdown-menu.show {
+    max-height: 300px;
+    opacity: 1;
+    visibility: visible;
+    padding: 0.5rem !important;
+    margin-top: 0.5rem;
+}
+
+/* Ensure dropdowns are visible and clickable on mobile */
+.mobile-sidebar .dropdown {
+    position: relative;
+    z-index: 1060;
+}
+
+.mobile-sidebar .dropdown.show {
+    z-index: 1061;
+}
+
+.mobile-sidebar .dropdown-toggle::after {
+    margin-left: auto;
+    transition: transform 0.3s ease;
+}
+
+.mobile-sidebar .dropdown.show .dropdown-toggle::after {
+    transform: rotate(180deg);
+}
+
+/* Highlight dropdown toggle when expanded */
+.mobile-sidebar .dropdown.show .dropdown-toggle {
+    background-color: rgba(30, 91, 184, 0.2);
+    border-radius: 0.5rem;
+}
+
+/* Mobile sidebar dropdown items - instant display (container handles animation) */
+.mobile-sidebar .dropdown-item {
+    color: var(--bs-body-color);
+    padding: 0.5rem 1rem 0.5rem 2rem;
+    transition: all 0.2s ease;
+    display: block;
+    width: 100%;
+}
+
+.mobile-sidebar .dropdown-item:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.mobile-sidebar .dropdown-item.active {
+    background-color: var(--bs-primary);
+    color: white;
+    font-weight: 600;
 }
 
 /* Mobile Search Expansion */

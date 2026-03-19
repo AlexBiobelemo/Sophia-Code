@@ -91,7 +91,6 @@ All database models are defined in `app/models.py` using SQLAlchemy ORM. Key mod
 - **User**: User accounts with preferences and authentication
 - **Snippet**: Code snippets with metadata
 - **Collection**: Hierarchical organization for snippets
-- **LeetcodeProblem/Solution**: Problem-solving features
 - **Note**: Personal note-taking
 - **ChatSession/Message**: AI chat functionality
 - **Point/Badge**: Gamification system

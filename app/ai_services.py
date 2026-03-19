@@ -140,10 +140,29 @@ def _handle_api_response(response, operation_name):
         return False, "Error: Unexpected API response format."
 
 
-def _get_api_key() -> str:
+def _get_api_key(user_api_key=None, user_use_own_key=False) -> str:
+    """Get API key - user's own key if enabled, otherwise app default."""
+    # Use provided user API key if enabled
+    if user_use_own_key and user_api_key:
+        return user_api_key
+    
+    # Try to get user's API key from current_user if not provided
+    if user_api_key is None:
+        try:
+            from flask_login import current_user
+            if current_user and current_user.is_authenticated:
+                if current_user.use_own_api_key and current_user.gemini_api_key:
+                    return current_user.gemini_api_key
+        except:
+            pass
+
+    # Fall back to app's default API key
     api_key = current_app.config.get('GEMINI_API_KEY')
     if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is not configured.")
+        # Check if user has saved a key but not enabled it
+        if user_api_key and not user_use_own_key:
+            raise RuntimeError("You have saved an API key but haven't enabled it. Please check 'Use my key' in the API key settings.")
+        raise RuntimeError("GEMINI_API_KEY is not configured. Please add your API key in the settings or set GEMINI_API_KEY environment variable.")
     return api_key
 
 
@@ -528,104 +547,6 @@ def cosine_similarity(v1, v2):
     return np.dot(v1_arr, v2_arr) / (np.linalg.norm(v1_arr) * np.linalg.norm(v2_arr))
 
 
-def generate_leetcode_solution(problem_title, problem_description, language):
-    """Generate LeetCode solution using Gemini API."""
-    global LAST_META
-    LAST_META['retries'] = False
-    LAST_META['retry_attempts'] = 0
-    LAST_META['chunked'] = False
-    LAST_META['provider'] = 'gemini'
-
-    try:
-        genai.configure(api_key=_get_api_key())
-        update_global_model_name()
-        model = genai.GenerativeModel(model_name=MODEL_NAME)
-
-        prompt = (
-            f"Solve this LeetCode problem in {language}:\n\n"
-            f"Problem: {problem_title}\n"
-            f"Description: {problem_description}\n\n"
-            "Provide ONLY the solution code with minimal comments. No markdown, no explanations."
-        )
-
-        def _do_call():
-            return model.generate_content(prompt)
-
-        response = _call_with_retries(_do_call, "leetcode solution generation")
-        success, result = _handle_api_response(response, "leetcode solution generation")
-        return result
-
-    except Exception as e:
-        current_app.logger.error(f"Gemini API error (leetcode solution): {e}")
-        return f"Error: Could not generate solution. {str(e)}"
-
-
-def explain_leetcode_solution(solution_code, problem_title, language):
-    """Explain LeetCode solution using Gemini API."""
-    global LAST_META
-    LAST_META['retries'] = False
-    LAST_META['retry_attempts'] = 0
-    LAST_META['chunked'] = False
-    LAST_META['provider'] = 'gemini'
-
-    try:
-        genai.configure(api_key=_get_api_key())
-        update_global_model_name()
-        model = genai.GenerativeModel(model_name=MODEL_NAME)
-
-        prompt = (
-            f"Explain this LeetCode solution for '{problem_title}' in {language}:\n\n"
-            f"```{language}\n{solution_code}\n```\n\n"
-            "Provide a clear, structured explanation including:\n"
-            "1. Approach/Algorithm used\n"
-            "2. Time and Space Complexity\n"
-            "3. Key implementation details"
-        )
-
-        def _do_call():
-            return model.generate_content(prompt)
-
-        response = _call_with_retries(_do_call, "leetcode explanation")
-        success, result = _handle_api_response(response, "leetcode explanation")
-        return result
-
-    except Exception as e:
-        current_app.logger.error(f"Gemini API error (leetcode explanation): {e}")
-        return f"Error: Could not generate explanation. {str(e)}"
-
-
-def classify_leetcode_solution(solution_code, problem_description):
-    """Classify LeetCode solution using Gemini API."""
-    global LAST_META
-    LAST_META['retries'] = False
-    LAST_META['retry_attempts'] = 0
-    LAST_META['chunked'] = False
-    LAST_META['provider'] = 'gemini'
-
-    try:
-        genai.configure(api_key=_get_api_key())
-        update_global_model_name()
-        model = genai.GenerativeModel(model_name=MODEL_NAME)
-
-        prompt = (
-            f"Classify this LeetCode solution:\n\n"
-            f"Problem: {problem_description[:500]}\n\n"
-            f"Solution:\n{solution_code[:1000]}\n\n"
-            "Return classification as: difficulty(easy/medium/hard), pattern(two-pointers/sliding-window/etc.), data-structures used"
-        )
-
-        def _do_call():
-            return model.generate_content(prompt)
-
-        response = _call_with_retries(_do_call, "leetcode classification")
-        success, result = _handle_api_response(response, "leetcode classification")
-        return result
-
-    except Exception as e:
-        current_app.logger.error(f"Gemini API error (leetcode classification): {e}")
-        return f"Error: Could not classify solution. {str(e)}"
-
-
 # Multi-step solver functions
 def multi_step_layer1_architecture(prompt_text):
     """Layer 1: Problem Decomposition & Strategy."""
@@ -797,10 +718,10 @@ def multi_step_complete_solver(prompt_text, test_cases=None):
 
 
 # Streaming functions (using Gemini)
-def stream_code_generation(prompt_text, session_id=None):
+def stream_code_generation(prompt_text, session_id=None, user_api_key=None, user_use_own_key=False):
     """Stream code generation using Gemini."""
     try:
-        genai.configure(api_key=_get_api_key())
+        genai.configure(api_key=_get_api_key(user_api_key, user_use_own_key))
         update_global_model_name()
         model = genai.GenerativeModel(model_name=MODEL_NAME)
 
@@ -855,10 +776,10 @@ def stream_code_generation(prompt_text, session_id=None):
         }
 
 
-def stream_code_explanation(code_content, session_id=None, original_prompt=None):
+def stream_code_explanation(code_content, session_id=None, original_prompt=None, user_api_key=None, user_use_own_key=False):
     """Stream code explanation using Gemini."""
     try:
-        genai.configure(api_key=_get_api_key())
+        genai.configure(api_key=_get_api_key(user_api_key, user_use_own_key))
         update_global_model_name()
         model = genai.GenerativeModel(model_name=MODEL_NAME)
 
@@ -909,18 +830,18 @@ def stream_code_explanation(code_content, session_id=None, original_prompt=None)
         }
 
 
-def chained_streaming_generation(prompt_text, session_id=None, code_model=None, explanation_model=None):
+def chained_streaming_generation(prompt_text, session_id=None, code_model=None, explanation_model=None, user_api_key=None, user_use_own_key=False):
     """Complete token-efficient chaining pipeline."""
     def _chain_generator():
         code_content = ""
-        for chunk in stream_code_generation(prompt_text, session_id):
+        for chunk in stream_code_generation(prompt_text, session_id, user_api_key, user_use_own_key):
             yield chunk
             if chunk["type"] == "code_complete":
                 code_content = chunk["content"]
                 break
             elif chunk["type"] == "error":
                 return
-        
+
         if not code_content:
             yield {
                 "type": "error",
@@ -928,10 +849,10 @@ def chained_streaming_generation(prompt_text, session_id=None, code_model=None, 
                 "status": "error"
             }
             return
-        
-        for chunk in stream_code_explanation(code_content, session_id, prompt_text):
+
+        for chunk in stream_code_explanation(code_content, session_id, prompt_text, user_api_key, user_use_own_key):
             yield chunk
-    
+
     return _chain_generator()
 
 

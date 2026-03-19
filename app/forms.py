@@ -8,7 +8,7 @@ from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, Le
 from flask_wtf.file import FileField, FileAllowed
 
 from app import db
-from app.models import User, LeetcodeProblem
+from app.models import User
 
 
 class RegistrationForm(FlaskForm):
@@ -158,94 +158,6 @@ class CollectionForm(FlaskForm):
     submit = SubmitField('Create Collection', render_kw={'id': 'submit-button'})
 
 
-class LeetcodeProblemForm(FlaskForm):
-    title = StringField('Problem Title', validators=[DataRequired(), Length(min=1, max=255)])
-    description = TextAreaField('Problem Description', validators=[DataRequired()])
-    difficulty = SelectField('Difficulty', choices=[('Easy', 'Easy'), ('Medium', 'Medium'), ('Hard', 'Hard')], validators=[DataRequired()])
-    tags = StringField('Tags (comma-separated)', description='e.g., array, dynamic-programming')
-    leetcode_url = StringField('LeetCode URL', validators=[Length(max=500)])
-    submit = SubmitField('Add Problem', render_kw={'id': 'submit-button'})
-
-    def validate_title(self, title):
-        problem = db.session.scalar(sa.select(LeetcodeProblem).where(LeetcodeProblem.title == title.data))
-        if problem is not None:
-            raise ValidationError('A problem with this title already exists.')
-
-
-class GenerateSolutionForm(FlaskForm):
-    problem = SelectField('Select Problem', coerce=int, validators=[DataRequired()])
-    language = SelectField('Solution Language', choices=[
-        ('python', 'Python'),
-        ('java', 'Java'),
-        ('cpp', 'C++'),
-        ('c', 'C'),
-        ('csharp', 'C#'),
-        ('javascript', 'JavaScript'),
-        ('typescript', 'TypeScript'),
-        ('go', 'Go'),
-        ('kotlin', 'Kotlin'),
-        ('swift', 'Swift'),
-        ('ruby', 'Ruby'),
-        ('rust', 'Rust'),
-        ('php', 'PHP'),
-        ('scala', 'Scala'),
-        # SQL and dialects (for DB problems)
-        ('sql', 'SQL (Generic)'),
-        ('mysql', 'MySQL'),
-        ('postgresql', 'PostgreSQL'),
-        ('sqlite', 'SQLite'),
-        ('plsql', 'Oracle PL/SQL'),
-        ('tsql', 'T-SQL (SQL Server)'),
-
-        # Functional & Modern Niche
-        ('haskell', 'Haskell'),
-        ('elixir', 'Elixir'),
-        ('clojure', 'Clojure'),
-        ('fsharp', 'F#'),
-        ('ocaml', 'OCaml'),
-        ('erlang', 'Erlang'),
-        ('zig', 'Zig'),             # Rapidly growing systems language
-        ('solidity', 'Solidity'),   # Blockchain/Smart Contracts
-
-        # Scripting, Game Dev & Embedded
-        ('perl', 'Perl'),
-        ('lua', 'Lua'),             # Standard for game modding/embedded
-        ('groovy', 'Groovy'),       # Critical for Jenkins/Gradle
-        ('gdscript', 'GDScript'),   # Godot Engine
-        ('tcl', 'Tcl'),
-
-        # Enterprise, Legacy & Systems
-        ('objectivec', 'Objective-C'), # Apple ecosystem
-        ('visualbasic', 'Visual Basic .NET'), # Microsoft legacy
-        ('vba', 'VBA'),             # Excel/Office Macros
-        ('fortran', 'Fortran'),     # Scientific computing legacy
-        ('cobol', 'COBOL'),         # Banking/Mainframe legacy
-        ('pascal', 'Pascal/Delphi'), # Educational / Systems
-        ('assembly', 'Assembly'),   # General Assembly (x86/ARM)
-        ('abap', 'ABAP'),           # SAP Ecosystem
-        ('apex', 'Apex'),           # Salesforce Ecosystem
-        ('sas', 'SAS'),             # Analytics for business intelligence
-
-        # Infrastructure, Config & Build Tools
-        ('dockerfile', 'Dockerfile'), # Containerization syntax
-        ('hcl', 'HCL (Terraform)'), # HashiCorp Configuration Language
-        ('makefile', 'Makefile'), # Build automation
-        ('toml', 'TOML'), # Configuration file format
-        ('ini', 'INI'), # Generic configuration file format
-        ('protobuf', 'Protocol Buffers'), # Data serialization
-
-        # Web / Document Extensions
-        ('scss', 'SCSS/Sass'),      # CSS Preprocessor
-        ('latex', 'LaTeX/TeX'),     # Academic/Math Typesetting
-    ], validators=[DataRequired()])
-    submit = SubmitField('Generate Solution', render_kw={'id': 'submit-button'})
-
-
-class ApproveSolutionForm(FlaskForm):
-    approve = BooleanField('Approve Solution')
-    submit = SubmitField('Submit Approval', render_kw={'id': 'submit-button'})
-
-
 class BulkActionForm(FlaskForm):
     """Form for bulk operations (delete, copy, move) on snippets."""
     snippet_ids = StringField('Snippet IDs', validators=[DataRequired()])
@@ -312,6 +224,10 @@ class SettingsForm(FlaskForm):
         ('gemini-3-pro', 'Gemini 3 Pro (Advanced, Best for complex tasks)'),
     ], validators=[DataRequired()])
     
+    # BYOK - Bring Your Own Key
+    gemini_api_key = StringField('Gemini API Key', description='Enter your own Google Gemini API key (optional)')
+    use_own_api_key = BooleanField('Use my own API key instead of default')
+
     code_generation_style = SelectField('Code Generation Style', choices=[
         ('balanced', 'Balanced (Good explanations with moderate detail)'),
         ('detailed', 'Detailed (Comprehensive explanations and comments)'),

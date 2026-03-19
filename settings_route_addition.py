@@ -3,7 +3,6 @@
 # Add this import to the top of routes.py (around line 14-17)
 from app.forms import (RegistrationForm, LoginForm, SnippetForm,
                        AIGenerationForm, CollectionForm, NoteForm,
-                       LeetcodeProblemForm, GenerateSolutionForm, ApproveSolutionForm,
                        MoveSnippetForm, EditProfileForm, BulkActionForm, SettingsForm)
 
 # Add this route after the edit_profile route (around line 1901)

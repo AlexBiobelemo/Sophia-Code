@@ -41,11 +41,13 @@ class User(UserMixin, db.Model):
     public_profile = db.Column(db.Boolean, default=False)
     show_activity = db.Column(db.Boolean, default=True)
     snippet_visibility = db.Column(db.String(20), default='private')  # private, public, friends
+    
+    # BYOK - Bring Your Own Key
+    gemini_api_key = db.Column(db.String(512), nullable=True)  # Encrypted user API key
+    use_own_api_key = db.Column(db.Boolean, default=False)  # Toggle for using own key
 
     snippets = db.relationship('Snippet', backref='author', lazy='dynamic')
     collections = db.relationship('Collection', backref='owner', lazy='dynamic')
-    leetcode_problems = db.relationship('LeetcodeProblem', backref='author', lazy='dynamic')
-    leetcode_solutions = db.relationship('LeetcodeSolution', backref='contributor', lazy='dynamic')
     points = db.relationship('Point', backref='user', lazy='dynamic')
     badges = db.relationship('UserBadge', backref='user', lazy='dynamic')
     notes = db.relationship('Note', backref='author', lazy='dynamic')
@@ -217,58 +219,6 @@ class UserBadge(db.Model):
 
     def __repr__(self):
         return f'<User {self.user.username} earned {self.badge.name}>'
-
-
-
-class LeetcodeProblem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False, unique=True)
-    description = db.Column(db.Text, nullable=False)
-    difficulty = db.Column(db.String(20), nullable=False) # Easy, Medium, Hard
-    tags = db.Column(db.String(255), nullable=True) # e.g., "array, dynamic-programming"
-    leetcode_url = db.Column(db.String(500), nullable=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id')) # User who added the problem
-
-    solutions = db.relationship('LeetcodeSolution', backref='problem', lazy='dynamic')
-
-    __table_args__ = (
-        db.Index('ix_leetcode_problem_title', 'title', unique=True),
-        db.Index('ix_leetcode_problem_difficulty', 'difficulty'),
-        db.Index('ix_leetcode_problem_timestamp', 'timestamp'),
-    )
-
-    def __repr__(self):
-        return f'<LeetcodeProblem {self.title}>'
-
-
-class LeetcodeSolution(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    problem_id = db.Column(db.Integer, db.ForeignKey('leetcode_problem.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id')) # User who contributed the solution
-    solution_code = db.Column(db.Text, nullable=False)
-    language = db.Column(db.String(50), nullable=False, default='python')
-    explanation = db.Column(db.Text, nullable=True)
-    classification = db.Column(db.String(255), nullable=True) # e.g., "Dynamic Programming, BFS"
-    approved = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    embedding = db.Column(db.JSON, nullable=True) # For semantic search of solutions
-
-    __table_args__ = (
-        db.Index('ix_leetcode_solution_problem_id', 'problem_id'),
-        db.Index('ix_leetcode_solution_user_id', 'user_id'),
-        db.Index('ix_leetcode_solution_approved', 'approved'),
-        db.Index('ix_leetcode_solution_timestamp', 'timestamp'),
-    )
-
-    def generate_and_set_embedding(self):
-        from app import ai_services
-        text_to_embed = f"Problem: {self.problem.title}\nSolution: {self.solution_code}\nExplanation: {self.explanation}"
-        self.embedding = ai_services.generate_embedding(
-            text_to_embed, task_type="RETRIEVAL_DOCUMENT")
-
-    def __repr__(self):
-        return f'<LeetcodeSolution for {self.problem.title} by {self.contributor.username}>'
 
 
 class ChatSession(db.Model):

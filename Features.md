@@ -91,12 +91,6 @@
 
 ---
 
-### LeetCode Problem Integration
-**Description:** Users can add programming problems (e.g., LeetCode style) with titles, descriptions, difficulty levels, and tags.
-**Technical Implementation:** SQLAlchemy model for `LeetcodeProblem`, WTForms for problem creation.
-
----
-
 ### AI-Powered Code Generation
 **Description:** Integrates with an AI service (Google Gemini) to generate new code snippets from natural language prompts, explain existing code, suggest relevant tags, and refine code based on feedback.
 **Technical Implementation:** Google Gemini API integration (via `app/ai_services.py`), Celery for asynchronous task processing to avoid blocking the main Flask app during AI calls.

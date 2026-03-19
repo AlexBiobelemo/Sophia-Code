@@ -13,9 +13,8 @@ import json
 from app import db, ai_services
 from app.forms import (RegistrationForm, LoginForm, SnippetForm,
                        AIGenerationForm, CollectionForm, NoteForm,
-                       LeetcodeProblemForm, GenerateSolutionForm, ApproveSolutionForm,
                        MoveSnippetForm, EditProfileForm, BulkActionForm, SettingsForm)
-from app.models import User, Snippet, Collection, LeetcodeProblem, LeetcodeSolution, SnippetVersion, ChatSession, ChatMessage, Badge, UserBadge, Point, Note, MultiStepResult
+from app.models import User, Snippet, Collection, SnippetVersion, ChatSession, ChatMessage, Badge, UserBadge, Point, Note, MultiStepResult
 from app.utils.state_manager import StateManager, preserve_form_state, restore_form_state, preserve_search_state, restore_search_state
 from io import StringIO
 
@@ -27,8 +26,6 @@ def check_and_award_badges(user):
     # Fetch counts once to avoid redundant O(N) queries
     snippet_count = user.snippets.count()
     collection_count = user.collections.count()
-    leetcode_problem_count = user.leetcode_problems.count()
-    leetcode_solution_count = user.leetcode_solutions.count()
     total_points = user.get_total_points()
 
     # Badge: First Snippet
@@ -48,10 +45,6 @@ def check_and_award_badges(user):
     # Badge: Collection Creator (e.g., 1 collection)
     if collection_count >= 1:
         user.award_badge("Collection Creator")
-
-    # Badge: Leetcode Contributor (e.g., 1 problem or solution)
-    if leetcode_problem_count >= 1 or leetcode_solution_count >= 1:
-        user.award_badge("Leetcode Contributor")
 
     # Badge: Point Accumulator (e.g., 50 points)
     if total_points >= 50:
@@ -1468,150 +1461,6 @@ def delete_collection(collection_id):
     return redirect(url_for('main.collections'))
 
 
-@bp.route('/add_problem', methods=['GET', 'POST'])
-@login_required
-def add_problem():
-    form = LeetcodeProblemForm()
-    if form.validate_on_submit():
-        problem = LeetcodeProblem(
-            title=form.title.data,
-            description=form.description.data,
-            difficulty=form.difficulty.data,
-            tags=form.tags.data,
-            leetcode_url=form.leetcode_url.data,
-            author=current_user
-        )
-        db.session.add(problem)
-        db.session.commit()
-        check_and_award_badges(current_user) # Check and award badges
-        flash('Leetcode problem added successfully!', 'success')
-        return redirect(url_for('main.index'))
-    return render_template('add_problem.html', title='Add Leetcode Problem', form=form)
-
-
-@bp.route('/problem/<int:problem_id>')
-@login_required
-def view_problem(problem_id):
-    problem = db.session.get(LeetcodeProblem, problem_id)
-    if problem is None:
-        flash('Problem not found.', 'danger')
-        return redirect(url_for('main.index'))
-    
-    solutions = problem.solutions.filter_by(approved=True).order_by(LeetcodeSolution.timestamp.desc()).all()
-    return render_template('view_problem.html', title=problem.title, problem=problem, solutions=solutions)
-
-
-@bp.route('/generate_solution/<int:problem_id>', methods=['GET', 'POST'])
-@login_required
-def generate_solution(problem_id):
-    problem = db.session.get(LeetcodeProblem, problem_id)
-    if problem is None:
-        flash('Problem not found.', 'danger')
-        return redirect(url_for('main.index'))
-
-    form = GenerateSolutionForm()
-    form.problem.choices = [(problem.id, problem.title)] # Pre-select the current problem
-    form.problem.data = problem.id # Set default value
-
-    if form.validate_on_submit():
-        language = form.language.data
-        flash(f'Generating {language} solution for "{problem.title}"...', 'info')
-        
-        solution_code = ai_services.generate_leetcode_solution(
-            problem.title, problem.description, language
-        )
-        sol_meta = getattr(ai_services, 'LAST_META', {}) or {}
-        
-        if "Error:" in solution_code:
-            flash(solution_code, 'danger')
-            return redirect(url_for('main.view_problem', problem_id=problem.id))
-
-        explanation = ai_services.explain_leetcode_solution(
-            solution_code, problem.title, language
-        )
-        expl_meta = getattr(ai_services, 'LAST_META', {}) or {}
-
-        classification = ai_services.classify_leetcode_solution(
-            solution_code, problem.description
-        )
-        cls_meta = getattr(ai_services, 'LAST_META', {}) or {}
-
-        # Small banners for retries/chunking across steps
-        if sol_meta.get('retries'):
-            attempts = sol_meta.get('retry_attempts', 0)
-            flash(f"Notice: Solution generation was retried {attempts} time(s).", 'warning')
-        if expl_meta.get('retries'):
-            attempts = expl_meta.get('retry_attempts', 0)
-            flash(f"Notice: Explanation was retried {attempts} time(s).", 'warning')
-        if expl_meta.get('chunked'):
-            flash('Large input was processed in multiple parts; the explanation shown is combined.', 'info')
-        if cls_meta.get('retries'):
-            attempts = cls_meta.get('retry_attempts', 0)
-            flash(f"Notice: Classification was retried {attempts} time(s).", 'warning')
-
-        solution = LeetcodeSolution(
-            problem=problem,
-            contributor=current_user,
-            solution_code=solution_code,
-            language=language,
-            explanation=explanation,
-            classification=classification,
-            approved=False # Solutions need approval
-        )
-        try:
-            solution.generate_and_set_embedding()
-        except Exception as e:
-            current_app.logger.warning(f"embedding generation failed (generate_solution): {e}")
-        db.session.add(solution)
-        db.session.commit()
-        flash('Solution generated and awaiting approval!', 'success')
-        return redirect(url_for('main.view_solution', solution_id=solution.id))
-
-    return render_template('generate_solution.html', title='Generate Solution', form=form, problem=problem)
-
-
-@bp.route('/solution/<int:solution_id>')
-@login_required
-def view_solution(solution_id):
-    solution = db.session.get(LeetcodeSolution, solution_id)
-    if solution is None:
-        flash('Solution not found.', 'danger')
-        return redirect(url_for('main.index'))
-    
-    # Only allow viewing if approved or if current user is the contributor
-    if not solution.approved and solution.contributor != current_user:
-        flash('This solution is awaiting approval and cannot be viewed yet.', 'warning')
-        return redirect(url_for('main.view_problem', problem_id=solution.problem.id))
-
-    return render_template('view_solution.html', title=f"Solution for {solution.problem.title}", solution=solution)
-
-
-@bp.route('/solution/<int:solution_id>/approve', methods=['GET', 'POST'])
-@login_required
-def approve_solution(solution_id):
-    solution = db.session.get(LeetcodeSolution, solution_id)
-    if solution is None:
-        flash('Solution not found.', 'danger')
-        return redirect(url_for('main.index'))
-        
-    # Only the problem author or an admin (if we implement roles) can approve
-    if solution.problem.author != current_user:
-        flash('You do not have permission to approve this solution.', 'danger')
-        return redirect(url_for('main.view_solution', solution_id=solution.id))
-
-    form = ApproveSolutionForm(obj=solution)
-    if form.validate_on_submit():
-        solution.approved = form.approve.data
-        db.session.commit()
-        if solution.approved:
-            current_app.award_points(current_user, 20, "Solution Approved") # Award points for approving a solution
-            check_and_award_badges(current_user) # Check and award badges
-        flash('Solution approval status updated.', 'success')
-        return redirect(url_for('main.view_problem', problem_id=solution.problem.id))
-    
-    return render_template('approve_solution.html', title='Approve Solution', form=form, solution=solution)
-
-
 @bp.route('/export_snippets')
 @login_required
 def export_snippets():
@@ -1972,250 +1821,6 @@ def search_combined():
         return redirect(url_for('main.index'))
     return redirect(url_for('main.search', q=q_text))
 
-@bp.route('/search_solutions', methods=['GET', 'POST'])
-@login_required
-def search_solutions():
-    """Multi-approach search for approved Leetcode solutions with weighted ranking and highlights."""
-    import math
-    from datetime import datetime, timezone
-
-    # Support both GET and POST methods to handle large queries
-    if request.method == 'POST':
-        q_text = (request.form.get('q') or '').strip()
-        language = request.form.get('language') or ''
-        tag = request.form.get('tag') or ''
-        sort = request.form.get('sort') or 'date_desc'
-    else:
-        q_text = (request.args.get('q') or '').strip()
-        language = request.args.get('language') or ''
-        tag = request.args.get('tag') or ''
-        sort = request.args.get('sort') or 'date_desc'
-    
-    if not q_text:
-        return redirect(url_for('main.index'))
-
-    # Reuse the same simple parser from snippet search
-    def parse_query(s: str):
-        import shlex
-        tokens = shlex.split(s)
-        include_terms, exclude_terms, phrases = [], [], []
-        tags, languages = [], []
-        in_fields = set()  # title/desc/code/tags map to problem.title/problem.description/solution_code/classification,tags
-        before_dt = after_dt = None
-        for t in tokens:
-            lo = t.lower()
-            if lo.startswith('tag:'):
-                tags.append(t[4:])
-            elif lo.startswith('lang:') or lo.startswith('language:'):
-                languages.append(t.split(':', 1)[1])
-            elif lo.startswith('in:'):
-                for f in t.split(':',1)[1].split(','):
-                    f = f.strip().lower()
-                    if f in {'title','desc','description','code','tags','explanation','problem'}:
-                        in_fields.add('description' if f in {'desc','description'} else f)
-            elif lo.startswith('before:'):
-                try:
-                    dt = datetime.fromisoformat(t.split(':',1)[1])
-                    if dt.tzinfo is not None:
-                        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
-                    before_dt = dt
-                except Exception:
-                    pass
-            elif lo.startswith('after:'):
-                try:
-                    dt = datetime.fromisoformat(t.split(':',1)[1])
-                    if dt.tzinfo is not None:
-                        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
-                    after_dt = dt
-                except Exception:
-                    pass
-            elif lo.startswith('-') and len(t) > 1:
-                exclude_terms.append(t[1:])
-            elif ' ' in t and t.startswith('"') and t.endswith('"'):
-                phrases.append(t.strip('"'))
-            else:
-                include_terms.append(t)
-        return {
-            'include_terms': include_terms,
-            'exclude_terms': exclude_terms,
-            'phrases': phrases,
-            'tags': tags,
-            'languages': languages,
-            'in_fields': in_fields,
-            'before_dt': before_dt,
-            'after_dt': after_dt,
-        }
-
-    parsed = parse_query(q_text)
-
-    # Base selectable: only approved
-    sel = sa.select(LeetcodeSolution).where(LeetcodeSolution.approved == True)
-
-    # Filters
-    if parsed['languages']:
-        sel = sel.where(LeetcodeSolution.language.in_(parsed['languages']))
-    for t in parsed['tags']:
-        sel = sel.where(or_(
-            LeetcodeSolution.classification.ilike(f'%{t}%'),
-            LeetcodeSolution.problem.has(LeetcodeProblem.tags.ilike(f'%{t}%'))
-        ))
-    if parsed['before_dt'] is not None:
-        sel = sel.where(LeetcodeSolution.timestamp <= parsed['before_dt'])
-    if parsed['after_dt'] is not None:
-        sel = sel.where(LeetcodeSolution.timestamp >= parsed['after_dt'])
-
-    fields = parsed['in_fields'] or {'title','description','code','tags','explanation'}
-
-    # Include terms across chosen fields
-    for term in parsed['include_terms']:
-        like = f'%{term}%'
-        ors = []
-        if 'title' in fields:
-            ors.append(LeetcodeSolution.problem.has(LeetcodeProblem.title.ilike(like)))
-        if 'description' in fields or 'problem' in fields:
-            ors.append(LeetcodeSolution.problem.has(LeetcodeProblem.description.ilike(like)))
-        if 'code' in fields:
-            ors.append(LeetcodeSolution.solution_code.ilike(like))
-        if 'tags' in fields:
-            ors.append(LeetcodeSolution.classification.ilike(like))
-            ors.append(LeetcodeSolution.problem.has(LeetcodeProblem.tags.ilike(like)))
-        if 'explanation' in fields:
-            ors.append(LeetcodeSolution.explanation.ilike(like))
-        if ors:
-            sel = sel.where(or_(*ors))
-
-    # Phrases
-    for phrase in parsed['phrases']:
-        like = f'%{phrase}%'
-        ors = []
-        ors.append(LeetcodeSolution.problem.has(LeetcodeProblem.title.ilike(like)))
-        ors.append(LeetcodeSolution.problem.has(LeetcodeProblem.description.ilike(like)))
-        ors.append(LeetcodeSolution.solution_code.ilike(like))
-        ors.append(LeetcodeSolution.classification.ilike(like))
-        ors.append(LeetcodeSolution.explanation.ilike(like))
-        sel = sel.where(or_(*ors))
-
-    # Exclude terms
-    for term in parsed['exclude_terms']:
-        like = f'%{term}%'
-        sel = sel.where(
-            ~LeetcodeSolution.solution_code.ilike(like),
-            ~LeetcodeSolution.explanation.ilike(like),
-            ~LeetcodeSolution.classification.ilike(like),
-            ~LeetcodeSolution.problem.has(LeetcodeProblem.title.ilike(like)),
-            ~LeetcodeSolution.problem.has(LeetcodeProblem.description.ilike(like)),
-            ~LeetcodeSolution.problem.has(LeetcodeProblem.tags.ilike(like)),
-        )
-
-    # Candidate cap
-    CANDIDATE_CAP = 2000
-    sel = sel.order_by(LeetcodeSolution.timestamp.desc()).limit(CANDIDATE_CAP)
-    candidates = db.session.execute(sel).scalars().all()
-
-    if not candidates:
-        flash('No solutions found matching your search.', 'info')
-        return render_template('search_results_solutions.html', title='Search Results', results=[], highlights={}, query=q_text)
-
-    # Semantic
-    query_embedding = ai_services.generate_embedding(q_text, task_type="RETRIEVAL_QUERY")
-    query_vector = np.array(query_embedding) if query_embedding is not None else None
-    sol_vectors = {}
-    if query_vector is not None:
-        for s in candidates:
-            if s.embedding and isinstance(s.embedding, list) and len(s.embedding) > 0 and all(isinstance(x,(int,float)) for x in s.embedding):
-                sol_vectors[s.id] = np.array(s.embedding, dtype=np.float32)
-        sem_sims = {sid: ai_services.cosine_similarity(query_vector, vec) for sid, vec in sol_vectors.items()}
-    else:
-        sem_sims = {}
-
-    # Keyword score + badges
-    def keyword_score_and_badges(sol: LeetcodeSolution):
-        s = 0.0
-        b = []
-        qt = q_text.lower()
-        title = (sol.problem.title or '').lower() if sol.problem else ''
-        pdesc = (sol.problem.description or '').lower() if sol.problem else ''
-        code = (sol.solution_code or '').lower()
-        expl = (sol.explanation or '').lower()
-        cls = (sol.classification or '').lower()
-        ptags = (sol.problem.tags or '').lower() if sol.problem else ''
-        w = {
-            'title': 3.0,
-            'pdesc': 1.5,
-            'code': 1.0,
-            'expl': 1.2,
-            'cls': 1.2,
-            'ptags': 2.0,
-        }
-        def touch(field):
-            if field not in b:
-                b.append(field)
-        for t in parsed['include_terms']:
-            tl = t.lower()
-            if tl in title: s += w['title']; touch('title')
-            if tl in pdesc: s += w['pdesc']; touch('problem')
-            if tl in code: s += w['code']; touch('code')
-            if tl in expl: s += w['expl']; touch('explanation')
-            if tl in cls: s += w['cls']; touch('classification')
-            if tl in ptags: s += w['ptags']; touch('tags')
-        for ph in parsed['phrases']:
-            pl = ph.lower()
-            bonus = 4.0
-            if pl in title or pl in pdesc or pl in code or pl in expl or pl in cls or pl in ptags:
-                s += bonus; touch('phrase')
-        for tg in parsed['tags']:
-            tgl = tg.lower()
-            if any(part.strip().lower() == tgl for part in (cls or '').split(',')) or (tgl in ptags):
-                s += 3.0; touch('tag')
-        if parsed['languages'] and (sol.language in parsed['languages']):
-            s += 2.0; touch('language')
-        return s, b
-
-    KW_W, SEM_W, REC_W = 0.6, 0.35, 0.05
-    if parsed['in_fields'] or parsed['tags'] or parsed['languages']:
-        KW_W, SEM_W = 0.7, 0.25
-
-    def recency_boost(sol: LeetcodeSolution):
-        age_days = max(0.0, (datetime.utcnow() - sol.timestamp).days if sol.timestamp else 365.0)
-        return math.exp(-age_days / 180.0)
-
-    scored = []
-    highlights = {}
-    for sol in candidates:
-        kw, badges = keyword_score_and_badges(sol)
-        sem = sem_sims.get(sol.id, 0.0)
-        rec = recency_boost(sol)
-        score = KW_W * kw + SEM_W * sem + REC_W * rec
-        if sem > 0.65: badges.append('semantic')
-        highlights[sol.id] = badges
-        scored.append((score, sol))
-
-    scored.sort(key=lambda x: x[0], reverse=True)
-    results = [sol for _, sol in scored[:500]]
-
-    # Build highlight maps
-    import re, html
-    terms = parsed['include_terms'] + parsed['phrases']
-    pat = None
-    if terms:
-        safe_terms = [re.escape(t) for t in terms if t]
-        try:
-            pat = re.compile(r"(" + "|".join(safe_terms) + r")", re.IGNORECASE)
-        except re.error:
-            pat = None
-    def mark(text: str) -> str:
-        if not text:
-            return ''
-        esc = html.escape(text)
-        if not pat:
-            return esc
-        return pat.sub(lambda m: f"<mark>{m.group(0)}</mark>", esc)
-    hi_title = {sol.id: mark(sol.problem.title if sol.problem else '') for sol in results}
-    hi_text = {sol.id: mark(sol.explanation or sol.classification or '') for sol in results}
-
-    return render_template('search_results_solutions.html', title='Search Results', results=results, highlights=highlights, query=q_text, hi_title=hi_title, hi_text=hi_text)
-
-
 @bp.route('/api/user_activity')
 @login_required
 def user_activity():
@@ -2500,8 +2105,9 @@ def user_settings():
     """Allows the current user to manage their preferences and AI settings."""
     form = SettingsForm(obj=current_user)
     if form.validate_on_submit():
-        # Update user preferences
         current_user.preferred_ai_model = form.preferred_ai_model.data
+        current_user.gemini_api_key = form.gemini_api_key.data.strip() or None
+        current_user.use_own_api_key = form.use_own_api_key.data
         current_user.code_generation_style = form.code_generation_style.data
         current_user.auto_explain_code = form.auto_explain_code.data
         current_user.show_line_numbers = form.show_line_numbers.data
@@ -2520,6 +2126,8 @@ def user_settings():
         return redirect(url_for('main.user_profile'))
     
     # Pre-fill form with current user preferences
+    form.gemini_api_key.data = current_user.gemini_api_key or ''
+    form.use_own_api_key.data = current_user.use_own_api_key
     form.preferred_ai_model.data = current_user.preferred_ai_model
     form.code_generation_style.data = current_user.code_generation_style
     form.auto_explain_code.data = current_user.auto_explain_code
@@ -2535,6 +2143,56 @@ def user_settings():
     form.snippet_visibility.data = current_user.snippet_visibility
     
     return render_template('user_settings.html', title='User Settings', form=form)
+
+
+
+@bp.route('/api/user/api-key', methods=['POST'])
+@login_required
+def api_update_api_key():
+    """API endpoint to update user's Gemini API key."""
+    try:
+        data = request.get_json(silent=True)
+        if not data:
+            return jsonify({'error': 'Invalid request data. Please ensure you are sending valid JSON.'}), 400
+    except Exception as e:
+        return jsonify({'error': 'Invalid JSON format'}), 400
+
+    gemini_api_key = data.get('gemini_api_key', '')
+    use_own_api_key = data.get('use_own_api_key', False)
+    
+    # If API key is empty or just whitespace, keep existing key if one exists
+    if not gemini_api_key or not gemini_api_key.strip():
+        if use_own_api_key and current_user.gemini_api_key:
+            # User wants to use their key but didn't provide a new one, keep existing
+            gemini_api_key = current_user.gemini_api_key
+        else:
+            gemini_api_key = None
+    else:
+        gemini_api_key = gemini_api_key.strip()
+        # Validate new API key
+        if len(gemini_api_key) < 10:
+            return jsonify({'error': 'Invalid API key format. API key must be at least 10 characters.'}), 400
+        if len(gemini_api_key) > 512:
+            return jsonify({'error': 'API key too long. Please use a valid Gemini API key.'}), 400
+
+    try:
+        current_user.gemini_api_key = gemini_api_key
+        current_user.use_own_api_key = use_own_api_key
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'API key saved!' if gemini_api_key else 'API key removed'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
+
+@bp.route('/api/user/api-key-state', methods=['GET'])
+@login_required
+def api_get_api_key_state():
+    """API endpoint to get user's API key state (without exposing the key)."""
+    return jsonify({
+        'has_api_key': bool(current_user.gemini_api_key),
+        'use_own_api_key': current_user.use_own_api_key
+    })
 
 
 @bp.route('/help')
@@ -2624,16 +2282,20 @@ def chat():
     # Load sessions list
     sessions = current_user.chat_sessions.order_by(ChatSession.updated_at.desc()).all()
     # Active session by query or create if none
-    q = request.args.get('q')
+    session_id = request.args.get('session', type=int)
     active = None
-    if sessions:
+    if session_id:
+        active = db.session.get(ChatSession, session_id)
+        if not active or active.user_id != current_user.id:
+            active = sessions[0] if sessions else None
+    if not active and sessions:
         active = sessions[0]
-    else:
+    if not active:
         active = ChatSession(user_id=current_user.id, title='New Chat')
         db.session.add(active)
         db.session.commit()
     messages = active.messages.order_by(ChatMessage.created_at.asc()).all()
-    return render_template('chat.html', title='Chat', sessions=sessions, active=active, messages=messages, prefill=q or '')
+    return render_template('chat.html', title='Chat', sessions=sessions, active=active, messages=messages, prefill='')
 
 @bp.route('/api/chat/new', methods=['POST'])
 @login_required
@@ -3144,17 +2806,31 @@ def api_chained_streaming_generation():
         session_id = data.get('session_id') or str(uuid.uuid4())
         code_model = data.get('code_model')
         explanation_model = data.get('explanation_model')
-        
+
         if not prompt:
             return jsonify({'error': 'Prompt is required.'}), 400
-        
+
+        # Capture user's API key before entering generator context
+        user_api_key = None
+        user_use_own_key = False
+        try:
+            from flask_login import current_user
+            if current_user and current_user.is_authenticated:
+                user_api_key = current_user.gemini_api_key
+                user_use_own_key = current_user.use_own_api_key
+        except:
+            pass
+
         # Capture the current app object to use in the generator
         app = current_app._get_current_object()
-        
+
         def generate():
             with app.app_context():
                 try:
-                    for chunk in ai_services.chained_streaming_generation(prompt, session_id, code_model, explanation_model):
+                    for chunk in ai_services.chained_streaming_generation(
+                        prompt, session_id, code_model, explanation_model,
+                        user_api_key=user_api_key, user_use_own_key=user_use_own_key
+                    ):
                         yield f"data: {json.dumps(chunk, ensure_ascii=False)}\n\n"
                     # End of stream marker
                     yield f"data: {json.dumps({'type': 'stream_end'})}\n\n"
@@ -3162,7 +2838,7 @@ def api_chained_streaming_generation():
                     # Now we can use current_app.logger since we're in app context
                     current_app.logger.error(f"Chained streaming generation failed: {e}")
                     yield f"data: {json.dumps({'type': 'error', 'error': 'Pipeline failed'})}\n\n"
-        
+
         return current_app.response_class(
             generate(),
             mimetype='text/plain',
@@ -3172,7 +2848,7 @@ def api_chained_streaming_generation():
                 'X-Stream-Type': 'chained_generation'
             }
         )
-        
+
     except Exception as e:
         # Use print for logging since we're outside app context
         print(f"Chained streaming endpoint failed: {e}")

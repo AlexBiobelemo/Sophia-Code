@@ -340,8 +340,8 @@
                     <i class="bi bi-chevron-left"></i>
                 </button>
             </div>
-            
-            <!-- Hamburger button for collapsed state (visible only when collapsed) -->
+
+            <!-- Expand button shown when collapsed (hamburger menu icon) -->
             <button class="sidebar-expand-btn" id="sidebarExpandBtn" aria-label="Expand sidebar" style="display: none;">
                 <i class="bi bi-list"></i>
             </button>
@@ -387,24 +387,6 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                            aria-expanded="false" data-tooltip="LeetCode">
-                            <i class="bi bi-journal-code"></i>
-                            <span>LeetCode</span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('main.add_problem') }}">
-                                    <i class="bi bi-plus-circle me-2"></i>Add Problem
-                                </a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.search_solutions') }}">
-                                    <i class="bi bi-search me-2"></i>Search Solutions
-                                </a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="{{ current_user.username }}">
                             {% if current_user.is_authenticated and current_user.avatar_filename %}
@@ -425,6 +407,10 @@
                                 </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.user_settings') }}">
                                     <i class="bi bi-sliders me-2"></i>User Settings
+                                </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#byokModal">
+                                    <i class="bi bi-key me-2"></i>My API Key (BYOK)
                                 </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.export_snippets') }}">
                                     <i class="bi bi-box-arrow-down me-2"></i>Export Snippets
@@ -512,24 +498,6 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                            aria-expanded="false" data-tooltip="LeetCode">
-                            <i class="bi bi-journal-code"></i>
-                            <span>LeetCode</span>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('main.add_problem') }}">
-                                    <i class="bi bi-plus-circle me-2"></i>Add Problem
-                                </a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.search_solutions') }}">
-                                    <i class="bi bi-search me-2"></i>Search Solutions
-                                </a></li>
-                        </ul>
-                    </li>
-                    <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="{{ current_user.username }}">
                             {% if current_user.is_authenticated and current_user.avatar_filename %}
@@ -551,6 +519,10 @@
                                 </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.user_settings') }}">
                                     <i class="bi bi-sliders me-2"></i>User Settings
+                                </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#byokModal">
+                                    <i class="bi bi-key me-2"></i>My API Key (BYOK)
                                 </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.export_snippets') }}">
                                     <i class="bi bi-box-arrow-down me-2"></i>Export Snippets
@@ -1061,7 +1033,7 @@
             let isManuallyCollapsed = false;
             let hoverTimeout = null;
 
-            // Auto-collapse functionality
+            // Auto-collapse functionality (after 2 seconds of mouse leave)
             function startAutoCollapseTimer() {
                 if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
                 if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
@@ -1072,44 +1044,35 @@
                     if (window.innerWidth >= 992 && !sidebar.classList.contains('collapsed')) {
                         sidebar.classList.add('collapsed');
                         updateSidebarState(true);
-                        console.log('Auto-collapsed sidebar');
+                        console.log('Auto-collapsed sidebar after inactivity');
                     }
-                }, 5000);
+                }, 2000);
             }
 
-            // Auto-expand on hover (after 2 seconds)
-            function startAutoExpandTimer() {
+            // Instant auto-expand on hover
+            function expandSidebarImmediately() {
                 if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
                 if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
 
                 if (isManuallyCollapsed) return; // Don't auto-expand if manually collapsed
                 if (!sidebar.classList.contains('collapsed')) return; // Only expand if collapsed
 
-                console.log('Starting auto-expand timer...');
-                autoExpandTimeout = setTimeout(() => {
-                    if (window.innerWidth >= 992 && sidebar.classList.contains('collapsed')) {
-                        sidebar.classList.remove('collapsed');
-                        updateSidebarState(false);
-                        console.log('Auto-expanded sidebar');
-                    }
-                }, 2000);
+                sidebar.classList.remove('collapsed');
+                updateSidebarState(false);
+                console.log('Sidebar expanded on hover');
             }
 
-            // Cancel auto-expand
-            function cancelAutoExpand() {
-                if (autoExpandTimeout) {
-                    clearTimeout(autoExpandTimeout);
-                    autoExpandTimeout = null;
-                    console.log('Auto-expand cancelled');
-                }
-                if (!isManuallyCollapsed) {
-                    startAutoCollapseTimer();
+            // Cancel auto-collapse and keep sidebar expanded
+            function cancelAutoCollapse() {
+                if (autoCollapseTimeout) {
+                    clearTimeout(autoCollapseTimeout);
+                    autoCollapseTimeout = null;
+                    console.log('Auto-collapse cancelled');
                 }
             }
 
             function resetAutoCollapseTimer() {
                 if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
-                if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
                 startAutoCollapseTimer();
             }
 
@@ -1126,7 +1089,7 @@
 
                 // Update main wrapper margins
                 if (window.innerWidth >= 992) {
-                    mainWrapper.style.marginLeft = isCollapsed ? '60px' : '280px';
+                    mainWrapper.style.marginLeft = isCollapsed ? '70px' : '280px';
                 }
             }
 
@@ -1137,8 +1100,7 @@
 
                 if (isManuallyCollapsed) {
                     // Clear all timers when manually collapsed
-                    if (autoCollapseTimeout) clearTimeout(autoCollapseTimeout);
-                    if (autoExpandTimeout) clearTimeout(autoExpandTimeout);
+                    cancelAutoCollapse();
                     console.log('Manually collapsed, timers cleared');
                 } else {
                     startAutoCollapseTimer();
@@ -1158,7 +1120,7 @@
                     }
 
                     if (window.innerWidth >= 992) {
-                        mainWrapper.style.marginLeft = '60px';
+                        mainWrapper.style.marginLeft = '70px';
                     }
                 } else {
                     // Start auto-collapse timer for desktop if not collapsed
@@ -1172,7 +1134,7 @@
             function handleResize() {
                 if (window.innerWidth >= 992) {
                     const isCollapsed = sidebar.classList.contains('collapsed');
-                    mainWrapper.style.marginLeft = isCollapsed ? '60px' : '280px';
+                    mainWrapper.style.marginLeft = isCollapsed ? '70px' : '280px';
                 } else {
                     mainWrapper.style.marginLeft = '0';
                 }
@@ -1195,27 +1157,17 @@
                     });
                 }
 
-                // Auto-expand on hover - use mouseenter on entire sidebar
+                // Auto-expand on hover - instant expansion when collapsed
                 sidebar.addEventListener('mouseenter', function(e) {
-                    console.log('Sidebar mouseenter, collapsed:', sidebar.classList.contains('collapsed'));
                     if (sidebar.classList.contains('collapsed') && !isManuallyCollapsed) {
-                        startAutoExpandTimer();
+                        expandSidebarImmediately();
                     }
                 });
-                
-                sidebar.addEventListener('mouseleave', function() {
-                    console.log('Sidebar mouseleave');
-                    cancelAutoExpand();
-                });
 
-                // Also add hover detection for nav links when collapsed
-                const navLinks = sidebar.querySelectorAll('.nav-link');
-                navLinks.forEach(link => {
-                    link.addEventListener('mouseenter', function() {
-                        if (sidebar.classList.contains('collapsed') && !isManuallyCollapsed) {
-                            startAutoExpandTimer();
-                        }
-                    });
+                sidebar.addEventListener('mouseleave', function() {
+                    if (!isManuallyCollapsed) {
+                        startAutoCollapseTimer();
+                    }
                 });
 
                 // Track user activity and reset auto-collapse timer
@@ -1251,7 +1203,14 @@
             }
 
             if (mobileSidebarOverlay) {
-                mobileSidebarOverlay.addEventListener('click', closeMobileSidebar);
+                mobileSidebarOverlay.addEventListener('click', (e) => {
+                    // Don't close if clicking on a dropdown or dropdown item
+                    if (e.target.closest('.dropdown') || e.target.closest('.dropdown-menu')) {
+                        e.stopPropagation();
+                        return;
+                    }
+                    closeMobileSidebar();
+                });
             }
 
             // Mobile search expansion
@@ -1278,28 +1237,23 @@
                 const query = mobileSearchInput.value.trim();
                 if (query) {
                     // For mobile search, create a temporary form and submit via POST
-                    let actionUrl = "{{ url_for('main.search') }}";
-                    if (mobileSearchScope === 'solutions') {
-                        actionUrl = "{{ url_for('main.search_solutions') }}";
-                    } else if (mobileSearchScope === 'both') {
-                        actionUrl = "{{ url_for('main.search_combined') }}";
-                    }
-                    
+                    const actionUrl = "{{ url_for('main.search') }}";
+
                     // Create hidden form for POST submission
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = actionUrl;
-                    
+
                     const csrfInput = document.createElement('input');
                     csrfInput.type = 'hidden';
                     csrfInput.name = 'csrf_token';
                     csrfInput.value = '{{ csrf_token() }}';
-                    
+
                     const queryInput = document.createElement('input');
                     queryInput.type = 'hidden';
                     queryInput.name = 'q';
                     queryInput.value = query;
-                    
+
                     form.appendChild(csrfInput);
                     form.appendChild(queryInput);
                     document.body.appendChild(form);
@@ -1341,27 +1295,83 @@
             const scopeSel = document.getElementById('search-scope');
             if (form && scopeSel) {
                 form.addEventListener('submit', (e) => {
-                    const scope = scopeSel.value;
-                    if (scope === 'solutions') {
-                        form.action = "{{ url_for('main.search_solutions') }}";
-                    } else if (scope === 'both') {
-                        form.action = "{{ url_for('main.search_combined') }}";
-                    } else {
-                        form.action = "{{ url_for('main.search') }}";
-                    }
+                    // All searches now go to main search route
+                    form.action = "{{ url_for('main.search') }}";
                     // Form already uses POST method, so no need to change
                 });
             }
 
-            // Close mobile sidebar when clicking nav links
+            // Close mobile sidebar when clicking nav links (but not dropdowns)
             const mobileNavLinks = mobileSidebar.querySelectorAll('.nav-link');
             mobileNavLinks.forEach(link => {
-                link.addEventListener('click', () => {
+                link.addEventListener('click', (e) => {
+                    // Don't close if it's a dropdown toggle - let Bootstrap handle it
+                    if (link.classList.contains('dropdown-toggle')) {
+                        return;
+                    }
                     if (window.innerWidth <= 767) {
                         closeMobileSidebar();
                     }
                 });
             });
+
+            // Prevent mobile sidebar from closing when clicking inside dropdowns
+            const mobileDropdowns = mobileSidebar.querySelectorAll('.dropdown-menu');
+            mobileDropdowns.forEach(menu => {
+                menu.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+            });
+
+            // Also prevent dropdown item clicks from closing sidebar
+            const mobileDropdownItems = mobileSidebar.querySelectorAll('.dropdown-item');
+            mobileDropdownItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Close sidebar after clicking a dropdown item (navigate away)
+                    closeMobileSidebar();
+                });
+            });
+
+            // Active page highlighting
+            function highlightActiveNavLink() {
+                const currentPath = window.location.pathname;
+                const navLinks = document.querySelectorAll('.sidebar-nav .nav-link:not(.dropdown-toggle)');
+                
+                navLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    link.classList.remove('active');
+                    
+                    if (href === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+                
+                // Handle dropdown parent highlighting
+                const dropdowns = document.querySelectorAll('.sidebar-nav .dropdown');
+                dropdowns.forEach(dropdown => {
+                    const dropdownLinks = dropdown.querySelectorAll('.dropdown-item');
+                    let hasActiveChild = false;
+                    
+                    dropdownLinks.forEach(item => {
+                        const itemHref = item.getAttribute('href');
+                        if (itemHref === currentPath) {
+                            hasActiveChild = true;
+                            item.classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    });
+                    
+                    if (hasActiveChild) {
+                        const toggle = dropdown.querySelector('.dropdown-toggle');
+                        if (toggle) toggle.classList.add('active');
+                    }
+                });
+            }
+            
+            // Call on page load
+            highlightActiveNavLink();
 
             const flashMessages = document.querySelectorAll('.flash');
 
@@ -1996,6 +2006,156 @@
         // Refresh badge count every 5 minutes
         setInterval(loadBadgeCount, 300000);
     </script>
+
+    <div class="modal fade" id="byokModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-key me-2"></i>Bring Your Own API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small">Use your own Gemini API key</p>
+                    <input type="password" id="geminiApiKey" class="form-control mb-2" placeholder="API key">
+                    <div class="form-check mb-3">
+                        <input type="checkbox" id="useOwnKey" class="form-check-input">
+                        <label class="form-check-label">Use my key</label>
+                    </div>
+                    <div id="byokStatus" class="alert alert-info mb-2" style="display:none">
+                        <i class="bi bi-check-circle me-1"></i>
+                        <span id="byokStatusText">API key is saved</span>
+                    </div>
+                    <div id="byokMessage" class="alert" style="display:none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveBYOK()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    // Load BYOK state on page load
+    async function loadBYOKState(){
+        try{
+            let r=await fetch("/api/user/api-key-state"),
+                d=await r.json();
+            if(r.ok && d.has_api_key){
+                // Store in session storage for modal to access
+                sessionStorage.setItem('byok_has_key', 'true');
+                sessionStorage.setItem('byok_use_own_key', d.use_own_api_key ? 'true' : 'false');
+            }
+        }catch(err){
+            console.error("Error loading BYOK state:",err);
+        }
+    }
+    
+    // Update modal UI when it opens
+    document.getElementById('byokModal')?.addEventListener('show.bs.modal', function(){
+        const hasKey = sessionStorage.getItem('byok_has_key') === 'true';
+        const useKey = sessionStorage.getItem('byok_use_own_key') === 'true';
+        const statusDiv = document.getElementById('byokStatus');
+        const statusText = document.getElementById('byokStatusText');
+        const keyInput = document.getElementById('geminiApiKey');
+        const useOwnKey = document.getElementById('useOwnKey');
+        const messageDiv = document.getElementById('byokMessage');
+        
+        // Hide message div when modal opens
+        if(messageDiv) messageDiv.style.display = 'none';
+        
+        if(hasKey){
+            if(statusDiv){
+                statusDiv.style.display = 'block';
+                statusText.textContent = useKey ? 'API key is saved and active' : 'API key is saved (not currently active)';
+            }
+            if(keyInput) keyInput.placeholder = '••••••••••••••••••••';
+            if(useOwnKey) useOwnKey.checked = true;
+        }else{
+            if(statusDiv) statusDiv.style.display = 'none';
+            if(keyInput) keyInput.placeholder = 'API key';
+            if(useOwnKey) useOwnKey.checked = false;
+        }
+    });
+    
+    // Clear session storage when modal is hidden (optional, for security)
+    document.getElementById('byokModal')?.addEventListener('hidden.bs.modal', function(){
+        const messageDiv = document.getElementById('byokMessage');
+        if(messageDiv) messageDiv.style.display = 'none';
+    });
+    
+    async function saveBYOK(){
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        let k=document.getElementById("geminiApiKey").value.trim(),
+            u=document.getElementById("useOwnKey").checked,
+            m=document.getElementById("byokMessage");
+        
+        const hasKey = sessionStorage.getItem('byok_has_key') === 'true';
+        const isPlaceholder = k.includes('•');
+
+        // If user has existing key and didn't type a new one, send empty to keep existing
+        if(hasKey && isPlaceholder){
+            k = ''; // Server will keep existing key
+        }
+
+        // Validate API key length before sending
+        if(u && !k && !hasKey){
+            m.className="alert alert-danger";
+            m.textContent="Please enter your API key";
+            m.style.display="block";
+            return;
+        }
+
+        if(k && k.length < 10){
+            m.className="alert alert-danger";
+            m.textContent="Invalid API key. Must be at least 10 characters.";
+            m.style.display="block";
+            return;
+        }
+
+        if(k && k.length > 512){
+            m.className="alert alert-danger";
+            m.textContent="API key too long. Please check your key.";
+            m.style.display="block";
+            return;
+        }
+
+        try{
+            let r=await fetch("/api/user/api-key",{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "X-CSRFToken": csrfToken || ''
+                },
+                body:JSON.stringify({gemini_api_key:k,use_own_api_key:u})
+            });
+            let d=await r.json();
+            m.className=r.ok?"alert alert-success":"alert alert-danger";
+            m.textContent=d.message||d.error||"Error saving API key";
+            m.style.display="block";
+            if(r.ok){
+                // Update session storage
+                if(d.message && d.message.includes('removed')){
+                    sessionStorage.removeItem('byok_has_key');
+                    sessionStorage.removeItem('byok_use_own_key');
+                }else if(k || hasKey){
+                    sessionStorage.setItem('byok_has_key', 'true');
+                    sessionStorage.setItem('byok_use_own_key', u ? 'true' : 'false');
+                }
+                setTimeout(()=>{
+                    let modal=bootstrap.Modal.getInstance(document.getElementById("byokModal"));
+                    if(modal)modal.hide();
+                },1500);
+            }
+        }catch(err){
+            m.className="alert alert-danger";
+            m.textContent="Network error. Please try again.";
+            m.style.display="block";
+            console.error("Save BYOK error:",err);
+        }
+    }
+    
+    // Load BYOK state when page loads
+    document.addEventListener('DOMContentLoaded', loadBYOKState);
 </body>
 
 </html>

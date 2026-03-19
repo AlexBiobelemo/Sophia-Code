@@ -27,7 +27,6 @@ Project Sophia is a comprehensive knowledge management system designed to help d
 Project Sophia addresses the common problem developers face in managing an ever-growing collection of code snippets, solutions to problems, and general technical knowledge. It provides a structured environment to:
 
 - **Organize Code Snippets** - Create, categorize, and tag code snippets by language and collection
-- **Problem Solving** - Add LeetCode-style problems and generate AI-powered solutions
 - **AI-Powered Development** - Generate code, explain existing code, format, and refactor using AI
 - **Personal Knowledge Base** - Create notes and document your technical knowledge
 - **Gamification** - Track progress with points, badges, and activity streaks
@@ -134,12 +133,6 @@ The application will typically be available at `http://127.0.0.1:5000/`. Open th
 - **Code Refinement:** Fix bugs and improve code based on error messages
 - **Multi-Step Thinking:** Architecture → Coder → Tester → Refiner pipeline
 - **Streaming Generation:** Real-time code and explanation streaming
-
-### LeetCode Integration
-- Add programming problems with descriptions and difficulty levels
-- Generate AI solutions in multiple programming languages
-- Solution approval workflow
-- Solution explanation and classification
 
 ### Notes System
 - Create and manage personal notes
