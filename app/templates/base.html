@@ -1481,6 +1481,10 @@
             const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
             const isTyping = tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable);
             const key = e.key.toLowerCase();
+            
+            // Don't trigger shortcuts when user is typing in an input field
+            if (isTyping) return;
+            
             if (key === 's') {
                 const input = document.getElementById('navbar-search');
                 if (input && window.innerWidth > 767) { e.preventDefault(); input.focus(); }
