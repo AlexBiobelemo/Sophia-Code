@@ -27,6 +27,23 @@
         {% endfor %}
     </div>
 
+    <!-- Loading Spinner -->
+    <div id="chat-loading" class="chat-loading-spinner" style="display: none;">
+        <div class="loading-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+        <div class="loading-text">
+            <span class="typing-indicator">
+                <span>A</span><span>I</span>
+                <span class="thinking-dot">.</span>
+                <span class="thinking-dot">.</span>
+                <span class="thinking-dot">.</span>
+            </span>
+        </div>
+    </div>
+
     <!-- Chat Input - Minimal -->
     <div class="chat-input-area">
         <div class="input-wrapper">
@@ -669,6 +686,148 @@
         box-sizing: border-box;
         max-width: 100%;
     }
+
+    /* Loading Spinner Styles */
+    .chat-loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        padding: 2rem;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    }
+
+    .chat-loading-spinner.fade-out {
+        animation: fadeOut 0.3s ease forwards;
+    }
+
+    /* Bouncing Dots Animation */
+    .loading-dots {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .loading-dots .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--bs-primary) 0%, #59a3ff 100%);
+        animation: bounce 1.4s infinite ease-in-out both;
+        box-shadow: 0 2px 8px rgba(30, 91, 184, 0.4);
+    }
+
+    .loading-dots .dot:nth-child(1) {
+        animation-delay: -0.32s;
+    }
+
+    .loading-dots .dot:nth-child(2) {
+        animation-delay: -0.16s;
+    }
+
+    .loading-dots .dot:nth-child(3) {
+        animation-delay: 0s;
+    }
+
+    @keyframes bounce {
+        0%, 80%, 100% {
+            transform: scale(0.8);
+            opacity: 0.5;
+        }
+        40% {
+            transform: scale(1.2);
+            opacity: 1;
+        }
+    }
+
+    /* Typing Indicator Text */
+    .loading-text {
+        font-size: 0.9rem;
+        color: var(--bs-body-color);
+        opacity: 0.8;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+    }
+
+    .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .typing-indicator span {
+        animation: pulse-text 1.5s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .typing-indicator .thinking-dot {
+        animation: pulse-dot 1.5s infinite ease-in-out;
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    .typing-indicator .thinking-dot:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator .thinking-dot:nth-child(4) {
+        animation-delay: 0.3s;
+    }
+
+    .typing-indicator .thinking-dot:nth-child(5) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes pulse-text {
+        0%, 100% {
+            opacity: 0.4;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.05);
+        }
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% {
+            opacity: 0.3;
+        }
+        50% {
+            opacity: 1;
+        }
+    }
 </style>
 
 <script>
@@ -830,6 +989,26 @@
                 chatLog.scrollTop = chatLog.scrollHeight;
             }
 
+            function showLoadingSpinner() {
+                const spinner = document.getElementById('chat-loading');
+                if (spinner) {
+                    spinner.style.display = 'flex';
+                    spinner.classList.remove('fade-out');
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                }
+            }
+
+            function hideLoadingSpinner() {
+                const spinner = document.getElementById('chat-loading');
+                if (spinner) {
+                    spinner.classList.add('fade-out');
+                    setTimeout(() => {
+                        spinner.style.display = 'none';
+                        spinner.classList.remove('fade-out');
+                    }, 300);
+                }
+            }
+
             async function sendMessage(){
                 const msg = input.value.trim();
                 if (!msg) return;
@@ -837,6 +1016,9 @@
                 append('user', msg);
                 input.value = '';
                 sendBtn.disabled = true;
+
+                // Show loading spinner
+                showLoadingSpinner();
 
                 abortCtrl = new AbortController();
 
@@ -873,7 +1055,9 @@
                         const chunk = decoder.decode(value);
                         assistantMsg += chunk;
 
+                        // Hide loading spinner when first chunk arrives
                         if (!assistantEl) {
+                            hideLoadingSpinner();
                             assistantEl = document.createElement('div');
                             assistantEl.className = 'chat-message msg-assistant';
                             assistantEl.innerHTML = `<div class="message-content resp-body"></div>`;
@@ -892,6 +1076,8 @@
 
                 } catch(e) {
                     console.error('Chat error:', e);
+                    // Hide loading spinner on error
+                    hideLoadingSpinner();
                     if (e.name !== 'AbortError') {
                         append('assistant', 'Sorry, there was an error processing your request: ' + e.message);
                     }
