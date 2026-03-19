@@ -389,6 +389,10 @@ python -m pytest
 5. Enable HTTPS
 6. Configure backup systems
 
+Operational toggles (useful on Render):
+- `AUTO_MIGRATE=1` runs `flask db upgrade` best-effort on startup (default: enabled when `RENDER_EXTERNAL_URL` is present).
+- `SELF_PING_ENABLED=1` enables in-app keepalive pings to `GET /health` (default: enabled on Render; single-leader via file lock).
+
 ### Docker Deployment
 
 ```dockerfile

@@ -5,6 +5,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        window.APP_DEBUG = {{ 'true' if config.get('DEBUG') else 'false' }};
+        if (!window.APP_DEBUG) {
+            console.log = function () { };
+        }
+        try {
+            const u = new URL(window.location.href);
+            if (u.searchParams.has('csrf_token')) {
+                u.searchParams.delete('csrf_token');
+                const next = u.pathname + (u.search ? u.search : '') + (u.hash ? u.hash : '');
+                window.history.replaceState({}, document.title, next);
+            }
+        } catch (_) { }
+    </script>
     <title>{{ title }} - Dev Command Center</title>
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
@@ -14,6 +28,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app-toast.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/button-glass.css') }}">
 
     <!-- Premium very-dark theme overrides -->
@@ -387,7 +402,7 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="javascript:void(0)" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="{{ current_user.username }}">
                             {% if current_user.is_authenticated and current_user.avatar_filename %}
                             <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}?v={{ range(1,999999)|random }}"
@@ -409,7 +424,7 @@
                                     <i class="bi bi-sliders me-2"></i>User Settings
                                 </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#byokModal">
+                            <li><a class="dropdown-item" href="javascript:void(0)" role="button" data-bs-toggle="modal" data-bs-target="#byokModal">
                                     <i class="bi bi-key me-2"></i>My API Key (BYOK)
                                 </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.export_snippets') }}">
@@ -498,7 +513,7 @@
                         </a>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button"
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="javascript:void(0)" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false" data-tooltip="{{ current_user.username }}">
                             {% if current_user.is_authenticated and current_user.avatar_filename %}
                             <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_filename) }}?v={{ range(1,999999)|random }}"
@@ -521,7 +536,7 @@
                                     <i class="bi bi-sliders me-2"></i>User Settings
                                 </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#byokModal">
+                            <li><a class="dropdown-item" href="javascript:void(0)" role="button" data-bs-toggle="modal" data-bs-target="#byokModal">
                                     <i class="bi bi-key me-2"></i>My API Key (BYOK)
                                 </a></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.export_snippets') }}">
@@ -833,6 +848,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/app-toast.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js"></script>
     <script>moment.locale('en');</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
@@ -911,7 +927,12 @@
                 try {
                     const cached = localStorage.getItem('inline_chat_session_id');
                     if (cached) { inlineSessionId = Number(cached); return inlineSessionId; }
-                    const res = await fetch("{{ url_for('main.api_chat_new') }}", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: 'Quick Chat' }) });
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const res = await fetch("{{ url_for('main.api_chat_new') }}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                        body: JSON.stringify({ title: 'Quick Chat' })
+                    });
                     const data = await res.json();
                     inlineSessionId = data.session_id;
                     localStorage.setItem('inline_chat_session_id', String(inlineSessionId));
@@ -930,7 +951,13 @@
                 try {
                     const sid = await ensureInlineSession();
                     inlineAbort = new AbortController();
-                    const res = await fetch("{{ url_for('main.api_chat_stream') }}", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: sid, message: msg }), signal: inlineAbort.signal });
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const res = await fetch("{{ url_for('main.api_chat_stream') }}", {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken || '' },
+                        body: JSON.stringify({ session_id: sid, message: msg }),
+                        signal: inlineAbort.signal
+                    });
                     const reader = res.body.getReader();
                     const decoder = new TextDecoder();
                     let buf = '';
@@ -997,7 +1024,11 @@
                 try {
                     const sid = await ensureInlineSession();
                     if (sid) {
-                        await fetch(`{{ url_for('main.api_chat_delete', session_id=0) }}`.replace('0', String(sid)), { method: 'POST' });
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                        await fetch(`{{ url_for('main.api_chat_delete', session_id=0) }}`.replace('0', String(sid)), {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': csrfToken || '' }
+                        });
                     }
                 } catch (_) { }
                 inlineSessionId = null;
@@ -1044,7 +1075,6 @@
                     if (window.innerWidth >= 992 && !sidebar.classList.contains('collapsed')) {
                         sidebar.classList.add('collapsed');
                         updateSidebarState(true);
-                        console.log('Auto-collapsed sidebar after inactivity');
                     }
                 }, 2000);
             }
@@ -1059,7 +1089,6 @@
 
                 sidebar.classList.remove('collapsed');
                 updateSidebarState(false);
-                console.log('Sidebar expanded on hover');
             }
 
             // Cancel auto-collapse and keep sidebar expanded
@@ -1067,7 +1096,6 @@
                 if (autoCollapseTimeout) {
                     clearTimeout(autoCollapseTimeout);
                     autoCollapseTimeout = null;
-                    console.log('Auto-collapse cancelled');
                 }
             }
 
@@ -1076,11 +1104,33 @@
                 startAutoCollapseTimer();
             }
 
+            function closeDesktopSidebarDropdowns() {
+                if (!sidebar) return;
+                const openToggles = sidebar.querySelectorAll('.dropdown-toggle.show,[data-bs-toggle=\"dropdown\"].show');
+                openToggles.forEach(toggle => {
+                    try {
+                        bootstrap.Dropdown.getOrCreateInstance(toggle).hide();
+                    } catch (_) {
+                        // Fallback: remove show classes if Bootstrap isn't available for any reason
+                        toggle.classList.remove('show');
+                        const menu = toggle.parentElement?.querySelector('.dropdown-menu');
+                        if (menu) menu.classList.remove('show');
+                    }
+                });
+
+                // Also ensure any open menus are closed
+                sidebar.querySelectorAll('.dropdown-menu.show').forEach(menu => menu.classList.remove('show'));
+            }
+
             function updateSidebarState(isCollapsed) {
                 // Update toggle button icon
                 const toggleIcon = sidebarToggle.querySelector('i');
                 if (toggleIcon) {
                     toggleIcon.className = isCollapsed ? 'bi bi-chevron-right' : 'bi bi-chevron-left';
+                }
+
+                if (isCollapsed) {
+                    closeDesktopSidebarDropdowns();
                 }
 
                 // Save state to localStorage
@@ -1101,7 +1151,6 @@
                 if (isManuallyCollapsed) {
                     // Clear all timers when manually collapsed
                     cancelAutoCollapse();
-                    console.log('Manually collapsed, timers cleared');
                 } else {
                     startAutoCollapseTimer();
                 }
@@ -1143,6 +1192,7 @@
             // Initialize sidebar state and add event listeners
             if (sidebarToggle && sidebar) {
                 initializeSidebarState();
+                handleResize();
                 
                 // Toggle button click
                 sidebarToggle.addEventListener('click', toggleDesktopSidebar);
@@ -1373,50 +1423,9 @@
             // Call on page load
             highlightActiveNavLink();
 
-            const flashMessages = document.querySelectorAll('.flash');
-
-            flashMessages.forEach(flash => {
-                const message = flash.dataset.message;
-                const category = flash.dataset.category;
-
-                // Map flash categories to Bootstrap background colors
-                const bgClass = {
-                    'success': 'bg-success',
-                    'danger': 'bg-danger',
-                    'warning': 'bg-warning',
-                    'info': 'bg-info'
-                }[category] || 'bg-secondary';
-
-                // Create the toast HTML
-                const toastHTML = `
-                    <div class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                ${message}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    </div>
-                `;
-
-                // Add the toast to the container and show it
-                toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-                const newToastEl = toastContainer.lastElementChild;
-                const newToast = new bootstrap.Toast(newToastEl, { delay: 5000 });
-                newToast.show();
-            });
+            window.consumeFlashMessages?.();
         });
     </script>
-    <script src="https://unpkg.com/prettier@2.8.4/standalone.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-babel.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-html.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-postcss.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-markdown.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-typescript.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-yaml.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-php.js"></script>
-    <script src="https://unpkg.com/prettier@2.8.4/parser-ruby.js"></script>
-
     <!-- State Management -->
     <script src="{{ url_for('static', filename='js/state-manager.js') }}"></script>
     <!-- Streaming AI Pipeline -->
@@ -1794,21 +1803,13 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Check if particles.js library is loaded
-            console.log('Checking particles.js library...');
-            console.log('particlesJS function available:', typeof particlesJS);
-
             if (typeof particlesJS === 'undefined') {
                 console.error('particlesJS library is not loaded!');
                 return;
             }
 
-            console.log('Initializing particles...');
-            console.log('Particles container:', document.getElementById('particles-js'));
-
             try {
                 particlesJS('particles-js', defaultParticlesConfig);
-                console.log('Particles initialized successfully!');
             } catch (error) {
                 console.error('Error initializing particles:', error);
                 // Fallback: try with a simpler configuration
@@ -1865,7 +1866,6 @@
                     "retina_detect": true
                 };
                 particlesJS('particles-js', fallbackConfig);
-                console.log('Fallback particles initialized!');
             }
         });
     </script>
@@ -2157,6 +2157,10 @@
             console.error("Save BYOK error:",err);
         }
     }
+
+    // Expose BYOK helpers for inline handlers / other scripts
+    window.saveBYOK = saveBYOK;
+    window.loadBYOKState = loadBYOKState;
     
     // Load BYOK state when page loads
     document.addEventListener('DOMContentLoaded', loadBYOKState);

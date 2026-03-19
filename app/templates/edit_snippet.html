@@ -211,6 +211,15 @@
         } catch(_){}
     });
 
+    function stripCodeFences(text) {
+        const s = String(text || '').trim();
+        if (!s.startsWith('```')) return s;
+        const firstNewline = s.indexOf('\n');
+        const lastFence = s.lastIndexOf('```');
+        if (firstNewline === -1 || lastFence === -1 || lastFence <= firstNewline) return s;
+        return s.slice(firstNewline + 1, lastFence).trim();
+    }
+
     // --- Format Code Logic (AI-powered) ---
     formatBtn.addEventListener('click', async () => {
         const code = codeTextarea.value;
@@ -245,7 +254,7 @@
             });
             const data = await response.json();
             if (data.code) {
-                codeTextarea.value = data.code;
+                codeTextarea.value = stripCodeFences(data.code);
             } else if (data.error) {
                 alert('Could not format code: ' + data.error);
             } else {

@@ -24,6 +24,7 @@
             <i class="bi bi-pencil"></i>
         </a>
         <form action="{{ url_for('main.delete_snippet', snippet_id=snippet.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this snippet?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
                 <i class="bi bi-trash"></i>
             </button>

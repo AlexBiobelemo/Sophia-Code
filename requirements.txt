@@ -5,6 +5,7 @@ Flask_Migrate
 flask_sqlalchemy
 flask_wtf
 Flask-Moment
+Flask-Limiter
 google-generativeai
 numpy
 protobuf
@@ -17,5 +18,8 @@ WTForms
 markdown
 google-genai
 gunicorn
+APScheduler
+requests
+gTTS
 
 

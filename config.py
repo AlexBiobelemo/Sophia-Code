@@ -46,3 +46,18 @@ class Config:
 
     # Maximum content length to prevent overly large requests (16MB)
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+
+    # Cookie/security defaults (can be overridden via env vars)
+    SESSION_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = os.environ.get('SESSION_COOKIE_SAMESITE', 'Lax')
+    REMEMBER_COOKIE_SAMESITE = os.environ.get('REMEMBER_COOKIE_SAMESITE', 'Lax')
+
+    # Prefer secure cookies in production (Render/Gunicorn), allow override for local dev.
+    _secure_default = os.environ.get('FLASK_DEBUG', '0').strip() != '1'
+    SESSION_COOKIE_SECURE = os.environ.get('SESSION_COOKIE_SECURE', '1' if _secure_default else '0').strip() == '1'
+    REMEMBER_COOKIE_SECURE = os.environ.get('REMEMBER_COOKIE_SECURE', '1' if _secure_default else '0').strip() == '1'
+
+    # CSRF hardening
+    WTF_CSRF_TIME_LIMIT = 60 * 60  # 1 hour
+    WTF_CSRF_SSL_STRICT = False  # set True when always behind HTTPS

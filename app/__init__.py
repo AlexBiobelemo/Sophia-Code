@@ -74,18 +74,27 @@ login_manager.login_message_category = 'info' # Flash message category
 moment = Moment() # Initialize Flask-Moment
 csrf = CSRFProtect() # Initialize CSRFProtect
 
-# Configure CSRF for API endpoints
-csrf.exempt('app.routes.api_chat_new')
-csrf.exempt('app.routes.api_chat_send')
-csrf.exempt('app.routes.api_chat_stream')
-csrf.exempt('app.routes.suggest_tags')
-csrf.exempt('app.routes.format_code')
-csrf.exempt('app.routes.refine')
-csrf.exempt('app.routes.explain')
-csrf.exempt('app.routes.api_chained_streaming_generation')
-csrf.exempt('app.routes.api_save_streaming_result')
-csrf.exempt('app.routes.save_streaming_as_snippet')
+# Optional rate limiter (Flask-Limiter). If missing, app runs without rate limiting.
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
 
+    limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=["200 per day", "60 per hour"],
+        storage_uri="memory://",
+    )
+except Exception:
+    limiter = None
+
+
+def rate_limit(*args, **kwargs):
+    """Decorator wrapper to keep routes import-safe when Flask-Limiter isn't installed."""
+    if limiter is None:
+        def _noop(fn):
+            return fn
+        return _noop
+    return limiter.limit(*args, **kwargs)
 
 def create_app(config_class=Config):
     """Creates and configures an instance of the Flask application."""
@@ -103,6 +112,8 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     moment.init_app(app) # Initialize Flask-Moment
     csrf.init_app(app) # Initialize CSRFProtect
+    if limiter is not None:
+        limiter.init_app(app)
 
     with app.app_context():
         try:
@@ -149,11 +160,53 @@ def create_app(config_class=Config):
     from app.routes import bp as main_bp
     app.register_blueprint(main_bp)
 
+    # Optional self-ping keep-alive (disabled by default)
+    try:
+        from app.self_ping import start_self_ping
+        start_self_ping(app)
+    except Exception:
+        pass
+
+    # --- Custom error pages ---
+    @app.errorhandler(404)
+    def _not_found(_err):
+        from flask import render_template
+        return render_template("errors/404.html", title="Page Not Found"), 404
+
+    @app.errorhandler(500)
+    def _server_error(_err):
+        # Keep this handler extremely defensive; avoid throwing while rendering an error page.
+        try:
+            from flask import render_template
+            return render_template("errors/500.html", title="Server Error"), 500
+        except Exception:
+            return ("Server error", 500)
+
     # Defaults for optional daily snapshots
     app.config.setdefault('AUTO_DAILY_SNAPSHOT', True)
     app.config.setdefault('SNAPSHOT_DIR', 'snapshots')
 
     # --- Security headers & request timing ---
+    @app.before_request
+    def _strip_csrf_token_from_querystring():
+        # CSRF tokens must never be transported via URL query params (leaks via referrers, logs, hover previews).
+        # If a token ever ends up in the URL (e.g., from an accidental GET form field), strip and redirect.
+        if request.method != 'GET':
+            return None
+        if 'csrf_token' not in request.args:
+            return None
+        try:
+            from urllib.parse import urlencode
+            from flask import redirect
+
+            args = request.args.to_dict(flat=False)
+            args.pop('csrf_token', None)
+            qs = urlencode(args, doseq=True)
+            target = request.path + (f"?{qs}" if qs else "")
+            return redirect(target, code=302)
+        except Exception:
+            return None
+
     @app.before_request
     def _start_timer_and_request_id():
         g._start_time = time.perf_counter()

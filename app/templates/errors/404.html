@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-container">
+  <div class="error-hero">
+    <div class="error-orb" aria-hidden="true"></div>
+    <div class="error-code">404</div>
+    <h1 class="error-title">Page not found</h1>
+    <p class="error-subtitle">
+      The page you’re looking for doesn’t exist, or it may have been moved.
+    </p>
+    <div class="d-flex gap-2 flex-wrap justify-content-center mt-3">
+      <a class="btn btn-primary" href="{{ url_for('main.index') }}">
+        <i class="bi bi-house me-1"></i>Go Home
+      </a>
+      <button class="btn btn-outline-secondary" type="button" onclick="history.back()">
+        <i class="bi bi-arrow-left me-1"></i>Go Back
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .error-hero {
+    text-align: center;
+    padding: 4.5rem 1rem 3rem;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(var(--bs-border-color-rgb), 0.35);
+    border-radius: 18px;
+    background: rgba(var(--bs-card-bg-rgb), 0.55);
+    backdrop-filter: blur(14px);
+  }
+
+  .error-orb {
+    position: absolute;
+    inset: -80px auto auto -80px;
+    width: 260px;
+    height: 260px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 30% 30%, rgba(var(--bs-primary-rgb), 0.55), transparent 60%),
+                radial-gradient(circle at 70% 70%, rgba(255, 255, 255, 0.14), transparent 55%);
+    filter: blur(1px);
+    opacity: 0.9;
+  }
+
+  .error-code {
+    font-size: clamp(4rem, 10vw, 7rem);
+    font-weight: 900;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, rgba(var(--bs-primary-rgb), 1), rgba(255, 255, 255, 0.6));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .error-title {
+    font-weight: 800;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .error-subtitle {
+    max-width: 52ch;
+    margin: 0 auto;
+    opacity: 0.9;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .error-orb {
+      animation: orbFloat 4.5s ease-in-out infinite;
+    }
+  }
+
+  @keyframes orbFloat {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(18px, 12px); }
+  }
+</style>
+{% endblock %}
+

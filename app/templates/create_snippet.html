@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-container">
     <!-- Page Header -->
-    <div class="page-header mb-4">
+    <div class="page-header text-center mb-4">
         <h1 class="page-title">
             <i class="bi bi-plus-circle me-2"></i>Create New Snippet
         </h1>
@@ -124,6 +124,18 @@
 </div>
 
 <script>
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    function stripCodeFences(text) {
+        const s = String(text || '').trim();
+        if (!s.startsWith('```')) return s;
+        const firstNewline = s.indexOf('\n');
+        const lastFence = s.lastIndexOf('```');
+        if (firstNewline === -1 || lastFence === -1 || lastFence <= firstNewline) return s;
+        return s.slice(firstNewline + 1, lastFence).trim();
+    }
     // Retry Generation
     document.addEventListener('DOMContentLoaded', function() {
         const retryBtn = document.getElementById('retryGenerationBtn');
@@ -222,14 +234,14 @@
         try {
             const res = await fetch("{{ url_for('main.refine') }}", {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                 body: JSON.stringify({ code: code, error: errorText, language: language })
             });
             const data = await res.json();
             if (data.error) {
                 alert(data.error);
             } else if (data.code) {
-                document.getElementById('code-textarea').value = data.code;
+                document.getElementById('code-textarea').value = stripCodeFences(data.code);
                 const desc = document.querySelector('[name="description"]');
                 if (desc && data.explanation) {
                     desc.value = desc.value + '\n\n---\n\n### Updated AI Explanation\n' + data.explanation;
@@ -255,30 +267,25 @@
     });
 
     // Format Code
-    document.getElementById('format-btn').addEventListener('click', () => {
+    document.getElementById('format-btn').addEventListener('click', async () => {
         const lang = document.getElementById('language-select').value;
         const code = document.getElementById('code-textarea').value;
-        let parser;
-
-        switch (lang) {
-            case 'javascript': parser = 'babel'; break;
-            case 'typescript': parser = 'typescript'; break;
-            case 'html': parser = 'html'; break;
-            case 'css': parser = 'css'; break;
-            case 'markdown': parser = 'markdown'; break;
-            case 'yaml': parser = 'yaml'; break;
-            case 'php': parser = 'php'; break;
-            case 'ruby': parser = 'ruby'; break;
-            default:
-                alert('Formatting not supported for ' + lang);
-                return;
+        if (!code.trim()) {
+            alert('Please enter some code before formatting.');
+            return;
         }
 
         try {
-            const formattedCode = prettier.format(code, { parser: parser, plugins: prettierPlugins });
-            document.getElementById('code-textarea').value = formattedCode;
+            const res = await fetch("{{ url_for('main.format_code') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ code, language: lang })
+            });
+            const data = await res.json();
+            if (!res.ok || data.error) throw new Error(data.error || 'Failed to format code.');
+            document.getElementById('code-textarea').value = stripCodeFences(data.code);
         } catch (error) {
-            alert('Could not format code. Check for syntax errors.');
+            alert('Could not format code: ' + error.message);
         }
     });
 

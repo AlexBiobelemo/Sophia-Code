@@ -19,6 +19,7 @@
           <div class="d-flex gap-2">
             <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#v{{ v.id }}" aria-expanded="false" aria-controls="v{{ v.id }}">Preview</button>
             <form method="post" action="{{ url_for('main.revert_snippet', snippet_id=snippet.id, version_id=v.id) }}" onsubmit="return confirm('Revert to this version?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn btn-sm btn-danger" type="submit">Revert</button>
             </form>
           </div>

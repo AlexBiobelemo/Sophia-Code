@@ -7,10 +7,12 @@ import time
 import random
 from typing import Callable, Tuple, Optional, List
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+import sys
 
 # Model mapping from user preferences to actual API model names
 MODEL_MAPPING = {
     'gemini-2.5-flash': 'gemini-2.5-flash',
+    'gemini-2.5-flash-lite': 'gemini-2.5-flash-lite',
     'gemini-2.5-pro': 'gemini-2.5-pro',
     'gemini-3-pro': 'gemini-3-pro',
 }
@@ -36,13 +38,13 @@ LAST_META = {
 MODEL_TIERING_CONFIG = {
     "code_generation": {
         "primary": "gemini-2.5-flash",
-        "fallback": "gemini-1.5-flash",
-        "cost_optimized": "gemini-1.5-flash"
+        "fallback": "gemini-2.5-flash",
+        "cost_optimized": "gemini-2.5-flash-lite"
     },
     "explanation": {
-        "primary": "gemini-1.5-flash",
-        "fallback": "gemini-1.5-flash",
-        "cost_optimized": "gemini-1.5-flash"
+        "primary": "gemini-2.5-flash",
+        "fallback": "gemini-2.5-flash",
+        "cost_optimized": "gemini-2.5-flash-lite"
     }
 }
 
@@ -172,8 +174,23 @@ def _is_retryable_exception(e: Exception) -> bool:
 
 
 def _call_with_timeout(fn: Callable[[], any], timeout_seconds: int):
+    # Avoid spawning new executors while the interpreter is shutting down.
+    try:
+        if getattr(sys, "is_finalizing", lambda: False)():
+            return fn()
+    except Exception:
+        pass
+
     ex = ThreadPoolExecutor(max_workers=1)
-    fut = ex.submit(fn)
+    try:
+        fut = ex.submit(fn)
+    except RuntimeError as re:
+        # e.g. "cannot schedule new futures after interpreter shutdown"
+        try:
+            ex.shutdown(wait=False, cancel_futures=True)
+        except Exception:
+            pass
+        return fn()
     try:
         return fut.result(timeout=timeout_seconds)
     except FuturesTimeout as te:
@@ -357,7 +374,16 @@ def format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
 
         genai.configure(api_key=_get_api_key())
         update_global_model_name()
-        model = genai.GenerativeModel(model_name=MODEL_NAME)
+        # Auto-pick a faster model for short prompts to improve perceived latency.
+        chosen_model = MODEL_NAME
+        try:
+            if _count_tokens_estimate(code_to_format) <= 80:
+                chosen_model = get_api_model_name('gemini-2.5-flash-lite')
+        except Exception:
+            chosen_model = MODEL_NAME
+
+        LAST_META['model'] = chosen_model
+        model = genai.GenerativeModel(model_name=chosen_model)
 
         system_prompt = (
             "You are a code formatting expert. Format the following code with proper indentation, spacing, and style. "
@@ -367,7 +393,7 @@ def format_code_with_ai(code_to_format: str, language_hint: str = None) -> str:
         )
 
         lang_line = f"Language: {language_hint}\n" if language_hint else ""
-        prompt = f"{lang_line}CODE TO FORMAT:\n```\n{code_to_format}\n```\n\nFORMATTED CODE:"
+        prompt = f"{system_prompt}\n\n{lang_line}CODE TO FORMAT:\n```\n{code_to_format}\n```\n\nFORMATTED CODE:"
 
         def _do_call():
             return model.generate_content(prompt)

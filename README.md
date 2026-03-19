@@ -106,9 +106,21 @@ Project Sophia addresses the common problem developers face in managing an ever-
 
 To run the application:
 ```bash
-flask run 
+python run.py
 ```
 The application will typically be available at `http://127.0.0.1:5000/`. Open this URL in your web browser.
+
+## Render/Production Notes
+
+- `run.py` runs best-effort automatic migrations on startup when `RENDER_EXTERNAL_URL` is present (override with `AUTO_MIGRATE=0`).
+- Keep-alive self-ping auto-enables on Render (single-leader via lock) and pings `GET /health` every ~12 minutes.
+  - Override with `SELF_PING_ENABLED=0` or customize with `SELF_PING_*` env vars.
+
+## Maintenance Scripts
+
+- Backfill missing snippet versions: `python scripts/backfill_snippet_versions.py`
+- Auto-upgrade DB (manual run): `python scripts/auto_migrate.py`
+- Import/merge another SQLite DB into your current user: `python scripts/import_merge_sqlite.py --help`
 
 ## Key Features
 
@@ -154,7 +166,6 @@ The application will typically be available at `http://127.0.0.1:5000/`. Open th
 - Advanced search with filters (language, tags, date, collection)
 - Semantic search using vector embeddings
 - Search highlighting and scoring
-- Solution search for approved solutions
 
 ### Export & Backup
 - Export snippets as Markdown files
@@ -214,4 +225,4 @@ Project-Sophia/
 - Developed by Alex Biobelemo
 - Inspired by personal needs for better code organization
 - Uses Google Gemini API for AI capabilities
-- Uses Minimax API for additional AI capabilities
+ 

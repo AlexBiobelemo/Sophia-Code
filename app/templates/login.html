@@ -9,6 +9,7 @@
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app-toast.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/button-glass.css') }}">
 
     <!-- Premium very-dark theme overrides -->
@@ -94,6 +95,17 @@
 
 <body class="bg-body-tertiary">
     <div id="particles-js" style="min-height: 100vh; min-width: 100vw;"></div>
+    <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div id="flash-messages" style="display: none;">
+        {% for category, message in messages %}
+        <div class="flash" data-category="{{ category }}" data-message="{{ message }}"></div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
 
     <!-- Simple Centered Login Layout -->
     <div class="container-fluid">
@@ -149,6 +161,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/app-toast.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
         // Initialize particles

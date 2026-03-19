@@ -175,6 +175,7 @@
                         } %}
                         <!-- Save as Snippet button - uses session storage to avoid URL size limits -->
                         <form method="POST" action="{{ url_for('main.save_multi_step_as_snippet') }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="result_id" value="{{ result.result_id }}">
                             <input type="hidden" name="full_description" value="{{ full_description }}">
                             <button type="submit" class="btn btn-success btn-lg me-3" data-bs-toggle="tooltip"

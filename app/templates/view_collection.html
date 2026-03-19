@@ -1,34 +1,143 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Snippets in: <span class="text-body-secondary">{{ collection.name }}</span> <span class="badge bg-primary rounded-pill">{{ snippet_count }} snippets</span></h2>
-        <a href="{{ url_for('main.collections') }}" class="btn btn-outline-secondary">Back to All Collections</a>
+<div class="page-container">
+  <div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+      <div>
+        <h1 class="page-title mb-1">
+          <i class="bi bi-folder2-open me-2"></i>{{ collection.name }}
+        </h1>
+        <p class="page-subtitle mb-0">
+          <span class="badge bg-primary bg-opacity-10 text-primary">{{ snippet_count }} snippets</span>
+        </p>
+      </div>
+      <a href="{{ url_for('main.collections') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Collections
+      </a>
     </div>
+  </div>
 
-    {% if snippets.items %}
-        {% for snippet in snippets.items %}
-            <div class="card mb-3">
-                <div class="card-header d-flex justify-content-between">
-                    {{ snippet.title }}
-                    <small class="text-muted">{{ snippet.tags }}</small>
-                </div>
-                <div class="card-body">
-                    <p class="card-text">{{ snippet.description | striptags | truncate(150) or 'No description provided.' }}</p>
-                    <a href="{{ url_for('main.view_snippet', snippet_id=snippet.id) }}" class="btn btn-primary">View Snippet</a>
-                </div>
+  {% if sub_collections %}
+  <div class="card ai-snippet-card mb-4">
+    <div class="card-header">
+      <i class="bi bi-diagram-2 me-2"></i>Sub-collections
+    </div>
+    <div class="card-body">
+      <div class="collections-container grid-view">
+        {% for c in sub_collections %}
+        <div class="collection-item">
+          <a href="{{ url_for('main.view_collection', collection_id=c.id) }}" class="collection-link">
+            <div class="collection-icon">
+              <i class="bi bi-folder-fill text-warning"></i>
             </div>
-        {% endfor %}
-    {% else %}
-        <div class="text-center py-5">
-            <h3 class="text-muted">This collection is empty.</h3>
-            <p>You can add snippets to this collection from the 'Create Snippet' or 'Edit Snippet' pages.</p>
+            <div class="collection-info">
+              <div class="collection-name">{{ c.name }}</div>
+              <div class="collection-count">{{ c.snippets.count() }} snippets</div>
+            </div>
+          </a>
         </div>
-    {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-    {% if snippets and snippets.pages > 1 %}
-        {% with pagination=snippets, endpoint='main.view_collection', kwargs={'collection_id': collection.id} %}
-            {% include '_pagination.html' %}
-        {% endwith %}
-    {% endif %}
+  {% if snippets.items %}
+  <div class="snippets-container grid-view" id="snippets-container">
+    {% include '_snippets_list.html' %}
+  </div>
+
+  <!-- Infinite Scroll Loader -->
+  <div class="text-center py-4" id="infinite-scroll-loader">
+    <div class="spinner-border text-primary" role="status" style="display: none;">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted mt-2" id="loader-text">Scroll down to load more snippets...</p>
+  </div>
+  {% else %}
+  <div class="card ai-snippet-card">
+    <div class="card-body text-center py-5">
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="bi bi-folder"></i></div>
+        <h3 class="empty-state-title">This collection is empty</h3>
+        <p class="empty-state-text mb-0">Add snippets from the create/edit snippet pages.</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  // Infinite Scroll Pagination (Collection view)
+  document.addEventListener('DOMContentLoaded', () => {
+    const loader = document.getElementById('infinite-scroll-loader');
+    const loaderText = document.getElementById('loader-text');
+    const spinner = loader?.querySelector('.spinner-border');
+    const container = document.getElementById('snippets-container');
+
+    if (!loader || !container || !spinner || !loaderText) return;
+
+    let currentPage = {{ snippets.page or 1 }};
+    let isLoading = false;
+    let hasMorePages = {{ 'true' if snippets.has_next else 'false' }};
+
+    async function loadMoreSnippets() {
+      if (isLoading || !hasMorePages) return;
+
+      isLoading = true;
+      spinner.style.display = 'inline-block';
+      loaderText.textContent = 'Loading more snippets...';
+
+      try {
+        currentPage++;
+        const url = window.location.pathname + `?page=${currentPage}&partial=1`;
+        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (!response.ok) throw new Error('Network response was not ok');
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newItems = doc.querySelectorAll('.snippet-item');
+        const paginationInfo = doc.querySelector('#pagination-info');
+
+        if (newItems.length > 0) {
+          newItems.forEach(item => container.appendChild(item));
+          if (paginationInfo) {
+            hasMorePages = paginationInfo.dataset.hasNext === '1';
+          } else {
+            hasMorePages = false;
+          }
+
+          if (!hasMorePages) {
+            spinner.style.display = 'none';
+            loaderText.textContent = 'All snippets loaded.';
+          } else {
+            spinner.style.display = 'none';
+            loaderText.textContent = 'Scroll down to load more snippets...';
+          }
+        } else {
+          hasMorePages = false;
+          spinner.style.display = 'none';
+          loaderText.textContent = 'All snippets loaded.';
+        }
+      } catch (error) {
+        spinner.style.display = 'none';
+        loaderText.textContent = 'Could not load more snippets.';
+        window.appToast?.('Failed to load more snippets. Please try again.', 'danger');
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Intersection observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) loadMoreSnippets();
+      });
+    }, { rootMargin: '200px' });
+
+    observer.observe(loader);
+  });
+</script>
 {% endblock %}

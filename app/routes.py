@@ -4,22 +4,28 @@ import numpy as np
 import sqlalchemy as sa
 from sqlalchemy import or_
 from flask import (Blueprint, render_template, flash, redirect, url_for,
-                   request, current_app, jsonify)
+                   request, current_app, jsonify, send_file)
 from flask_login import current_user, login_user, logout_user, login_required
 import time, uuid
 from datetime import datetime, timedelta, timezone
 import json
 
-from app import db, ai_services
+from app import db, ai_services, rate_limit
 from app.forms import (RegistrationForm, LoginForm, SnippetForm,
                        AIGenerationForm, CollectionForm, NoteForm,
                        MoveSnippetForm, EditProfileForm, BulkActionForm, SettingsForm)
 from app.models import User, Snippet, Collection, SnippetVersion, ChatSession, ChatMessage, Badge, UserBadge, Point, Note, MultiStepResult
 from app.utils.state_manager import StateManager, preserve_form_state, restore_form_state, preserve_search_state, restore_search_state
 from io import StringIO
+from io import BytesIO
 
 # Create the main Blueprint
 bp = Blueprint('main', __name__)
+
+@bp.route('/health', methods=['GET'])
+def health():
+    """Lightweight health check endpoint for monitoring/self-ping."""
+    return jsonify({'status': 'ok'}), 200
 
 def check_and_award_badges(user):
     """Checks user activity and awards badges if criteria are met."""
@@ -135,6 +141,7 @@ def index():
 
 
 @bp.route('/login', methods=['GET', 'POST'])
+@rate_limit("10 per minute")
 def login():
     """Handles user login with rate limiting and account lockout."""
     if current_user.is_authenticated:
@@ -193,6 +200,7 @@ def logout():
 
 
 @bp.route('/register', methods=['GET', 'POST'])
+@rate_limit("6 per minute")
 def register():
     """Handles new user registration."""
     if current_user.is_authenticated:
@@ -353,10 +361,13 @@ def view_snippet(snippet_id):
           .order_by(Snippet.timestamp.desc())
     )
 
+    versions = snippet.versions.order_by(SnippetVersion.created_at.desc()).all()
+
     return render_template(
         'view_snippet.html',
         title=snippet.title,
         snippet=snippet,
+        versions=versions,
         prev_snippet_id=prev_snippet.id if prev_snippet else None,
         next_snippet_id=next_snippet.id if next_snippet else None,
     )
@@ -524,7 +535,7 @@ def snippet_history(snippet_id):
     return render_template('snippet_history.html', title=f"History: {snippet.title}", snippet=snippet, versions=versions)
 
 
-@bp.route('/snippet/<int:snippet_id>/revert', methods=['POST'])
+@bp.route('/snippet/<int:snippet_id>/revert/<int:version_id>', methods=['POST'])
 @login_required
 def revert_snippet(snippet_id, version_id):
     """Reverts a snippet to a previous version."""
@@ -558,6 +569,76 @@ def revert_snippet(snippet_id, version_id):
     db.session.commit()
     flash('Snippet reverted to selected version.', 'success')
     return redirect(url_for('main.view_snippet', snippet_id=snippet.id))
+
+
+@bp.route('/snippet/version/<int:version_id>/restore', methods=['POST'])
+@login_required
+def restore_version(version_id):
+    """Restore a snippet version (used from view_snippet version history)."""
+    version = db.session.get(SnippetVersion, version_id)
+    if version is None:
+        return jsonify({'error': 'Version not found.'}), 404
+
+    snippet = db.session.get(Snippet, version.snippet_id)
+    if snippet is None or snippet.author != current_user:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    # Snapshot current state before restoring
+    db.session.add(SnippetVersion(
+        snippet_id=snippet.id,
+        title=snippet.title,
+        description=snippet.description,
+        code=snippet.code,
+        language=snippet.language,
+        tags=snippet.tags,
+    ))
+
+    snippet.title = version.title
+    snippet.description = version.description
+    snippet.code = version.code
+    snippet.language = version.language
+    snippet.tags = version.tags
+    try:
+        snippet.generate_and_set_embedding()
+    except Exception as e:
+        current_app.logger.warning(f"embedding generation failed (restore_version): {e}")
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Version restored successfully.', 'snippet_id': snippet.id})
+
+
+@bp.route('/snippet/version/<int:version_id>/diff', methods=['GET'])
+@login_required
+def version_diff(version_id):
+    """Show an HTML diff between current snippet code and a historical version."""
+    version = db.session.get(SnippetVersion, version_id)
+    if version is None:
+        flash('Version not found.', 'danger')
+        return redirect(url_for('main.index'))
+
+    snippet = db.session.get(Snippet, version.snippet_id)
+    if snippet is None or snippet.author != current_user:
+        flash('Snippet not found or unauthorized.', 'danger')
+        return redirect(url_for('main.index'))
+
+    import difflib
+    diff = difflib.HtmlDiff(wrapcolumn=120)
+    diff_html = diff.make_table(
+        (snippet.code or '').splitlines(),
+        (version.code or '').splitlines(),
+        fromdesc='Current',
+        todesc=f"Version @ {version.created_at.strftime('%Y-%m-%d %H:%M')}",
+        context=True,
+        numlines=3
+    )
+
+    return render_template(
+        'version_diff.html',
+        title=f"Diff: {snippet.title}",
+        snippet=snippet,
+        version=version,
+        diff_html=diff_html
+    )
 
 
 @bp.route('/snippet/<int:snippet_id>/delete', methods=['POST'])
@@ -835,6 +916,7 @@ def save_multi_step_as_snippet():
 
 @bp.route('/explain', methods=['POST'])
 @login_required
+@rate_limit("20 per minute")
 def explain():
     """API endpoint to get an AI explanation for a code block.
     This specifically uses Gemini for the explain button on the view snippet page."""
@@ -863,7 +945,6 @@ def update_snippet_description(snippet_id):
     
     # Update description
     snippet.description = data['description']
-    snippet.updated_at = sa.func.now()
     db.session.commit()
     
     return jsonify({
@@ -871,6 +952,43 @@ def update_snippet_description(snippet_id):
         'message': 'Description updated successfully',
         'description': snippet.description
     })
+
+
+@bp.route('/snippet/<int:snippet_id>/update_code', methods=['POST'])
+@login_required
+def update_snippet_code(snippet_id):
+    """API endpoint to update snippet code while snapshotting history."""
+    snippet = db.get_or_404(Snippet, snippet_id)
+
+    if snippet.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.get_json(silent=True) or {}
+    code = data.get('code')
+    if not code:
+        return jsonify({'error': 'Missing code in request.'}), 400
+
+    # Snapshot current state before updating
+    db.session.add(SnippetVersion(
+        snippet_id=snippet.id,
+        title=snippet.title,
+        description=snippet.description,
+        code=snippet.code,
+        language=snippet.language,
+        tags=snippet.tags,
+    ))
+
+    snippet.code = code
+    if data.get('language'):
+        snippet.language = data['language']
+
+    try:
+        snippet.generate_and_set_embedding()
+    except Exception as e:
+        current_app.logger.warning(f"embedding generation failed (update_snippet_code): {e}")
+
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Snippet updated successfully'})
 
 
 @bp.route('/api/save_streaming_result', methods=['POST'])
@@ -949,6 +1067,7 @@ def save_streaming_as_snippet():
 
 @bp.route('/suggest-tags', methods=['POST'])
 @login_required
+@rate_limit("30 per minute")
 def suggest_tags():
     """API endpoint to get AI-suggested tags for code."""
     try:
@@ -971,6 +1090,7 @@ def suggest_tags():
 
 @bp.route('/format-code', methods=['POST'])
 @login_required
+@rate_limit("20 per minute")
 def format_code():
     """API endpoint to format code using AI."""
     try:
@@ -990,6 +1110,7 @@ def format_code():
 
 @bp.route('/refine', methods=['POST'])
 @login_required
+@rate_limit("12 per minute")
 def refine():
     """Refine AI-generated code based on runtime error output and update explanation."""
     data = request.get_json()
@@ -1378,6 +1499,10 @@ def view_collection(collection_id):
     # Query for snippets in this collection and paginate the results
     pagination = collection.snippets.order_by(Snippet.timestamp.desc()).paginate(
         page=page, per_page=current_app.config['POSTS_PER_PAGE'], error_out=False)
+
+    # Infinite scroll support (returns only the snippet cards fragment)
+    if request.args.get('partial') == '1':
+        return render_template('_snippets_list.html', snippets=pagination)
     
     # Fetch sub-collections
     sub_collections = collection.children.order_by(Collection.name.asc()).all()
@@ -2420,6 +2545,39 @@ def api_chat_rename(session_id):
     s.updated_at = sa.func.now()
     db.session.commit()
     return jsonify({'ok': True, 'title': s.title})
+
+
+@bp.route('/api/tts', methods=['POST'])
+@login_required
+@rate_limit("30/minute")
+def api_tts():
+    """
+    Optional server-side TTS (Google via gTTS) for chat.
+
+    Client may fall back to browser speech synthesis if this endpoint is unavailable.
+    """
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    lang = (data.get("lang") or "en").strip() or "en"
+
+    if not text:
+        return jsonify({"error": "Text required"}), 400
+    text = text[:2500]
+
+    try:
+        from gtts import gTTS  # type: ignore
+    except Exception as e:
+        return jsonify({"error": f"TTS unavailable: {e}"}), 501
+
+    fp = BytesIO()
+    try:
+        gTTS(text=text, lang=lang).write_to_fp(fp)
+    except Exception as e:
+        current_app.logger.warning(f"TTS generation failed: {e}")
+        return jsonify({"error": "TTS generation failed"}), 502
+
+    fp.seek(0)
+    return send_file(fp, mimetype="audio/mpeg", download_name="tts.mp3")
 
 
 @bp.route('/collections/reorder', methods=['POST'])

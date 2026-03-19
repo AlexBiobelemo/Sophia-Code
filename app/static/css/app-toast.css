@@ -1,0 +1,41 @@
+.toast.app-toast {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+.toast.app-toast .toast-body {
+  padding: 0.85rem 1rem;
+}
+
+.toast.app-toast .app-toast-title {
+  display: flex;
+  align-items: center;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  margin-bottom: 0.1rem;
+}
+
+.toast.app-toast .app-toast-message {
+  opacity: 0.95;
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast.app-toast {
+    animation: appToastIn 260ms ease-out;
+  }
+}
+
+@keyframes appToastIn {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+

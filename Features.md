@@ -93,7 +93,7 @@
 
 ### AI-Powered Code Generation
 **Description:** Integrates with an AI service (Google Gemini) to generate new code snippets from natural language prompts, explain existing code, suggest relevant tags, and refine code based on feedback.
-**Technical Implementation:** Google Gemini API integration (via `app/ai_services.py`), Celery for asynchronous task processing to avoid blocking the main Flask app during AI calls.
+**Technical Implementation:** Google Gemini API integration (via `app/ai_services.py`) with retries, timeouts, and streaming-friendly UI rendering.
 
 #### Demo: Code Generation (GIF/Video)
 <div style="text-align: center;">
@@ -121,18 +121,6 @@
 
 ---
 
-### AI-Powered Solution Generation
-**Description:** Integrates with an AI service (Google Gemini) to generate solutions for added programming problems in various languages based on problem descriptions, and to explain and classify these solutions.
-**Technical Implementation:** Google Gemini API integration (via `app/ai_services.py`).
-
----
-
-### Solution Approval Workflow
-**Description:** Generated AI solutions can be reviewed and approved by users, storing the approved solutions for future reference.
-**Technical Implementation:** Boolean flag on `Solution` model for approval status, UI elements for approval/rejection.
-
----
-
 ### Bulk Actions
 **Description:** Allows users to perform operations like deleting, copying, or moving multiple snippets simultaneously.
 **Technical Implementation:** Frontend JavaScript handles selection and sends bulk requests to a dedicated backend endpoint.
@@ -149,6 +137,6 @@
 ---
 
 ## Performance Specifications
-- **Load Limits:** Designed for individual users or small teams. AI generation tasks are offloaded to a background worker (Celery) to prevent blocking the main application.
+- **Load Limits:** Designed for individual users or small teams. AI generation tasks run server-side with request timeouts and UI streaming/chunking for responsiveness.
 - **Browser Compatibility:** Tested on modern web browsers (Chrome, Firefox, Safari, Edge).
 - **Database:** SQLite is suitable for small to medium-sized datasets. For larger deployments, the SQLAlchemy ORM allows for easy migration to PostgreSQL or MySQL.

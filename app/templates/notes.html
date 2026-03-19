@@ -24,43 +24,45 @@
     </div>
 
     {% if notes.items %}
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <div class="notes-grid">
         {% for note in notes.items %}
-        <div class="col">
-            <div class="card ai-snippet-card h-100 hover-lift">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-journal-text me-2 text-primary"></i>{{ note.title }}
-                    </h5>
-                    
-                    <p class="card-text text-muted small mb-3">
-                        <i class="bi bi-calendar3 me-1"></i>{{ moment(note.timestamp).format('LL') }}
-                    </p>
-
-                    <div class="card-text flex-grow-1 mb-3 note-preview">
-                        <div class="markdown-content">
-                            {{ note.content | markdown_preview(200) | safe }}
-                        </div>
-                    </div>
-
-                    <div class="mt-auto pt-3 border-top">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <a href="{{ url_for('main.view_note', note_id=note.id) }}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-eye me-1"></i>View
-                            </a>
-                            <div class="btn-group" role="group">
-                                <a href="{{ url_for('main.edit_note', note_id=note.id) }}" class="btn btn-outline-secondary btn-sm" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form action="{{ url_for('main.delete_note', note_id=note.id) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this note?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+        <div class="note-card hover-lift">
+            <div class="note-card-header">
+                <h5 class="note-card-title">
+                    <i class="bi bi-journal-text me-2 text-primary"></i>{{ note.title }}
+                </h5>
+                <div class="note-card-actions">
+                    <a href="{{ url_for('main.view_note', note_id=note.id) }}" class="btn btn-icon btn-sm" title="View">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{{ url_for('main.edit_note', note_id=note.id) }}" class="btn btn-icon btn-sm" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <form action="{{ url_for('main.delete_note', note_id=note.id) }}" method="post" class="d-inline" onsubmit="return confirm('Delete this note?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-icon btn-sm text-danger" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
                 </div>
+            </div>
+            
+            <div class="note-card-meta">
+                <span class="note-date">
+                    <i class="bi bi-calendar3 me-1"></i>{{ moment(note.timestamp).format('LL') }}
+                </span>
+            </div>
+            
+            <div class="note-card-content">
+                <div class="markdown-content">
+                    {{ note.content | markdown_preview(200) | safe }}
+                </div>
+            </div>
+            
+            <div class="note-card-footer">
+                <a href="{{ url_for('main.view_note', note_id=note.id) }}" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-eye me-1"></i>Read More
+                </a>
             </div>
         </div>
         {% endfor %}
@@ -108,49 +110,154 @@
 </div>
 
 <style>
-    .note-preview {
-        max-height: 180px;
+    .notes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .note-card {
+        background: var(--bs-card-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        min-height: 300px;
+        max-height: 420px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .note-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        border-color: var(--bs-primary);
+    }
+
+    .note-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .note-card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--bs-body-color);
+        line-height: 1.4;
+        flex: 1;
+    }
+
+    .note-card-actions {
+        display: flex;
+        gap: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .note-card-actions .btn-icon {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-md);
+        background: rgba(var(--bs-secondary-bg-rgb), 0.5);
+        border: 1px solid var(--bs-border-color);
+        color: var(--bs-body-color);
+        transition: all 0.2s ease;
+    }
+
+    .note-card-actions .btn-icon:hover {
+        background: var(--bs-primary);
+        border-color: var(--bs-primary);
+        color: white;
+    }
+
+    .note-card-actions .btn-icon.text-danger:hover {
+        background: var(--bs-danger);
+        border-color: var(--bs-danger);
+        color: white;
+    }
+
+    .note-card-meta {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .note-date {
+        font-size: 0.85rem;
+        color: var(--bs-secondary-color);
+    }
+
+    .note-card-content {
+        flex: 1;
         overflow-y: auto;
+        margin-bottom: 1rem;
+        max-height: 200px;
+    }
+
+    .note-card-content .markdown-content {
+        color: var(--bs-secondary-color);
         font-size: 0.9rem;
         line-height: 1.6;
     }
-    
-    .note-preview .markdown-content {
-        color: var(--bs-secondary-color);
-    }
-    
-    .note-preview h1, .note-preview h2, .note-preview h3 {
-        font-size: 1.1rem;
+
+    .note-card-content h1, 
+    .note-card-content h2, 
+    .note-card-content h3 {
+        font-size: 1rem;
         margin-top: 0.75rem;
         margin-bottom: 0.5rem;
+        color: var(--bs-body-color);
     }
-    
-    .note-preview p {
+
+    .note-card-content p {
         margin-bottom: 0.75rem;
     }
-    
-    .note-preview code {
+
+    .note-card-content code {
         background: rgba(var(--bs-secondary-bg-rgb), 0.5);
         padding: 0.15rem 0.4rem;
         border-radius: var(--radius-sm);
         font-family: 'Fira Code', monospace;
         font-size: 0.85em;
+        color: var(--bs-body-color);
     }
-    
-    .note-preview pre {
+
+    .note-card-content pre {
         background: rgba(var(--bs-secondary-bg-rgb), 0.5);
         padding: 0.75rem;
         border-radius: var(--radius-md);
         overflow-x: auto;
-        max-height: 150px;
+        max-height: 120px;
         overflow-y: auto;
+        margin: 0.5rem 0;
     }
-    
-    .note-preview blockquote {
+
+    .note-card-content blockquote {
         border-left: 3px solid var(--bs-primary);
         padding-left: 1rem;
         margin: 0.75rem 0;
         color: var(--bs-secondary-color);
+    }
+
+    .note-card-footer {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--bs-border-color);
+    }
+
+    .note-preview {
+        max-height: 180px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+        line-height: 1.6;
     }
 </style>
 {% endblock %}

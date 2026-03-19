@@ -32,11 +32,6 @@
   - [AI Tag Suggestion](#ai-tag-suggestion)
   - [AI Code Refinement](#ai-code-refinement)
   - [AI Note Explanation](#ai-note-explanation)
-- [LeetCode Problem Management](#leetcode-problem-management)
-  - [Adding a Problem](#adding-a-problem)
-  - [Generating Solutions](#generating-solutions)
-  - [Approving Solutions](#approving-solutions)
-  - [Viewing Solutions](#viewing-solutions)
 - [Notes Management](#notes-management)
   - [Creating Notes](#creating-notes)
   - [Viewing Notes](#viewing-notes)
@@ -51,7 +46,6 @@
   - [Basic Search](#basic-search)
   - [Advanced Search Syntax](#advanced-search-syntax)
   - [Semantic Search](#semantic-search)
-  - [Solution Search](#solution-search)
 - [Export Features](#export-features)
   - [Export All Snippets](#export-all-snippets)
   - [Export Filtered Snippets](#export-filtered-snippets)
@@ -69,7 +63,7 @@
 
 ## Introduction
 
-Welcome to Project Sophia! This comprehensive guide will walk you through using all features of the application to manage your code snippets, solve programming problems, and leverage AI for code generation.
+Welcome to Project Sophia! This guide walks you through using the application to manage your code snippets, collections, notes, and AI features.
 
 ## Account Setup
 
@@ -106,9 +100,10 @@ Welcome to Project Sophia! This comprehensive guide will walk you through using 
 Access User Settings from your profile or navigation:
 
 - **AI Settings:**
-  - Preferred AI Model: Choose between Gemini models or Minimax
+  - Preferred AI Model: Choose between Gemini models
   - Code Generation Style: Balanced, Detailed, or Concise
   - Auto Explain Code: Automatically explain code on creation
+  - BYOK (Bring Your Own Key): Optionally save and use your own Gemini API key
 
 - **UI Preferences:**
   - Show Line Numbers: Display line numbers in code snippets
@@ -290,40 +285,6 @@ Access User Settings from your profile or navigation:
 1. View a note.
 2. Click **Explain** to get an AI-powered explanation of the note content.
 
-## LeetCode Problem Management
-
-### Adding a Problem
-
-1. Navigate to **Add Problem**.
-2. Enter the **Problem Title**.
-3. Enter the **Problem Description**.
-4. Select the **Difficulty** (Easy, Medium, or Hard).
-5. Add **Tags** (comma-separated) for categorization.
-6. (Optional) Provide the **LeetCode URL** if it's from LeetCode.
-7. Click **Add Problem**.
-
-### Generating Solutions
-
-1. View a problem.
-2. Click **Generate Solution**.
-3. Select the **Solution Language**.
-4. Click **Generate Solution**.
-5. Review the generated solution and explanation.
-6. Click **Approve Solution** if it meets requirements.
-
-### Approving Solutions
-
-1. Navigate to the solution (from problem page or notifications).
-2. Review the solution code and explanation.
-3. Click **Approve** to publish the solution.
-4. Approved solutions are visible in search results.
-
-### Viewing Solutions
-
-1. View a problem.
-2. See all approved solutions in the Solutions section.
-3. Click a solution to view details.
-
 ## Notes Management
 
 ### Creating Notes
@@ -406,12 +367,6 @@ Use these operators for precise searches:
 
 The system automatically performs semantic search using AI embeddings, finding conceptually related snippets even without exact keyword matches.
 
-### Solution Search
-
-1. Navigate to **Solutions Search**.
-2. Use the same search syntax to find approved solutions.
-3. Results include problem context and explanations.
-
 ## Export Features
 
 ### Export All Snippets
@@ -446,7 +401,6 @@ Earn points for various activities:
 - Creating a snippet: 10 points
 - Copying a snippet: 5 points
 - Creating a note: 5 points
-- Approving a solution: 20 points
 
 ### Badges
 
@@ -456,7 +410,6 @@ Earn badges for achievements:
 - **Points Badges:** Rookie → Contributor → Champion → Legend
 - **Streak Badges:** Getting Started (3 days) → Dedicated (7 days) → Committed (14 days) → Persistent (30 days)
 - **Language Badges:** Polyglot (3 languages) → Universal Coder (5 languages)
-- **LeetCode Badges:** Problem Solver → Solution Provider → Algorithm Expert
 - **Notes Badges:** Note Taker → Knowledge Keeper
 
 ### Streaks
