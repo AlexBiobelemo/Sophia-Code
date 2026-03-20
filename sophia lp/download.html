@@ -26,6 +26,7 @@
         <nav class="nav" aria-label="Primary">
           <a class="nav-link" href="./index.html">Home</a>
           <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
           <a class="nav-link is-active" href="./download.html">Download</a>
         </nav>
         <div class="nav-cta">
@@ -42,6 +43,7 @@
         <div class="wrap mobile-menu-wrap">
           <a class="nav-link" href="./index.html">Home</a>
           <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
           <a class="nav-link" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
         </div>
       </div>
@@ -98,11 +100,11 @@
             </article>
             <article class="card">
               <h3><i class="bi bi-wifi"></i> Network</h3>
-              <p>Optional. Needed only for AI model calls and the hosted demo.</p>
+              <p>Optional. Needed for AI model calls and for the hosted demo.</p>
             </article>
             <article class="card">
               <h3><i class="bi bi-shield-check"></i> Security</h3>
-              <p>Local build binds to localhost; tokens and secrets are not placed in URLs.</p>
+              <p>Local build binds to localhost; tokens and secrets are not placed in URLs. BYOK keys stay masked by default.</p>
             </article>
           </div>
         </div>
@@ -111,14 +113,15 @@
       <section class="section">
         <div class="wrap">
           <div class="section-head">
-            <h2>Accessibility and safe defaults</h2>
-            <p>This site aims for WCAG-friendly patterns: focus rings, semantic structure, and reduced-motion support.</p>
+            <h2>Portfolio notes (what this demonstrates)</h2>
+            <p>Beyond UI polish: state management, security fixes, and practical AI workflows in a real Flask app.</p>
           </div>
           <div class="card">
             <ul class="checklist">
-              <li>Keyboard navigation and visible focus states</li>
-              <li>High-contrast type on pure black</li>
-              <li>Respects <span class="mono">prefers-reduced-motion</span></li>
+              <li>Consistent navigation patterns and responsive behavior across pages</li>
+              <li>CSRF tokens never appear in the address bar (prevented at multiple layers)</li>
+              <li>Chat sessions with smart naming and a welcome state</li>
+              <li>BYOK API key toggle with masked/unmasked UI and server-side validation</li>
             </ul>
           </div>
         </div>
@@ -151,4 +154,3 @@
   <script src="./assets/js/site.js"></script>
 </body>
 </html>
-

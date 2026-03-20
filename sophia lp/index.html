@@ -26,6 +26,7 @@
         <nav class="nav" aria-label="Primary">
           <a class="nav-link is-active" href="./index.html">Home</a>
           <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
           <a class="nav-link" href="./download.html">Download</a>
         </nav>
         <div class="nav-cta">
@@ -41,6 +42,7 @@
       <div class="mobile-menu" hidden>
         <div class="wrap mobile-menu-wrap">
           <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
           <a class="nav-link" href="./download.html">Download</a>
           <a class="nav-link" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
         </div>
@@ -100,9 +102,67 @@
               <div class="mascot-body"></div>
             </div>
 
-            <div class="shot shot-tilt" data-parallax="0.18">
-              <img src="./assets/images/dashboard-snippets.png" alt="Sophia Code snippets dashboard screenshot" loading="eager" />
-              <div class="shot-frame" aria-hidden="true"></div>
+            <div class="mock-window mock-tilt" data-parallax="0.18" aria-label="Sophia Code UI mockup">
+              <div class="mock-top" aria-hidden="true">
+                <div class="mock-dots">
+                  <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+                </div>
+                <div class="mock-title mono">sophia://snippets</div>
+                <div class="mock-pill mono">Search: <span class="muted">tag:auth lang:python</span></div>
+              </div>
+              <div class="mock-body">
+                <aside class="mock-side" aria-hidden="true">
+                  <div class="side-item active"><i class="bi bi-folder2-open"></i><span>Solutions</span></div>
+                  <div class="side-item"><i class="bi bi-journal-text"></i><span>Notes</span></div>
+                  <div class="side-item"><i class="bi bi-magic"></i><span>AI Generate</span></div>
+                  <div class="side-item"><i class="bi bi-chat-dots"></i><span>QuickChat</span></div>
+                  <div class="side-item"><i class="bi bi-search"></i><span>Search</span></div>
+                  <div class="side-spacer"></div>
+                  <div class="side-item foot"><i class="bi bi-sliders"></i><span>Settings</span></div>
+                </aside>
+                <section class="mock-main">
+                  <div class="mock-grid">
+                    <article class="mock-card">
+                      <div class="mock-card-top">
+                        <span class="tag">python</span>
+                        <span class="tag tag2">auth</span>
+                      </div>
+                      <h4 class="mock-card-title">JWT refresh middleware</h4>
+                      <pre class="mock-code mono"><code>def refresh(req):
+  token = read_cookie(req)
+  if not token: return None
+  return rotate(token)</code></pre>
+                      <div class="mock-actions">
+                        <span class="pill"><i class="bi bi-lightbulb"></i> Explain</span>
+                        <span class="pill"><i class="bi bi-lightning-charge"></i> Optimize</span>
+                        <span class="pill"><i class="bi bi-clipboard"></i> Copy</span>
+                      </div>
+                    </article>
+
+                    <article class="mock-card">
+                      <div class="mock-card-top">
+                        <span class="tag">sql</span>
+                        <span class="tag tag2">index</span>
+                      </div>
+                      <h4 class="mock-card-title">Fast search query</h4>
+                      <pre class="mock-code mono"><code>SELECT id, title
+FROM snippet
+WHERE title ILIKE '%cache%'
+ORDER BY timestamp DESC;</code></pre>
+                      <div class="mock-actions">
+                        <span class="pill"><i class="bi bi-diagram-3"></i> Save to collection</span>
+                        <span class="pill"><i class="bi bi-clock-history"></i> Versions</span>
+                      </div>
+                    </article>
+                  </div>
+
+                  <div class="mock-row">
+                    <div class="mock-badge"><i class="bi bi-award"></i> Badges</div>
+                    <div class="mock-meter" aria-hidden="true"><span class="m"></span></div>
+                    <div class="mock-note mono">Auto-save enabled • CSRF protected • Rate limited</div>
+                  </div>
+                </section>
+              </div>
             </div>
 
             <div class="chip-row" aria-hidden="true">
@@ -142,21 +202,21 @@
       <section class="section">
         <div class="wrap">
           <div class="section-head">
-            <h2>Made for people who actually build</h2>
-            <p>Bold UI, practical defaults, and just enough motion to feel alive without getting in your way.</p>
+            <h2>Built as a real product, not a template</h2>
+            <p>Everything here matches the Sophia Code codebase: Flask + SQLAlchemy + WTForms, Gemini integration, and a UI that behaves consistently across pages.</p>
           </div>
           <div class="grid-3">
             <article class="card card-glow">
-              <h3><i class="bi bi-magic"></i> AI help that stays on-task</h3>
-              <p>Generate, explain, refine, and format code with an assistant tuned for engineering work.</p>
+              <h3><i class="bi bi-magic"></i> AI generation and refinement</h3>
+              <p>Streaming-style output, explain/optimize actions, tag suggestions, and a “refine with runtime error” workflow built for debugging loops.</p>
             </article>
             <article class="card card-glow">
-              <h3><i class="bi bi-diagram-3"></i> Your knowledge base, structured</h3>
-              <p>Collections, tags, and fast filtering keep solutions retrievable when you need them.</p>
+              <h3><i class="bi bi-diagram-3"></i> A structured knowledge base</h3>
+              <p>Snippets, collections (including nesting), notes, history snapshots, and export tools for portability.</p>
             </article>
             <article class="card card-glow">
-              <h3><i class="bi bi-box-arrow-down"></i> Portable and exportable</h3>
-              <p>Export snippets and keep your data in your control. No lock-in, no drama.</p>
+              <h3><i class="bi bi-shield-check"></i> Security-conscious defaults</h3>
+              <p>CSRF protection, referrer policy, safe request headers, no tokens in URLs, and rate limiting for sensitive endpoints.</p>
             </article>
           </div>
         </div>
@@ -208,4 +268,3 @@
   <script src="./assets/js/site.js"></script>
 </body>
 </html>
-

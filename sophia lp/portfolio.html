@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Sophia Code case study: feature set, technical decisions, security hardening, and UX details." />
+  <title>Sophia Code | Case Study</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="./assets/css/site.css" />
+</head>
+
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <div data-barba="wrapper">
+    <header class="site-header">
+      <div class="wrap header-wrap">
+        <a class="brand" href="./index.html" aria-label="Sophia Code home">
+          <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
+          <span class="brand-text">Sophia Code</span>
+        </a>
+        <nav class="nav" aria-label="Primary">
+          <a class="nav-link" href="./index.html">Home</a>
+          <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link is-active" href="./portfolio.html">Case Study</a>
+          <a class="nav-link" href="./download.html">Download</a>
+        </nav>
+        <div class="nav-cta">
+          <a class="btn btn-ghost" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
+          <a class="btn btn-primary" href="./download.html">
+            Download <span class="badge badge-mini">Windows only</span>
+          </a>
+        </div>
+        <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+      <div class="mobile-menu" hidden>
+        <div class="wrap mobile-menu-wrap">
+          <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./download.html">Download</a>
+          <a class="nav-link" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="content" data-barba="container" data-barba-namespace="portfolio">
+      <section class="page-hero">
+        <div class="wrap page-hero-wrap">
+          <h1 class="page-title">Case Study</h1>
+          <p class="page-sub">
+            Sophia Code is a Flask-based developer knowledge base: snippets + collections + notes, with AI workflows and a
+            chat assistant. This page is written to match the actual codebase and the engineering decisions behind it.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>What it solves</h2>
+            <p>Developers keep re-solving the same problems because solutions are scattered across tabs, gists, and old repos.</p>
+          </div>
+          <div class="grid-3">
+            <article class="card">
+              <h3><i class="bi bi-inboxes"></i> Capture</h3>
+              <p class="muted">Snippets and notes become a single searchable system.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-diagram-3"></i> Structure</h3>
+              <p class="muted">Collections + tags + language filtering keep knowledge retrievable.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-lightning-charge"></i> Accelerate</h3>
+              <p class="muted">AI workflows help with generation, explanation, formatting, and debugging.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Key features (as implemented)</h2>
+            <p>A subset of the functionality that’s visible in the repo and in the live demo.</p>
+          </div>
+          <div class="grid-2">
+            <article class="card card-glow">
+              <h3><i class="bi bi-code-slash"></i> Snippet management</h3>
+              <ul class="checklist">
+                <li>Create/edit/delete snippets with validations (WTForms)</li>
+                <li>Syntax highlighting, copy tools, and AI actions on snippet view</li>
+                <li>Version snapshots (history) for safe iteration</li>
+              </ul>
+            </article>
+            <article class="card card-glow">
+              <h3><i class="bi bi-search"></i> Intelligent search</h3>
+              <ul class="checklist">
+                <li>Filtering by language/tag/sort and query text</li>
+                <li>Search state preservation for better navigation</li>
+                <li>Pagination designed for large libraries</li>
+              </ul>
+            </article>
+            <article class="card card-glow">
+              <h3><i class="bi bi-chat-dots"></i> QuickChat sessions</h3>
+              <ul class="checklist">
+                <li>Welcome state (no empty sessions created)</li>
+                <li>New chat created on first message</li>
+                <li>Smart title naming after first response</li>
+              </ul>
+            </article>
+            <article class="card card-glow">
+              <h3><i class="bi bi-key"></i> BYOK and settings</h3>
+              <ul class="checklist">
+                <li>Bring-your-own Gemini API key with masked/unmasked toggles</li>
+                <li>Server-side validation and safe handling (do not echo keys back)</li>
+                <li>Preferences for model and UI behavior</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Security hardening</h2>
+            <p>Practical OWASP-aligned fixes, not just checkboxes.</p>
+          </div>
+          <div class="grid-3">
+            <article class="card">
+              <h3><i class="bi bi-shield-check"></i> CSRF</h3>
+              <p class="muted">Tokens never go in the URL. The app strips them if they ever appear, and the UI avoids rehydrating them into querystrings.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-file-earmark-lock2"></i> Safe headers</h3>
+              <p class="muted">Security headers like <span class="mono">X-Frame-Options</span> and a CSP baseline reduce common browser attack surfaces.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-speedometer2"></i> Rate limiting</h3>
+              <p class="muted">Sensitive endpoints can be limited to reduce abuse and avoid accidental overload.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Tech stack</h2>
+            <p>Chosen for speed of iteration and solid defaults.</p>
+          </div>
+          <div class="grid-3">
+            <article class="card">
+              <h3><i class="bi bi-braces"></i> Backend</h3>
+              <p class="muted">Flask, Flask-Login, Flask-WTF/CSRFProtect, Flask-Migrate, Flask-Limiter.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-database"></i> Data</h3>
+              <p class="muted">SQLAlchemy ORM + SQLite by default, migrations via Alembic.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-stars"></i> AI</h3>
+              <p class="muted">Gemini models with BYOK support and safe UX around keys.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div class="wrap cta-wrap">
+          <div class="cta-copy">
+            <h2>See it in action</h2>
+            <p>Use the live demo, or download the desktop build when ready.</p>
+          </div>
+          <div class="cta-actions">
+            <a class="btn btn-primary btn-lg" href="./download.html">
+              <i class="bi bi-download"></i>
+              Download <span class="badge badge-mini">Windows only</span>
+            </a>
+            <a class="btn btn-ghost btn-lg" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">
+              <i class="bi bi-box-arrow-up-right"></i>
+              Live demo
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="wrap footer-wrap">
+          <div class="footer-left">
+            <div class="brand brand-footer">
+              <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
+              <span class="brand-text">Sophia Code</span>
+            </div>
+            <p class="fine">Developer: Alex Alagoa Biobelemo. More: <a class="mono" href="https://alexbio.onrender.com/" target="_blank" rel="noopener">alexbio.onrender.com</a></p>
+          </div>
+          <div class="footer-right" aria-label="Developer links">
+            <a class="icon-link" href="mailto:alexbio0405@gmail.com" aria-label="Email"><i class="bi bi-envelope"></i></a>
+            <a class="icon-link" href="https://www.linkedin.com/in/alex-alagoa-biobelemo/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+            <a class="icon-link" href="https://github.com/AlexBiobelemo" target="_blank" rel="noopener" aria-label="GitHub"><i class="bi bi-github"></i></a>
+            <a class="icon-link" href="https://x.com/AlexarGreatest" target="_blank" rel="noopener" aria-label="X"><i class="bi bi-twitter-x"></i></a>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@barba/core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+  <script src="./assets/js/site.js"></script>
+</body>
+</html>
+

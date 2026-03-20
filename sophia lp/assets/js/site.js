@@ -119,6 +119,12 @@
     if (track && !prefersReduced) {
       window.gsap.to(track, { xPercent: -50, ease: "none", duration: 22, repeat: -1 });
     }
+
+    // Subtle "status meter" animation in mock UI
+    const meter = qs(".mock-meter .m");
+    if (meter) {
+      window.gsap.to(meter, { width: "78%", duration: 2.2, ease: "sine.inOut", yoyo: true, repeat: -1 });
+    }
   }
 
   function initBarba(lenis) {

@@ -26,6 +26,7 @@
         <nav class="nav" aria-label="Primary">
           <a class="nav-link" href="./index.html">Home</a>
           <a class="nav-link is-active" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
           <a class="nav-link" href="./download.html">Download</a>
         </nav>
         <div class="nav-cta">
@@ -41,6 +42,7 @@
       <div class="mobile-menu" hidden>
         <div class="wrap mobile-menu-wrap">
           <a class="nav-link" href="./index.html">Home</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
           <a class="nav-link" href="./download.html">Download</a>
           <a class="nav-link" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
         </div>
@@ -60,7 +62,7 @@
           <div class="split">
             <div class="split-copy">
               <h2><i class="bi bi-code-slash"></i> Snippets that stay readable</h2>
-              <p>Rich code blocks, tags, language filters, and actions like explain, optimize, and copy-ready output.</p>
+              <p>CRUD flows, version snapshots, tags, collections, and language-aware code highlighting. Designed to stay fast as the library grows.</p>
               <ul class="checklist">
                 <li>Fast browsing with pagination and infinite scroll</li>
                 <li>AI actions: explain, optimize, refine runtime errors</li>
@@ -68,9 +70,29 @@
               </ul>
             </div>
             <div class="split-media" data-parallax="0.12">
-              <div class="shot">
-                <img src="./assets/images/snippet-view.png" alt="Snippet view screen" loading="lazy" />
-                <div class="shot-frame" aria-hidden="true"></div>
+              <div class="mock-window">
+                <div class="mock-top" aria-hidden="true">
+                  <div class="mock-dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+                  <div class="mock-title mono">sophia://snippet/view</div>
+                  <div class="mock-pill mono">Actions: Explain • Optimize • Copy</div>
+                </div>
+                <div class="mock-pane">
+                  <div class="mock-h mono">Title: <span class="muted">Rate limiter config</span></div>
+                  <div class="mock-kv">
+                    <span class="tag">python</span>
+                    <span class="tag tag2">security</span>
+                    <span class="tag tag3">flask</span>
+                  </div>
+                  <pre class="mock-code mono"><code>@rate_limit("30/minute")
+def api_tts():
+  ...
+  return send_file(fp)</code></pre>
+                  <div class="mock-actions">
+                    <span class="pill"><i class="bi bi-clipboard"></i> Copy</span>
+                    <span class="pill"><i class="bi bi-clock-history"></i> Versions</span>
+                    <span class="pill"><i class="bi bi-box-arrow-down"></i> Export</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -86,9 +108,18 @@
               </ul>
             </div>
             <div class="split-media" data-parallax="0.16">
-              <div class="shot">
-                <img src="./assets/images/collections.png" alt="Collections screen" loading="lazy" />
-                <div class="shot-frame" aria-hidden="true"></div>
+              <div class="mock-window">
+                <div class="mock-top" aria-hidden="true">
+                  <div class="mock-dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+                  <div class="mock-title mono">sophia://collections</div>
+                  <div class="mock-pill mono">Nested • Reorder • Count</div>
+                </div>
+                <div class="mock-list">
+                  <div class="rowi"><i class="bi bi-folder-fill"></i><span>Interview Prep</span><span class="muted mono">42</span></div>
+                  <div class="rowi"><i class="bi bi-folder-fill"></i><span>Auth + Security</span><span class="muted mono">18</span></div>
+                  <div class="rowi"><i class="bi bi-folder-fill"></i><span>Data Structures</span><span class="muted mono">27</span></div>
+                  <div class="rowi"><i class="bi bi-folder-fill"></i><span>Deployments</span><span class="muted mono">9</span></div>
+                </div>
               </div>
             </div>
           </div>
@@ -104,9 +135,19 @@
               </ul>
             </div>
             <div class="split-media" data-parallax="0.10">
-              <div class="shot">
-                <img src="./assets/images/notes.png" alt="Notes screen" loading="lazy" />
-                <div class="shot-frame" aria-hidden="true"></div>
+              <div class="mock-window">
+                <div class="mock-top" aria-hidden="true">
+                  <div class="mock-dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+                  <div class="mock-title mono">sophia://notes</div>
+                  <div class="mock-pill mono">Markdown • Search • Preview</div>
+                </div>
+                <div class="mock-note-pane">
+                  <div class="mock-h">Decision log</div>
+                  <pre class="mock-code mono"><code>### Why we avoid CSRF in URLs
+- leaks via referrers/logs
+- browser previews
+- copy/paste mistakes</code></pre>
+                </div>
               </div>
             </div>
           </div>
@@ -117,21 +158,24 @@
         <div class="wrap">
           <div class="section-head">
             <h2>AI features, without the chaos</h2>
-            <p>Use AI where it helps: generation, explanation, refinement, and chat focused on your knowledge base.</p>
+            <p>Gemini-powered flows with safe UX: BYOK toggle, server-side validation, streaming-style delivery, and sessioned chats.</p>
           </div>
           <div class="grid-2">
             <article class="card card-glow">
               <h3><i class="bi bi-magic"></i> Generate</h3>
-              <p>Create code and explanations, then save straight into your library.</p>
-              <div class="mini-shot">
-                <img src="./assets/images/ai-generate.png" alt="AI generate screen" loading="lazy" />
+              <p>Generate code + explanation, then save as a snippet. Includes retry, formatting, and refinement loops.</p>
+              <div class="mock-mini">
+                <div class="mini-row"><span class="tag">prompt</span><span class="muted mono">"build a cache layer"</span></div>
+                <div class="mini-row"><span class="tag tag2">stream</span><span class="mono">yield chunk…</span></div>
+                <div class="mini-row"><span class="tag tag3">save</span><span class="mono">create_snippet()</span></div>
               </div>
             </article>
             <article class="card card-glow">
               <h3><i class="bi bi-chat-dots"></i> QuickChat</h3>
-              <p>Ask questions, get clean markdown answers, and keep named conversations.</p>
-              <div class="mini-shot">
-                <img src="./assets/images/chat.png" alt="Chat screen" loading="lazy" />
+              <p>Multiple sessions, smart titles, and markdown output with copy tools. Built to stay in a coding lane.</p>
+              <div class="mock-mini">
+                <div class="bubble b1 mono">User: explain this function</div>
+                <div class="bubble b2 mono">Sophia: ✅ Here’s what it does…</div>
               </div>
             </article>
           </div>
@@ -144,9 +188,42 @@
             <h2>Progress that motivates</h2>
             <p>Badges and points keep momentum. It feels like leveling up your own craft.</p>
           </div>
-          <div class="shot" data-parallax="0.14">
-            <img src="./assets/images/badges.png" alt="Badges screen" loading="lazy" />
-            <div class="shot-frame" aria-hidden="true"></div>
+          <div class="grid-3">
+            <article class="card">
+              <h3><i class="bi bi-award"></i> First Snippet</h3>
+              <p class="muted">Earned when you create your first snippet.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-award"></i> Code Journeyman</h3>
+              <p class="muted">Progress badges based on snippet milestones.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-award"></i> Code Master</h3>
+              <p class="muted">Long-term consistency and collection building.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Security and accessibility (portfolio-grade)</h2>
+            <p>Hardening work you can point to: CSRF, headers, rate limits, and WCAG-friendly UI defaults.</p>
+          </div>
+          <div class="grid-3">
+            <article class="card">
+              <h3><i class="bi bi-shield-check"></i> CSRF discipline</h3>
+              <p class="muted">No CSRF in URLs. Tokens stay in forms/headers and are stripped if ever present.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-speedometer2"></i> Rate limiting</h3>
+              <p class="muted">Sensitive APIs can be limited to reduce abuse and accidental overload.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-universal-access"></i> WCAG patterns</h3>
+              <p class="muted">Keyboard focus, reduced motion support, readable contrast, semantic structure.</p>
+            </article>
           </div>
         </div>
       </section>
@@ -197,4 +274,3 @@
   <script src="./assets/js/site.js"></script>
 </body>
 </html>
-
