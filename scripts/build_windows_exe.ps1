@@ -1,15 +1,25 @@
 Param(
   [string]$Name = "Sophia-Code",
-  [string]$Entry = "desktop_entry.py"
+  [string]$Entry = "desktop_entry.py",
+  [switch]$SkipInstall
 )
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "Building $Name from $Entry"
 
-python -m pip install --upgrade pip | Out-Host
-python -m pip install -r requirements.txt | Out-Host
-python -m pip install pyinstaller | Out-Host
+if (-not $SkipInstall) {
+  python -m pip install --upgrade pip | Out-Host
+
+  # Install runtime deps for a desktop build. Skip gunicorn (not supported on Windows).
+  $reqs = Get-Content ".\\requirements.txt" | Where-Object { $_ -and ($_ -notmatch '^\\s*#') }
+  foreach ($r in $reqs) {
+    if ($r -match '^gunicorn\\b') { continue }
+    python -m pip install "$r" | Out-Host
+  }
+
+  python -m pip install pyinstaller | Out-Host
+}
 
 # Clean previous outputs
 if (Test-Path ".\\build") { Remove-Item -Recurse -Force ".\\build" }
@@ -28,5 +38,8 @@ pyinstaller `
 
 Write-Host ""
 Write-Host "Build complete. Output:"
-Get-ChildItem ".\\dist" -Force | Select-Object Name,Length,LastWriteTime
-
+if (Test-Path ".\\dist") {
+  Get-ChildItem ".\\dist" -Force | Select-Object Name,Length,LastWriteTime
+} else {
+  Write-Host "No dist/ directory was produced."
+}
