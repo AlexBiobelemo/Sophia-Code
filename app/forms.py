@@ -225,7 +225,7 @@ class SettingsForm(FlaskForm):
     ], validators=[DataRequired()])
     
     # BYOK - Bring Your Own Key
-    gemini_api_key = StringField('Gemini API Key', description='Enter your own Google Gemini API key (optional)')
+    gemini_api_key = PasswordField('Gemini API Key', description='Enter your own Google Gemini API key (optional)')
     use_own_api_key = BooleanField('Use my own API key instead of default')
 
     code_generation_style = SelectField('Code Generation Style', choices=[

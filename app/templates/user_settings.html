@@ -21,32 +21,39 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     {{ form.preferred_ai_model.label(class="form-label") }}
-                <div class="mb-3">
-                    <label class="form-label">Gemini API Key</label>
-                    {{ form.gemini_api_key(class="form-control", placeholder="Optional") }}
-                </div>
-                <div class="form-check mb-3">
-                    {{ form.use_own_api_key(class="form-check-input") }}
-                    <label class="form-check-label">Use my API key</label>
-                </div>
-                <hr>
-
                                     {{ form.preferred_ai_model(class="form-select") }}
-                <div class="mb-3">
-                    <label class="form-label">Gemini API Key</label>
-                    {{ form.gemini_api_key(class="form-control", placeholder="Optional") }}
-                </div>
-                <div class="form-check mb-3">
-                    {{ form.use_own_api_key(class="form-check-input") }}
-                    <label class="form-check-label">Use my API key</label>
-                </div>
-                <hr>
-
                                     <div class="form-text">Choose the AI model for code generation and explanations
                                     </div>
                                     {% for e in form.preferred_ai_model.errors %}<div class="text-danger small">{{ e }}
                                     </div>{% endfor %}
                                 </div>
+
+                                <div class="mb-3">
+                                    {{ form.gemini_api_key.label(class="form-label") }}
+                                    <div class="input-group">
+                                        {{ form.gemini_api_key(
+                                            class="form-control",
+                                            placeholder=('••••••••••••••••••••' if has_api_key else 'Optional'),
+                                            autocomplete="off",
+                                            autocorrect="off",
+                                            autocapitalize="none",
+                                            spellcheck="false"
+                                        ) }}
+                                        <button class="btn btn-outline-secondary" type="button" id="geminiApiKeyEyeSettings" aria-label="Show API key">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    {% if form.gemini_api_key.description %}
+                                    <div class="form-text">{{ form.gemini_api_key.description }}</div>
+                                    {% endif %}
+                                    {% for e in form.gemini_api_key.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    {{ form.use_own_api_key(class="form-check-input") }}
+                                    {{ form.use_own_api_key.label(class="form-check-label") }}
+                                </div>
+                                <hr>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -221,6 +228,19 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Eye toggle for Gemini API key field.
+        const keyInput = document.getElementById('gemini_api_key');
+        const eyeBtn = document.getElementById('geminiApiKeyEyeSettings');
+        if (keyInput && eyeBtn) {
+            eyeBtn.addEventListener('click', () => {
+                const isPassword = (keyInput.getAttribute('type') || 'password') === 'password';
+                keyInput.setAttribute('type', isPassword ? 'text' : 'password');
+                const icon = eyeBtn.querySelector('i');
+                if (icon) icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+                eyeBtn.setAttribute('aria-label', isPassword ? 'Hide API key' : 'Show API key');
+            });
+        }
+
         const form = document.querySelector('form');
         const submitButton = document.getElementById('submit-button');
 

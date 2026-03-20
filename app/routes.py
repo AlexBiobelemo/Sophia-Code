@@ -2231,7 +2231,18 @@ def user_settings():
     form = SettingsForm(obj=current_user)
     if form.validate_on_submit():
         current_user.preferred_ai_model = form.preferred_ai_model.data
-        current_user.gemini_api_key = form.gemini_api_key.data.strip() or None
+
+        # Never round-trip the stored API key back into HTML. Only update if the user typed a new one.
+        raw_key = (form.gemini_api_key.data or '').strip()
+        if raw_key:
+            if len(raw_key) < 10:
+                flash('Invalid API key format. API key must be at least 10 characters.', 'danger')
+                return render_template('user_settings.html', title='User Settings', form=form, has_api_key=bool(current_user.gemini_api_key))
+            if len(raw_key) > 512:
+                flash('API key too long. Please use a valid Gemini API key.', 'danger')
+                return render_template('user_settings.html', title='User Settings', form=form, has_api_key=bool(current_user.gemini_api_key))
+            current_user.gemini_api_key = raw_key
+
         current_user.use_own_api_key = form.use_own_api_key.data
         current_user.code_generation_style = form.code_generation_style.data
         current_user.auto_explain_code = form.auto_explain_code.data
@@ -2249,9 +2260,8 @@ def user_settings():
         db.session.commit()
         flash('Settings updated successfully.', 'success')
         return redirect(url_for('main.user_profile'))
-    
+     
     # Pre-fill form with current user preferences
-    form.gemini_api_key.data = current_user.gemini_api_key or ''
     form.use_own_api_key.data = current_user.use_own_api_key
     form.preferred_ai_model.data = current_user.preferred_ai_model
     form.code_generation_style.data = current_user.code_generation_style
@@ -2267,7 +2277,7 @@ def user_settings():
     form.show_activity.data = current_user.show_activity
     form.snippet_visibility.data = current_user.snippet_visibility
     
-    return render_template('user_settings.html', title='User Settings', form=form)
+    return render_template('user_settings.html', title='User Settings', form=form, has_api_key=bool(current_user.gemini_api_key))
 
 
 

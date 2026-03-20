@@ -2038,13 +2038,18 @@
                     <h5 class="modal-title"><i class="bi bi-key me-2"></i>Bring Your Own API Key</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <p class="small">Use your own Gemini API key</p>
-                    <input type="password" id="geminiApiKey" class="form-control mb-2" placeholder="API key">
-                    <div class="form-check mb-3">
-                        <input type="checkbox" id="useOwnKey" class="form-check-input">
-                        <label class="form-check-label">Use my key</label>
-                    </div>
+                 <div class="modal-body">
+                     <p class="small">Use your own Gemini API key</p>
+                     <div class="input-group mb-2">
+                         <input type="password" id="geminiApiKey" class="form-control" placeholder="API key" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+                         <button class="btn btn-outline-secondary" type="button" id="geminiApiKeyEye" aria-label="Show API key">
+                             <i class="bi bi-eye"></i>
+                         </button>
+                     </div>
+                     <div class="form-check mb-3">
+                         <input type="checkbox" id="useOwnKey" class="form-check-input">
+                         <label class="form-check-label">Use my key</label>
+                     </div>
                     <div id="byokStatus" class="alert alert-info mb-2" style="display:none">
                         <i class="bi bi-check-circle me-1"></i>
                         <span id="byokStatusText">API key is saved</span>
@@ -2106,7 +2111,22 @@
         const messageDiv = document.getElementById('byokMessage');
         if(messageDiv) messageDiv.style.display = 'none';
     });
-    
+
+    // Eye toggle for BYOK key (masked/unmasked).
+    (function(){
+        const eyeBtn = document.getElementById('geminiApiKeyEye');
+        const keyInput = document.getElementById('geminiApiKey');
+        if (!eyeBtn || !keyInput) return;
+
+        eyeBtn.addEventListener('click', () => {
+            const isPassword = (keyInput.getAttribute('type') || 'password') === 'password';
+            keyInput.setAttribute('type', isPassword ? 'text' : 'password');
+            const icon = eyeBtn.querySelector('i');
+            if (icon) icon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+            eyeBtn.setAttribute('aria-label', isPassword ? 'Hide API key' : 'Show API key');
+        });
+    })();
+     
     async function saveBYOK(){
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         let k=document.getElementById("geminiApiKey").value.trim(),
