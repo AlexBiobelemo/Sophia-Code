@@ -21,6 +21,11 @@
                             {{ form.language(class="form-select", id="language-select") }}
                         </div>
                     </div>
+                    <div class="mb-3" id="custom-language-wrap" style="display:none;">
+                        {{ form.custom_language.label(class="form-label") }}
+                        {{ form.custom_language(class="form-control", id="custom-language-input", placeholder="e.g., haskell") }}
+                        <div class="form-text">Use a short language id (letters/numbers). Example: <code>haskell</code>, <code>terraform</code>.</div>
+                    </div>
                     <div class="mb-3">
                         {{ form.collection.label(class="form-label") }}
                         {{ form.collection(class="form-select") }}
@@ -87,9 +92,31 @@
     const codeTextarea = document.getElementById('code-textarea');
     const tagsInput = document.getElementById('tags-input');
     const langSelect = document.getElementById('language-select');
+    const customLangWrap = document.getElementById('custom-language-wrap');
+    const customLangInput = document.getElementById('custom-language-input');
     const refineBtn = document.getElementById('refine-btn');
     const runtimeErrorTextarea = document.getElementById('runtime-error-textarea');
     const saveChangesBtn = document.getElementById('save-changes-btn'); // New reference for submit button
+
+    // Custom language toggle
+    (function(){
+        if (!langSelect || !customLangWrap || !customLangInput) return;
+        const update = () => {
+            const isCustom = langSelect.value === '__custom__';
+            customLangWrap.style.display = isCustom ? 'block' : 'none';
+            if (!isCustom) customLangInput.value = '';
+        };
+        langSelect.addEventListener('change', update);
+        update();
+    })();
+
+    function getEffectiveLanguage() {
+        if (!langSelect) return '';
+        if (langSelect.value === '__custom__') {
+            return (customLangInput?.value || '').trim();
+        }
+        return langSelect.value;
+    }
 
     // --- Suggest Tags Logic ---
     suggestBtn.addEventListener('click', async () => {
@@ -150,7 +177,7 @@
     refineBtn.addEventListener('click', async () => {
         const code = codeTextarea.value.trim();
         const errorText = runtimeErrorTextarea.value.trim();
-        const language = langSelect.value;
+        const language = getEffectiveLanguage();
         if (!code) { alert('Please ensure code is present.'); return; }
         if (!errorText) { alert('Please paste the runtime error/output.'); return; }
 
@@ -223,7 +250,7 @@
     // --- Format Code Logic (AI-powered) ---
     formatBtn.addEventListener('click', async () => {
         const code = codeTextarea.value;
-        const language = langSelect.value;
+        const language = getEffectiveLanguage();
 
         if (!code) {
             alert('Please enter some code before formatting.');

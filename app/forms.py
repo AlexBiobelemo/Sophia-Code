@@ -133,7 +133,9 @@ class SnippetForm(FlaskForm):
         # Web / Document Extensions
         ('scss', 'SCSS/Sass'),      # CSS Preprocessor
         ('latex', 'LaTeX/TeX'),     # Academic/Math Typesetting
+        ('__custom__', 'Custom...'),
     ])
+    custom_language = StringField('Custom Language', validators=[Length(max=40)])
     description = TextAreaField('Description (Optional)')
     code = TextAreaField('Code', validators=[DataRequired()])
     tags = StringField('Tags (comma-separated)',

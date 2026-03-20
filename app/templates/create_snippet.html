@@ -50,6 +50,12 @@
                     </div>
                 </div>
 
+                <div class="mb-4" id="custom-language-wrap" style="display:none;">
+                    {{ form.custom_language.label(class="form-label") }}
+                    {{ form.custom_language(class="form-control ai-input", id="custom-language-input", placeholder="e.g., haskell") }}
+                    <div class="form-text">Tip: use a short language id (letters/numbers). Example: <code>haskell</code>, <code>terraform</code>.</div>
+                </div>
+
                 <!-- Collection -->
                 <div class="mb-4">
                     {{ form.collection.label(class="form-label") }}
@@ -136,6 +142,15 @@
         if (firstNewline === -1 || lastFence === -1 || lastFence <= firstNewline) return s;
         return s.slice(firstNewline + 1, lastFence).trim();
     }
+
+    function getEffectiveLanguage() {
+        const sel = document.getElementById('language-select');
+        if (!sel) return '';
+        if (sel.value === '__custom__') {
+            return (document.getElementById('custom-language-input')?.value || '').trim();
+        }
+        return sel.value;
+    }
     // Retry Generation
     document.addEventListener('DOMContentLoaded', function() {
         const retryBtn = document.getElementById('retryGenerationBtn');
@@ -152,6 +167,23 @@
                 window.location.href = '{{ url_for("main.generate") }}';
             });
         }
+    });
+
+    // Custom language toggle
+    document.addEventListener('DOMContentLoaded', function () {
+        const langSel = document.getElementById('language-select');
+        const wrap = document.getElementById('custom-language-wrap');
+        const customInput = document.getElementById('custom-language-input');
+        if (!langSel || !wrap || !customInput) return;
+
+        const update = () => {
+            const isCustom = langSel.value === '__custom__';
+            wrap.style.display = isCustom ? 'block' : 'none';
+            if (!isCustom) customInput.value = '';
+        };
+
+        langSel.addEventListener('change', update);
+        update();
     });
 
     // Tag Suggestions
@@ -222,7 +254,7 @@
     refineBtn.addEventListener('click', async () => {
         const code = document.getElementById('code-textarea').value.trim();
         const errorText = document.getElementById('runtime-error-textarea').value.trim();
-        const language = document.getElementById('language-select').value;
+        const language = getEffectiveLanguage();
         
         if (!code) { alert('Please enter code.'); return; }
         if (!errorText) { alert('Please paste the error message.'); return; }
@@ -268,7 +300,7 @@
 
     // Format Code
     document.getElementById('format-btn').addEventListener('click', async () => {
-        const lang = document.getElementById('language-select').value;
+        const lang = getEffectiveLanguage();
         const code = document.getElementById('code-textarea').value;
         if (!code.trim()) {
             alert('Please enter some code before formatting.');
@@ -295,28 +327,30 @@
         const form = document.querySelector('form');
         if (!form) return;
         
-        try {
-            const raw = localStorage.getItem(KEY);
-            if (raw) {
-                const d = JSON.parse(raw);
-                if (d.title) form.querySelector('[name="title"]').value = d.title;
-                if (d.language) form.querySelector('[name="language"]').value = d.language;
-                if (d.description) form.querySelector('[name="description"]').value = d.description;
-                if (d.code) form.querySelector('[name="code"]').value = d.code;
-                if (d.tags) form.querySelector('[name="tags"]').value = d.tags;
-                if (d.collection) form.querySelector('[name="collection"]').value = d.collection;
-            }
-        } catch (_) { }
+         try {
+             const raw = localStorage.getItem(KEY);
+             if (raw) {
+                 const d = JSON.parse(raw);
+                 if (d.title) form.querySelector('[name="title"]').value = d.title;
+                 if (d.language) form.querySelector('[name="language"]').value = d.language;
+                 if (d.custom_language) form.querySelector('[name="custom_language"]').value = d.custom_language;
+                 if (d.description) form.querySelector('[name="description"]').value = d.description;
+                 if (d.code) form.querySelector('[name="code"]').value = d.code;
+                 if (d.tags) form.querySelector('[name="tags"]').value = d.tags;
+                 if (d.collection) form.querySelector('[name="collection"]').value = d.collection;
+             }
+         } catch (_) { }
         
-        const save = () => {
-            const d = {
-                title: form.querySelector('[name="title"]').value,
-                language: form.querySelector('[name="language"]').value,
-                description: form.querySelector('[name="description"]').value,
-                code: form.querySelector('[name="code"]').value,
-                tags: form.querySelector('[name="tags"]').value,
-                collection: form.querySelector('[name="collection"]').value,
-            };
+         const save = () => {
+             const d = {
+                 title: form.querySelector('[name="title"]').value,
+                 language: form.querySelector('[name="language"]').value,
+                 custom_language: form.querySelector('[name="custom_language"]')?.value || '',
+                 description: form.querySelector('[name="description"]').value,
+                 code: form.querySelector('[name="code"]').value,
+                 tags: form.querySelector('[name="tags"]').value,
+                 collection: form.querySelector('[name="collection"]').value,
+             };
             try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (_) { }
         };
         
