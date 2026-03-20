@@ -2406,7 +2406,7 @@ CHAT_SYSTEM_PROMPT = (
 def chat():
     # Load sessions list
     sessions = current_user.chat_sessions.order_by(ChatSession.updated_at.desc()).all()
-    # Active session by query or create if none
+    # Active session by query (or latest). If user has no sessions yet, render a welcome state.
     session_id = request.args.get('session', type=int)
     active = None
     if session_id:
@@ -2415,12 +2415,66 @@ def chat():
             active = sessions[0] if sessions else None
     if not active and sessions:
         active = sessions[0]
-    if not active:
-        active = ChatSession(user_id=current_user.id, title='New Chat')
-        db.session.add(active)
-        db.session.commit()
-    messages = active.messages.order_by(ChatMessage.created_at.asc()).all()
+
+    messages = active.messages.order_by(ChatMessage.created_at.asc()).all() if active else []
     return render_template('chat.html', title='Chat', sessions=sessions, active=active, messages=messages, prefill='')
+
+
+def _derive_chat_title(first_user_msg: str, assistant_msg: str | None = None) -> str:
+    """Heuristic chat title generation (no additional model calls)."""
+    import re
+
+    raw = (first_user_msg or "").strip()
+    if assistant_msg:
+        # If the user message is tiny (e.g., "help"), use a bit more context.
+        if len(raw) < 12:
+            raw = f"{raw} {assistant_msg}"
+
+    # Drop code blocks / inline code for cleaner titles.
+    raw = re.sub(r"```.*?```", " ", raw, flags=re.S)
+    raw = re.sub(r"`[^`]+`", " ", raw)
+    raw = re.sub(r"\s+", " ", raw).strip()
+
+    if not raw:
+        return "New Chat"
+
+    # Prefer the first sentence / clause.
+    raw = re.split(r"[.!?\n]", raw, maxsplit=1)[0].strip()
+
+    # Remove leading filler
+    raw = re.sub(r"^(please\s+|hey\s+|hi\s+|hello\s+|can you\s+|could you\s+|help me\s+)", "", raw, flags=re.I).strip()
+
+    # Keep it short but meaningful.
+    words = raw.split(" ")
+    raw = " ".join(words[:10]).strip()
+
+    raw = raw.strip(" -:;,.!?/\\|")
+    if not raw:
+        return "New Chat"
+
+    # Sentence case (avoid shouting).
+    raw = raw[:1].upper() + raw[1:]
+
+    return (raw[:60]).rstrip()
+
+
+def _maybe_autotitle_session(session: ChatSession, first_user_msg: str, assistant_msg: str | None) -> None:
+    """Rename 'New Chat' sessions after the first assistant response."""
+    try:
+        if not session or session.user_id != current_user.id:
+            return
+        if (session.title or "").strip() not in ("", "New Chat"):
+            return
+        # Only auto-title on the first exchange.
+        try:
+            msg_count = session.messages.count()
+        except Exception:
+            msg_count = None
+        if msg_count is not None and msg_count > 2:
+            return
+        session.title = _derive_chat_title(first_user_msg, assistant_msg)[:200]
+    except Exception:
+        return
 
 @bp.route('/api/chat/new', methods=['POST'])
 @login_required
@@ -2474,8 +2528,9 @@ def api_chat_send():
     am = ChatMessage(session_id=s.id, role='assistant', content=answer)
     db.session.add(am)
     s.updated_at = sa.func.now()
+    _maybe_autotitle_session(s, user_msg, answer)
     db.session.commit()
-    return jsonify({'session_id': s.id, 'answer': answer})
+    return jsonify({'session_id': s.id, 'title': s.title, 'answer': answer})
 
 @bp.route('/api/chat/stream', methods=['POST'])
 @login_required
@@ -2506,6 +2561,7 @@ def api_chat_stream():
     # Persist assistant msg now so history is up-to-date in other views
     db.session.add(ChatMessage(session_id=s.id, role='assistant', content=answer))
     s.updated_at = sa.func.now()
+    _maybe_autotitle_session(s, user_msg, answer)
     db.session.commit()
 
     def generate():
@@ -2519,7 +2575,11 @@ def api_chat_stream():
         # End marker (client ignores visually)
         yield "\n"
 
-    return current_app.response_class(generate(), mimetype='text/plain')
+    resp = current_app.response_class(generate(), mimetype='text/plain')
+    # Let the client update URL/history without redirects while streaming.
+    resp.headers['X-Chat-Session-Id'] = str(s.id)
+    resp.headers['X-Chat-Session-Title'] = (s.title or 'New Chat')
+    return resp
 
 @bp.route('/api/chat/delete/<int:session_id>', methods=['POST'])
 @login_required

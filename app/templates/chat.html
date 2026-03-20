@@ -5,7 +5,7 @@
     <!-- Minimal Header -->
     <div class="chat-header">
         <div class="chat-header-left">
-            <h1 class="chat-title">QuickChat</h1>
+            <h1 class="chat-title">{{ active.title if active else 'QuickChat' }}</h1>
         </div>
         <div class="chat-header-right">
             <!-- Chat History Toggle Button -->
@@ -20,6 +20,23 @@
 
     <!-- Chat Messages -->
     <div id="chat-log" class="chat-messages">
+        {% if not messages %}
+        <div class="chat-welcome" id="chat-welcome" role="status" aria-live="polite">
+            <div class="welcome-inner">
+                <div class="welcome-badge">
+                    <i class="bi bi-lightbulb"></i>
+                </div>
+                <h2 class="welcome-title">Welcome to QuickChat</h2>
+                <p class="welcome-subtitle">Ask about your snippets, solutions, debugging, refactors, or best practices.</p>
+                <div class="welcome-samples">
+                    <button class="btn btn-outline-primary sample-prompt" type="button">Explain this snippet and suggest improvements</button>
+                    <button class="btn btn-outline-primary sample-prompt" type="button">Help me debug an error message</button>
+                    <button class="btn btn-outline-primary sample-prompt" type="button">Write a clean solution and tests</button>
+                </div>
+                <p class="welcome-footnote mb-0">A new chat is created automatically when you send your first message.</p>
+            </div>
+        </div>
+        {% endif %}
         {% for m in messages %}
         <div class="chat-message {% if m.role=='user' %}msg-user{% else %}msg-assistant{% endif %}">
             <div class="message-content">{{ m.content }}</div>
@@ -44,6 +61,13 @@
         <div class="input-wrapper">
             <input id="chat-input" class="form-control"
                 placeholder="Ask anything..."
+                name="chat_message"
+                autocomplete="off"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+                data-lpignore="true"
+                data-1p-ignore="true"
                 value="{{ prefill }}" />
             <button id="chat-voice" class="btn btn-outline-secondary btn-send" type="button" title="Voice input" aria-label="Voice input">
                 <i class="bi bi-mic-fill"></i>
@@ -77,7 +101,7 @@
             <div class="drawer-body">
                 <ul id="chat-sessions" class="chat-sessions-list">
                     {% for s in sessions %}
-                    <li class="chat-session-item {% if s.id == active.id %}active{% endif %}" data-session-id="{{ s.id }}">
+                    <li class="chat-session-item {% if active and s.id == active.id %}active{% endif %}" data-session-id="{{ s.id }}">
                         <span class="session-title text-truncate">{{ s.title }}</span>
                         <button class="btn btn-sm btn-icon delete-chat" title="Delete chat">
                             <i class="bi bi-x-lg"></i>
@@ -123,12 +147,6 @@
         opacity: 1 !important;
     }
 
-    /* Hide mobile sidebar only */
-    body.chat-page-active .mobile-sidebar,
-    body.chat-page-active .mobile-sidebar-overlay {
-        display: none !important;
-    }
-
     /* Main wrapper adjustment - sidebar pushes content, doesn't overlay */
     body.chat-page-active .main-wrapper {
         margin-left: 280px !important;
@@ -163,6 +181,60 @@
         background-color: var(--bs-body-bg) !important;
         overflow: hidden !important;
         z-index: 1 !important;
+    }
+
+    /* Welcome state */
+    .chat-welcome {
+        display: grid;
+        place-items: center;
+        padding: 2rem 1rem 1.25rem;
+    }
+
+    .chat-welcome .welcome-inner {
+        width: min(760px, 100%);
+        border: 1px solid rgba(var(--bs-border-color-rgb), 0.7);
+        border-radius: 18px;
+        background: rgba(var(--bs-card-bg-rgb), 0.32);
+        backdrop-filter: blur(12px);
+        padding: 1.5rem 1.25rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    .chat-welcome .welcome-badge {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 0.75rem;
+        background: rgba(var(--bs-primary-rgb), 0.18);
+        border: 1px solid rgba(var(--bs-primary-rgb), 0.35);
+        color: var(--bs-primary);
+        font-size: 1.15rem;
+    }
+
+    .chat-welcome .welcome-title {
+        font-size: 1.35rem;
+        margin: 0 0 0.35rem;
+        font-weight: 800;
+        letter-spacing: 0.2px;
+    }
+
+    .chat-welcome .welcome-subtitle {
+        margin: 0 0 1rem;
+        opacity: 0.85;
+    }
+
+    .chat-welcome .welcome-samples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .chat-welcome .welcome-footnote {
+        opacity: 0.75;
+        font-size: 0.9rem;
     }
 
     .chat-page-container .chat-header,
@@ -1201,6 +1273,10 @@
                 const msg = input.value.trim();
                 if (!msg) return;
 
+                // Remove the welcome state once the user starts chatting.
+                const welcome = document.getElementById('chat-welcome');
+                if (welcome) welcome.remove();
+
                 append('user', msg);
                 input.value = '';
                 sendBtn.disabled = true;
@@ -1227,8 +1303,55 @@
                     });
 
                     if (!res.ok) {
-                        const error = await res.json();
-                        throw new Error(error.error || 'Request failed');
+                        let errMsg = 'Request failed';
+                        try {
+                            const error = await res.json();
+                            errMsg = error.error || errMsg;
+                        } catch (_) {
+                            try { errMsg = (await res.text()) || errMsg; } catch (_) { }
+                        }
+                        throw new Error(errMsg);
+                    }
+
+                    // If this was the first message, the server creates a session and returns it via headers.
+                    const newSessionId = res.headers.get('X-Chat-Session-Id');
+                    const newSessionTitle = res.headers.get('X-Chat-Session-Title');
+                    if (newSessionId && !sessionId) {
+                        sessionId = Number(newSessionId);
+                        try {
+                            window.history.replaceState({}, document.title, `/chat?session=${sessionId}`);
+                        } catch (_) { }
+
+                        // Add/activate session in the drawer list.
+                        const existing = sessionsEl.querySelector(`.chat-session-item[data-session-id="${sessionId}"]`);
+                        activeLi?.classList.remove('active');
+                        const li = existing || document.createElement('li');
+                        li.className = 'chat-session-item active';
+                        li.dataset.sessionId = String(sessionId);
+                        if (!existing) {
+                            li.innerHTML = `
+                                <span class="session-title text-truncate"></span>
+                                <button class="btn btn-sm btn-icon delete-chat" title="Delete chat">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            `;
+                            sessionsEl.prepend(li);
+                        } else {
+                            li.classList.add('active');
+                        }
+                        activeLi = li;
+                        if (newSessionTitle) {
+                            const t = li.querySelector('.session-title');
+                            if (t) t.textContent = newSessionTitle;
+                            if (chatTitle) chatTitle.textContent = newSessionTitle;
+                        }
+                    } else if (newSessionTitle && chatTitle && chatTitle.textContent === 'QuickChat') {
+                        // Update visible title if server renamed an existing "New Chat" session.
+                        chatTitle.textContent = newSessionTitle;
+                        if (activeLi) {
+                            const t = activeLi.querySelector('.session-title');
+                            if (t) t.textContent = newSessionTitle;
+                        }
                     }
 
                     const reader = res.body.getReader();
@@ -1265,6 +1388,16 @@
                     // Speak once the assistant finishes (if enabled)
                     speakMarkdown(assistantMsg);
 
+                    // After streaming completes, the server may have renamed the chat title.
+                    const finalTitle = res.headers.get('X-Chat-Session-Title');
+                    if (finalTitle && chatTitle) {
+                        chatTitle.textContent = finalTitle;
+                        if (activeLi) {
+                            const t = activeLi.querySelector('.session-title');
+                            if (t) t.textContent = finalTitle;
+                        }
+                    }
+
                 } catch(e) {
                     console.error('Chat error:', e);
                     // Hide loading spinner on error
@@ -1295,30 +1428,40 @@
             });
 
             newBtn.addEventListener('click', async ()=>{
-                let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-                if (!csrfToken) {
-                    csrfToken = getCookie('csrf_token');
-                }
+                // Reset locally. A real chat session is created only when the user sends a message.
+                sessionId = null;
+                activeLi?.classList.remove('active');
+                activeLi = null;
+                chatLog.innerHTML = `
+                    <div class="chat-welcome" id="chat-welcome" role="status" aria-live="polite">
+                        <div class="welcome-inner">
+                            <div class="welcome-badge"><i class="bi bi-lightbulb"></i></div>
+                            <h2 class="welcome-title">Welcome to QuickChat</h2>
+                            <p class="welcome-subtitle">Ask about your snippets, solutions, debugging, refactors, or best practices.</p>
+                            <div class="welcome-samples">
+                                <button class="btn btn-outline-primary sample-prompt" type="button">Explain this snippet and suggest improvements</button>
+                                <button class="btn btn-outline-primary sample-prompt" type="button">Help me debug an error message</button>
+                                <button class="btn btn-outline-primary sample-prompt" type="button">Write a clean solution and tests</button>
+                            </div>
+                            <p class="welcome-footnote mb-0">A new chat is created automatically when you send your first message.</p>
+                        </div>
+                    </div>
+                `;
+                if (chatTitle) chatTitle.textContent = 'QuickChat';
+                try { window.history.replaceState({}, document.title, '/chat'); } catch (_) { }
+                closeDrawerFunc();
+                input?.focus();
+            });
 
-                try {
-                    const res = await fetch('/api/chat/new', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken || ''
-                        },
-                        body: JSON.stringify({title: 'New Chat'})
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        window.location.href = `/chat?session=${data.session_id}`;
-                    } else {
-                        alert('Failed to create new chat. Please try again.');
-                    }
-                } catch(e) {
-                    console.error('New chat error:', e);
-                    alert('Failed to create new chat. Please try again.');
+            // Sample prompt buttons
+            document.addEventListener('click', (e) => {
+                const btn = e.target.closest('.sample-prompt');
+                if (!btn) return;
+                const text = (btn.textContent || '').trim();
+                if (!text) return;
+                if (input) {
+                    input.value = text;
+                    input.focus();
                 }
             });
 
