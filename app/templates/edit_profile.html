@@ -22,10 +22,11 @@
             <label class="form-label">Avatar</label>
             <div class="d-flex align-items-center gap-3">
               {% set avatar = current_user.avatar_filename %}
+              {% set default_avatar_url = 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=96&q=80' %}
               {% if avatar %}
                 <img src="{{ url_for('static', filename='uploads/avatars/' + avatar) }}?v={{ range(1,999999)|random }}" class="rounded-circle" width="48" height="48" alt="avatar">
               {% else %}
-                <i class="bi bi-person-circle fs-2"></i>
+                <img src="{{ default_avatar_url }}" class="rounded-circle" width="48" height="48" alt="avatar">
               {% endif %}
               {{ form.avatar(class="form-control") }}
             </div>
