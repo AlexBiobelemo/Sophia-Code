@@ -357,7 +357,13 @@ class StateManager {
         const inputs = form.querySelectorAll('input, textarea, select');
 
         inputs.forEach(input => {
-            if (input.name && input.type !== 'password') {
+            if (!input.name) return;
+            // Never persist secrets (prevents CSRF leakage into URLs, avoids saving API keys, etc.).
+            if (input.name === 'csrf_token') return;
+            if (input.type === 'password') return;
+            if (input.name.toLowerCase().includes('api_key')) return;
+
+            if (input.type !== 'password') {
                 if (input.type === 'checkbox' || input.type === 'radio') {
                     if (input.checked) {
                         data[input.name] = input.value;
@@ -379,6 +385,7 @@ class StateManager {
         if (!form) return;
 
         Object.entries(data).forEach(([name, value]) => {
+            if (name === 'csrf_token') return;
             const input = form.querySelector(`[name="${name}"]`);
             if (input) {
                 if (input.type === 'checkbox' || input.type === 'radio') {
@@ -400,6 +407,7 @@ class StateManager {
         // Get URL parameters
         const params = new URLSearchParams(window.location.search);
         params.forEach((value, key) => {
+            if (key === 'csrf_token') return;
             filters[key] = value;
         });
 
@@ -409,6 +417,7 @@ class StateManager {
             const inputs = searchForm.querySelectorAll('input, select');
             inputs.forEach(input => {
                 if (input.name && input.value) {
+                    if (input.name === 'csrf_token') return;
                     filters[input.name] = input.value;
                 }
             });
@@ -424,6 +433,7 @@ class StateManager {
         // Restore URL parameters
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
+            if (key === 'csrf_token') return; // never expose tokens in URLs
             if (key !== 'q') { // Don't restore main search query
                 params.set(key, value);
             }
@@ -435,6 +445,7 @@ class StateManager {
 
         // Restore form inputs
         Object.entries(filters).forEach(([key, value]) => {
+            if (key === 'csrf_token') return;
             const input = document.querySelector(`[name="${key}"]`);
             if (input) {
                 input.value = value;
