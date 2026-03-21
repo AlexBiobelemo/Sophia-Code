@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Download Sophia Code for Windows or try the hosted live demo." />
+  <title>Sophia Code | Download</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="stylesheet" href="./assets/css/site.css" />
+</head>
+
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <div data-barba="wrapper">
+    <header class="site-header">
+      <div class="wrap header-wrap">
+        <a class="brand" href="./index.html" aria-label="Sophia Code home">
+          <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
+          <span class="brand-text">Sophia Code</span>
+        </a>
+        <nav class="nav" aria-label="Primary">
+          <a class="nav-link" href="./index.html">Home</a>
+          <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
+          <a class="nav-link is-active" href="./download.html">Download</a>
+        </nav>
+        <div class="nav-cta">
+          <a class="btn btn-ghost" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
+          <a class="btn btn-primary" href="#download">
+            Download <span class="badge badge-mini">Windows only</span>
+          </a>
+        </div>
+        <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
+          <i class="bi bi-list"></i>
+        </button>
+      </div>
+      <div class="mobile-menu" hidden>
+        <div class="wrap mobile-menu-wrap">
+          <a class="nav-link" href="./index.html">Home</a>
+          <a class="nav-link" href="./features.html">Features</a>
+          <a class="nav-link" href="./portfolio.html">Case Study</a>
+          <a class="nav-link" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="content" data-barba="container" data-barba-namespace="download">
+      <section class="page-hero">
+        <div class="wrap page-hero-wrap">
+          <h1 class="page-title">Download Sophia Code</h1>
+          <p class="page-sub">Desktop build for Windows, plus a hosted demo if you prefer the browser.</p>
+        </div>
+      </section>
+
+      <section class="section" id="download">
+        <div class="wrap">
+          <div class="grid-2">
+            <article class="card card-glow">
+              <h2 class="h2-tight"><i class="bi bi-windows"></i> Windows</h2>
+              <p class="fine">One-file executable. Runs locally on <span class="mono">127.0.0.1</span> and opens in your browser.</p>
+              <div class="cta-actions">
+                <a class="btn btn-primary btn-lg" href="./downloads/Sophia-Code-Windows.exe">
+                  <i class="bi bi-download"></i>
+                  Download <span class="badge badge-mini">Windows only</span>
+                </a>
+              </div>
+              <p class="fine muted">If the file is not present yet, the download link will be updated after the build step is completed.</p>
+            </article>
+
+            <article class="card card-glow">
+              <h2 class="h2-tight"><i class="bi bi-globe2"></i> Live demo</h2>
+              <p class="fine">Try Sophia Code immediately in the browser.</p>
+              <div class="cta-actions">
+                <a class="btn btn-ghost btn-lg" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">
+                  <i class="bi bi-box-arrow-up-right"></i>
+                  Open live demo
+                </a>
+              </div>
+              <p class="fine muted">The demo shares the same UI and feature set. Use BYOK if you want your own Gemini key.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>System requirements</h2>
+            <p>Keep it simple and predictable.</p>
+          </div>
+          <div class="grid-3">
+            <article class="card">
+              <h3><i class="bi bi-cpu"></i> OS</h3>
+              <p>Windows 10/11</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-wifi"></i> Network</h3>
+              <p>Optional. Needed for AI model calls and for the hosted demo.</p>
+            </article>
+            <article class="card">
+              <h3><i class="bi bi-shield-check"></i> Security</h3>
+              <p>Local build binds to localhost; tokens and secrets are not placed in URLs. BYOK keys stay masked by default.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>Portfolio notes (what this demonstrates)</h2>
+            <p>Beyond UI polish: state management, security fixes, and practical AI workflows in a real Flask app.</p>
+          </div>
+          <div class="card">
+            <ul class="checklist">
+              <li>Consistent navigation patterns and responsive behavior across pages</li>
+              <li>CSRF tokens never appear in the address bar (prevented at multiple layers)</li>
+              <li>Chat sessions with smart naming and a welcome state</li>
+              <li>BYOK API key toggle with masked/unmasked UI and server-side validation</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="wrap footer-wrap">
+          <div class="footer-left">
+            <div class="brand brand-footer">
+              <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
+              <span class="brand-text">Sophia Code</span>
+            </div>
+            <p class="fine">Built by Alex Alagoa Biobelemo.</p>
+          </div>
+          <div class="footer-right" aria-label="Developer links">
+            <a class="icon-link" href="mailto:alexbio0405@gmail.com" aria-label="Email"><i class="bi bi-envelope"></i></a>
+            <a class="icon-link" href="https://www.linkedin.com/in/alex-alagoa-biobelemo/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+            <a class="icon-link" href="https://github.com/AlexBiobelemo" target="_blank" rel="noopener" aria-label="GitHub"><i class="bi bi-github"></i></a>
+            <a class="icon-link" href="https://x.com/AlexarGreatest" target="_blank" rel="noopener" aria-label="X"><i class="bi bi-twitter-x"></i></a>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@barba/core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+  <script src="./assets/js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Setup guide for Sophia Code: Installation instructions, prerequisites, environment configuration, and first-time setup checklist." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://sophia-code-landing-page/setup.html" />
+  <meta name="author" content="Alex Alagoa Biobelemo" />
+  
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sophia Code | Setup Guide" />
+  <meta property="og:description" content="Step-by-step installation guide for Sophia Code. Get started in minutes." />
+  <meta property="og:url" content="https://sophia-code-landing-page/setup.html" />
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Sophia Code | Setup Guide" />
+  <meta name="twitter:description" content="Step-by-step installation guide for Sophia Code. Get started in minutes." />
+  
+  <title>Sophia Code | Setup Guide</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" as="style" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preload" href="./assets/css/site.css" as="style" />
+  <link rel="stylesheet" href="./assets/css/site.css" />
+  <script src="./assets/js/components.js" defer></script>
+  
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1M0X2ELT8N"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1M0X2ELT8N');
+  </script>
+  
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+  <style>
+    .setup-section {
+      margin-bottom: 48px;
+    }
+    
+    .setup-step {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+      padding: 24px;
+      background: rgba(10,15,23,0.35);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .setup-step:hover {
+      border-color: rgba(30,91,184,0.4);
+      transform: translateX(4px);
+    }
+    
+    .step-number {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--a), var(--a2));
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 1.25rem;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 40px rgba(30, 91, 184, 0.2);
+    }
+    
+    .step-content h3 {
+      margin: 0 0 12px;
+      font-size: 1.2rem;
+      color: var(--ink);
+    }
+    
+    .step-content p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    
+    .code-block {
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+    
+    .code-block code {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--a2);
+      line-height: 1.7;
+    }
+    
+    .code-title {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-family: var(--mono);
+    }
+    
+    .note-box {
+      background: rgba(30, 91, 184, 0.1);
+      border: 1px solid rgba(30,91,184,0.4);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin: 16px 0;
+    }
+    
+    .note-box p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    
+    .note-box strong {
+      color: var(--a2);
+    }
+    
+    .env-vars {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    
+    .env-var {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+    
+    .env-var-name {
+      color: var(--a2);
+    }
+    
+    .env-var-desc {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    
+    .setup-nav {
+      display: flex;
+      gap: 16px;
+      margin-top: 48px;
+      padding-top: 48px;
+      border-top: 1px solid var(--line);
+    }
+    
+    .setup-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: rgba(10,15,23,0.35);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.9rem;
+      transition: all 0.15s ease;
+    }
+    
+    .setup-nav-btn:hover {
+      border-color: rgba(30,91,184,0.4);
+      color: var(--ink);
+      background: rgba(30, 91, 184, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .setup-step {
+        flex-direction: column;
+        gap: 16px;
+      }
+      
+      .env-var {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <div data-barba="wrapper">
+    <div id="site-header"></div>
+
+    <main id="content" data-barba="container" data-barba-namespace="setup">
+      <section class="page-hero">
+        <div class="wrap page-hero-wrap">
+          <h1 class="page-title">Setup <span class="text-gradient">Guide</span></h1>
+          <p class="page-sub">Get Sophia Code running on your local machine in minutes.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="card" style="padding: 40px; margin-bottom: 48px; background: linear-gradient(135deg, rgba(30,91,184,0.1), var(--bg1)); border: 1px solid var(--border-accent);">
+            <h3 style="margin-bottom: 32px; text-align: center; font-size: 1.5rem;">What You're Getting</h3>
+            <div class="grid-3">
+              <div class="stat-card" style="background: transparent; border: none; padding: 16px;">
+                <div class="metric-number">10</div>
+                <div class="metric-label">Database Tables</div>
+              </div>
+              <div class="stat-card" style="background: transparent; border: none; padding: 16px;">
+                <div class="metric-number">31+</div>
+                <div class="metric-label">API Endpoints</div>
+              </div>
+              <div class="stat-card" style="background: transparent; border: none; padding: 16px;">
+                <div class="metric-number">4</div>
+                <div class="metric-label">AI Models</div>
+              </div>
+              <div class="stat-card" style="background: transparent; border: none; padding: 16px;">
+                <div class="metric-number">25+</div>
+                <div class="metric-label">Achievement Badges</div>
+              </div>
+              <div class="stat-card" style="background: transparent; border: none; padding: 16px;">
+                <div class="metric-number">15+</div>
+                <div class="metric-label">User Preferences</div>
+              </div>
+              <div class="stat-card" style="background: transparent; border: none; padding: 16px;">
+                <div class="metric-number">60%</div>
+                <div class="metric-label">CPU Optimization</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="setup-section">
+            <h2 style="margin-bottom: 48px;">Installation Steps</h2>
+            
+            <div class="setup-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h3>Clone the Repository</h3>
+                <p>Download the source code from GitHub to your local machine.</p>
+                <div class="code-block">
+                  <div class="code-title">Terminal</div>
+                  <code>git clone https://github.com/AlexBiobelemo/Sophia-Code.git<br>cd Sophia-Code</code>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h3>Create Virtual Environment</h3>
+                <p>Set up an isolated Python environment for the project.</p>
+                <div class="code-block">
+                  <div class="code-title">Windows</div>
+                  <code>python -m venv venv<br>venv\Scripts\activate</code>
+                </div>
+                <div class="code-block">
+                  <div class="code-title">macOS / Linux</div>
+                  <code>python3 -m venv venv<br>source venv/bin/activate</code>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h3>Install Dependencies</h3>
+                <p>Install all required Python packages.</p>
+                <div class="code-block">
+                  <code>pip install -r requirements.txt</code>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h3>Configure Environment Variables</h3>
+                <p>Create a <code class="mono">.env</code> file in the root directory with the following variables:</p>
+                <div class="env-vars">
+                  <div class="env-var">
+                    <span class="env-var-name">SECRET_KEY</span>
+                    <span class="env-var-desc">Your secret key</span>
+                  </div>
+                  <div class="env-var">
+                    <span class="env-var-name">DATABASE_URL</span>
+                    <span class="env-var-desc">sqlite:///app.db</span>
+                  </div>
+                  <div class="env-var">
+                    <span class="env-var-name">GEMINI_API_KEY</span>
+                    <span class="env-var-desc">Your Gemini API key</span>
+                  </div>
+                  <div class="env-var">
+                    <span class="env-var-name">FLASK_APP</span>
+                    <span class="env-var-desc">run.py</span>
+                  </div>
+                  <div class="env-var">
+                    <span class="env-var-name">FLASK_ENV</span>
+                    <span class="env-var-desc">development</span>
+                  </div>
+                </div>
+                <div class="note-box">
+                  <p><strong>Important:</strong> Replace <code class="mono">GEMINI_API_KEY</code> with your actual Google Gemini API key. You can get one from <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener" style="color: var(--a2);">Google AI Studio</a>.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <h3>Initialize the Database</h3>
+                <p>Set up the database schema using Flask-Migrate.</p>
+                <div class="code-block">
+                  <code>flask db upgrade</code>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-step">
+              <div class="step-number">6</div>
+              <div class="step-content">
+                <h3>Initialize Default Badges</h3>
+                <p>Set up the gamification badge system.</p>
+                <div class="code-block">
+                  <code>python -c "from app.badge_system import initialize_default_badges; from app import create_app, db; app = create_app(); with app.app_context(): initialize_default_badges()"</code>
+                </div>
+              </div>
+            </div>
+            
+            <div class="setup-step">
+              <div class="step-number">7</div>
+              <div class="step-content">
+                <h3>Run the Application</h3>
+                <p>Start the Flask development server.</p>
+                <div class="code-block">
+                  <code>python run.py</code>
+                </div>
+                <div class="note-box">
+                  <p>The application will be available at <a href="http://127.0.0.1:5000/" target="_blank" rel="noopener" style="color: var(--a2);">http://127.0.0.1:5000/</a></p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="setup-section">
+            <h2 style="margin-bottom: 48px;">Prerequisites</h2>
+            <div class="grid-3">
+              <article class="card">
+                <h3><i class="bi bi-filetype-py"></i> Python</h3>
+                <p>Version 3.9 or higher required for all features.</p>
+              </article>
+              <article class="card">
+                <h3><i class="bi bi-cpu"></i> pip</h3>
+                <p>Python package installer for dependencies.</p>
+              </article>
+              <article class="card">
+                <h3><i class="bi bi-git"></i> Git</h3>
+                <p>Version control for cloning the repository.</p>
+              </article>
+            </div>
+          </div>
+          
+          <div class="setup-section">
+            <h2 style="margin-bottom: 48px;">Post-Installation</h2>
+            <div class="card" style="padding: 32px;">
+              <h3 style="margin-bottom: 24px; font-size: 1.35rem;">First-Time Setup Checklist</h3>
+              <ul class="checklist">
+                <li>Verify the database file (app.db) was created in the root directory</li>
+                <li>Ensure the <code class="mono">instance/</code> folder exists for uploads</li>
+                <li>Test the Gemini API connection in Settings page</li>
+                <li>Create your first user account via registration</li>
+                <li>Explore the demo data if using the hosted version</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="setup-nav">
+            <a class="setup-nav-btn" href="./features.html">
+              <i class="bi bi-arrow-left"></i>
+              View Features
+            </a>
+            <a class="setup-nav-btn" href="./demo.html" style="margin-left: auto;">
+              Try Live Demo
+              <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div id="site-footer"></div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@barba/core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+  <script src="./assets/js/site.js"></script>
+</body>
+</html>

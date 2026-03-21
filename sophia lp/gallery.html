@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Browse Sophia Code interface screenshots: dashboard, snippet management, AI generation, collections, search, and gamification." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://sophia-code-landing-page/gallery.html" />
+  <meta name="author" content="Alex Alagoa Biobelemo" />
+  
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sophia Code | Gallery" />
+  <meta property="og:description" content="Explore Sophia Code's interface and features through screenshots." />
+  <meta property="og:url" content="https://sophia-code-landing-page/gallery.html" />
+  
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Sophia Code | Gallery" />
+  <meta name="twitter:description" content="Explore Sophia Code's interface and features through screenshots." />
+  
+  <title>Sophia Code | Gallery</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" as="style" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link rel="preload" href="./assets/css/site.css" as="style" />
+  <link rel="stylesheet" href="./assets/css/site.css" />
+  <script src="./assets/js/components.js" defer></script>
+  
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1M0X2ELT8N"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-1M0X2ELT8N');
+  </script>
+  
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+  <style>
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 32px;
+      margin-top: 40px;
+      content-visibility: auto;
+      contain-intrinsic-size: 0 1000px;
+    }
+    
+    .gallery-item {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: rgba(10,15,23,0.35);
+      transition: all var(--transition-base);
+      cursor: pointer;
+      contain: layout style;
+    }
+    
+    .gallery-item:hover {
+      transform: translateY(-4px);
+      border-color: rgba(30,91,184,0.4);
+      box-shadow: 0 0 40px rgba(30, 91, 184, 0.15);
+    }
+    
+    .gallery-item img {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+      background: var(--bg1);
+      content-visibility: auto;
+    }
+    
+    .gallery-item:hover img {
+      transform: scale(1.03);
+    }
+    
+    .gallery-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 50%, rgba(7, 11, 16, 0.95));
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .gallery-item:hover .gallery-overlay {
+      opacity: 1;
+    }
+    
+    .gallery-overlay h4 {
+      margin: 0 0 8px;
+      font-size: 1.1rem;
+      color: var(--ink);
+      font-weight: 700;
+    }
+    
+    .gallery-overlay p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    
+    .gallery-item.featured {
+      grid-column: span 2;
+    }
+    
+    .gallery-item.featured img {
+      height: 500px;
+    }
+    
+    @media (max-width: 980px) {
+      .gallery-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .gallery-item.featured {
+        grid-column: span 1;
+      }
+      
+      .gallery-item.featured img {
+        height: 280px;
+      }
+      
+      .gallery-item img {
+        height: 220px;
+      }
+    }
+    
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(7, 11, 16, 0.95);
+      backdrop-filter: blur(10px);
+      display: none;
+      place-items: center;
+      padding: 40px;
+    }
+    
+    .lightbox.active {
+      display: grid;
+    }
+    
+    .lightbox-content {
+      max-width: 90%;
+      max-height: 90vh;
+      position: relative;
+    }
+    
+    .lightbox-content img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: var(--radius);
+      border: 1px solid rgba(30,91,184,0.4);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
+    }
+    
+    .lightbox-close {
+      position: absolute;
+      top: -40px;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--line2);
+      background: var(--bg2);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    
+    .lightbox-close:hover {
+      background: var(--a);
+      border-color: var(--a);
+    }
+    
+    .lightbox-caption {
+      text-align: center;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <div data-barba="wrapper">
+    <div id="site-header"></div>
+
+    <main id="content" data-barba="container" data-barba-namespace="gallery">
+      <section class="page-hero">
+        <div class="wrap page-hero-wrap">
+          <h1 class="page-title">Product <span class="text-gradient">Gallery</span></h1>
+          <p class="page-sub">Explore Sophia Code's interface and features.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="gallery-grid">
+            <div class="gallery-item featured" onclick="openLightbox(this)">
+              <img src="../landing page images/sophia code (3).png" alt="Dashboard - Your Snippets" loading="eager" fetchpriority="high">
+              <div class="gallery-overlay">
+                <h4>Dashboard Overview</h4>
+                <p>Optimized with O(1) database aggregations and 80% query reduction</p>
+              </div>
+            </div>
+
+            <div class="gallery-item" onclick="openLightbox(this)">
+              <img src="../landing page images/sophia code (4).png" alt="Snippet Management List View" loading="lazy">
+              <div class="gallery-overlay">
+                <h4>Snippet Management</h4>
+                <p>SQLAlchemy models with SnippetVersion tracking for full history</p>
+              </div>
+            </div>
+
+            <div class="gallery-item" onclick="openLightbox(this)">
+              <img src="../landing page images/sophia code (8).png" alt="AI Code Generation" loading="lazy">
+              <div class="gallery-overlay">
+                <h4>AI Code Generation</h4>
+                <p>Streaming with 60% CPU reduction via requestAnimationFrame</p>
+              </div>
+            </div>
+
+            <div class="gallery-item" onclick="openLightbox(this)">
+              <img src="../landing page images/sophia code (5).png" alt="Collections Organization" loading="lazy">
+              <div class="gallery-overlay">
+                <h4>Collections</h4>
+                <p>Hierarchical organization with parent_id for nested collections</p>
+              </div>
+            </div>
+
+            <div class="gallery-item" onclick="openLightbox(this)">
+              <img src="../landing page images/sophia code (9).png" alt="Intelligent Search" loading="lazy">
+              <div class="gallery-overlay">
+                <h4>Smart Search</h4>
+                <p>Semantic search with vector embeddings and query preservation</p>
+              </div>
+            </div>
+
+            <div class="gallery-item" onclick="openLightbox(this)">
+              <img src="../landing page images/sophia code (10).png" alt="Gamification Badges" loading="lazy">
+              <div class="gallery-overlay">
+                <h4>Gamification</h4>
+                <p>25+ badges with real-time progress tracking API</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta">
+        <div class="wrap">
+          <div class="cta-wrap">
+            <div class="cta-copy">
+              <h2>Ready to try it yourself?</h2>
+              <p>Explore Sophia Code with a pre-populated demo database.</p>
+            </div>
+            <div class="cta-actions">
+              <a class="btn btn-primary btn-lg cta-demo-btn" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">
+                <i class="bi bi-box-arrow-up-right"></i>
+                Open live demo
+              </a>
+              <div class="cta-popup">
+                <p><strong>Demo Login:</strong></p>
+                <p class="mono">Username: <span style="color: var(--a2);">alex</span></p>
+                <p class="mono">Password: <span style="color: var(--a2);">12345</span></p>
+                <p style="margin-top: 8px; font-size: 0.8rem; color: var(--muted);">Or register a fresh account</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div id="site-footer"></div>
+    </main>
+  </div>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <div class="lightbox-content">
+      <button class="lightbox-close" onclick="closeLightbox(event)"><i class="bi bi-x-lg"></i></button>
+      <img id="lightbox-img" src="" alt="">
+      <div class="lightbox-caption" id="lightbox-caption"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@barba/core"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+  <script src="./assets/js/site.js"></script>
+  <script>
+    function openLightbox(element) {
+      const img = element.querySelector('img');
+      const overlay = element.querySelector('.gallery-overlay');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      
+      lightboxImg.src = img.src;
+      lightboxImg.alt = img.alt;
+      lightboxCaption.textContent = overlay.querySelector('h4').textContent + ' - ' + overlay.querySelector('p').textContent;
+      lightbox.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeLightbox(event) {
+      if (event.target.closest('.lightbox-content')) return;
+      
+      const lightbox = document.getElementById('lightbox');
+      lightbox.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const lightbox = document.getElementById('lightbox');
+        if (lightbox.classList.contains('active')) {
+          closeLightbox({ target: lightbox });
+        }
+      }
+    });
+  </script>
+</body>
+</html>
