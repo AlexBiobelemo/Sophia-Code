@@ -25,15 +25,15 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://sophia-code-landing-page/landing page images/sophia code (3).png</image:loc>
+      <image:loc>https://sophia-code-landing-page/assets/images/sophia code (3).png</image:loc>
       <image:title>Dashboard Overview</image:title>
     </image:image>
     <image:image>
-      <image:loc>https://sophia-code-landing-page/landing page images/sophia code (4).png</image:loc>
+      <image:loc>https://sophia-code-landing-page/assets/images/sophia code (4).png</image:loc>
       <image:title>Snippet Management</image:title>
     </image:image>
     <image:image>
-      <image:loc>https://sophia-code-landing-page/landing page images/sophia code (8).png</image:loc>
+      <image:loc>https://sophia-code-landing-page/assets/images/sophia code (8).png</image:loc>
       <image:title>AI Code Generation</image:title>
     </image:image>
   </url>

@@ -23,9 +23,6 @@ Allow: /assets/css/
 Allow: /assets/js/
 Allow: /assets/images/
 
-# Disallow landing page images folder (internal use)
-Disallow: /landing page images/
-
 # Common bot-specific rules
 User-agent: Googlebot
 Allow: /
