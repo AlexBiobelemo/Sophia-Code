@@ -151,6 +151,7 @@ class StreamingAIManager {
         try {
             // Set up UI first
             const ui = this.setupStreamingUI(sessionId, options.containerId);
+            this.scrollIntoView(ui.container);
 
             // Store the original prompt for retry functionality
             ui.originalPrompt = prompt;
@@ -296,6 +297,10 @@ class StreamingAIManager {
                 break;
 
             case 'code_complete':
+                if (data.language) {
+                    ui.state.detectedLanguage = data.language;
+                    this.updateLanguageUI(ui, data.language);
+                }
                 this.updateUIState(ui, {
                     status: 'code_complete',
                     currentStep: 2,
@@ -348,6 +353,10 @@ class StreamingAIManager {
                 break;
 
             case 'pipeline_complete':
+                if (data.language) {
+                    ui.state.detectedLanguage = data.language;
+                    this.updateLanguageUI(ui, data.language);
+                }
                 this.updateUIState(ui, {
                     status: 'complete',
                     currentStep: 2,
@@ -416,6 +425,48 @@ class StreamingAIManager {
         }
 
         return container;
+    }
+
+    scrollIntoView(el) {
+        if (!el) return;
+        try {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (_) {
+            // ignore
+        }
+    }
+
+    detectLanguage(code) {
+        if (!code) return '';
+        const sample = code.slice(0, 2000).toLowerCase();
+        const hints = [
+            ['python', ['def ', 'import ', 'self', 'async def', 'print(']],
+            ['javascript', ['function ', 'console.log', '=>', 'document.', 'async function']],
+            ['typescript', ['interface ', 'implements', 'enum ', ': string', ': number', 'readonly ']],
+            ['java', ['public class', 'system.out.println', 'void main', 'implements ']],
+            ['cpp', ['#include <', 'std::', 'using namespace std', 'cout <<']],
+            ['c', ['#include <', 'printf(', 'scanf(']],
+            ['csharp', ['using system', 'namespace ', 'console.writeline', 'public class program']],
+            ['go', ['package main', 'fmt.', 'func main(', 'import (']],
+            ['ruby', ['def ', 'puts ', ' end', 'module ', 'class ']],
+            ['rust', ['fn main()', 'let mut', 'println!', 'use std::']],
+            ['php', ['<?php', 'echo ', '$_post', '$_get']],
+            ['swift', ['import uikit', 'let ', 'var ', 'func ', 'class ']],
+            ['kotlin', ['fun main(', 'val ', 'var ', 'println(', 'object ']],
+            ['scala', ['object ', 'def ', 'val ', 'var ', 'println(']],
+            ['sql', ['select ', 'from ', 'where ', 'insert into', 'create table']],
+            ['bash', ['#!/bin/bash', 'echo ', ' fi', ' &&', ' ||']],
+            ['powershell', ['write-host', 'get-childitem', '$env:', 'param(']],
+            ['html', ['<html', '<div', '<span', '<body', '<head']],
+            ['css', ['{', '}', 'color:', 'display:', 'flex', 'grid']],
+            ['json', ['{', '}', '\":', '\"[']],
+            ['yaml', [':', '- ', 'true', 'false']],
+            ['markdown', ['#', '##', '**', '_', '`']],
+        ];
+        for (const [lang, markers] of hints) {
+            if (markers.some(m => sample.includes(m))) return lang;
+        }
+        return '';
     }
 
     /**
@@ -533,6 +584,10 @@ class StreamingAIManager {
                 elements.codeSection.style.display = 'block';
                 if (elements.codeContent) {
                     elements.codeContent.textContent = state.codeContent;
+                    if (!state.detectedLanguage) {
+                        state.detectedLanguage = this.detectLanguage(state.codeContent);
+                    }
+                    this.updateLanguageUI(ui, state.detectedLanguage);
                     if (window.Prism) {
                         Prism.highlightElement(elements.codeContent);
                     }
@@ -554,6 +609,15 @@ class StreamingAIManager {
 
             ui.renderPending = false;
         });
+    }
+
+    updateLanguageUI(ui, language) {
+        if (!language || !ui?.elements) return;
+        const badge = ui.container.querySelector('.code-language-badge');
+        if (badge) badge.textContent = language.toUpperCase();
+        if (ui.elements.codeContent) {
+            ui.elements.codeContent.className = `language-${language}`;
+        }
     }
 
     /**
@@ -598,7 +662,8 @@ class StreamingAIManager {
             timestamp: new Date().toISOString(),
             code: data.code,
             explanation: data.explanation,
-            optimizations: data.optimizations
+            optimizations: data.optimizations,
+            language: data.language || this.detectLanguage(data.code || '')
         };
 
         // Store in sessionStorage for client-side access
@@ -622,7 +687,8 @@ class StreamingAIManager {
                 body: JSON.stringify({
                     session_id: sessionId,
                     code: data.code,
-                    explanation: data.explanation
+                    explanation: data.explanation,
+                    language: data.language || ''
                 })
             });
             
@@ -706,12 +772,19 @@ class StreamingAIManager {
             return;
         }
         
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
         // If we have a server session key, use it to save
         if (this.serverSessionKey) {
             // Create a form and submit with the key
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/save_streaming_as_snippet';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
             
             const keyInput = document.createElement('input');
             keyInput.type = 'hidden';
@@ -728,9 +801,16 @@ class StreamingAIManager {
             explanationInput.name = 'explanation';
             explanationInput.value = results.explanation;
             
+            const languageInput = document.createElement('input');
+            languageInput.type = 'hidden';
+            languageInput.name = 'language';
+            languageInput.value = results.language || '';
+
+            form.appendChild(csrfInput);
             form.appendChild(keyInput);
             form.appendChild(codeInput);
             form.appendChild(explanationInput);
+            form.appendChild(languageInput);
             document.body.appendChild(form);
             form.submit();
         } else {
@@ -738,6 +818,11 @@ class StreamingAIManager {
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '/save_streaming_as_snippet';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken;
             
             const codeInput = document.createElement('input');
             codeInput.type = 'hidden';
@@ -749,8 +834,15 @@ class StreamingAIManager {
             explanationInput.name = 'explanation';
             explanationInput.value = results.explanation;
             
+            const languageInput = document.createElement('input');
+            languageInput.type = 'hidden';
+            languageInput.name = 'language';
+            languageInput.value = results.language || '';
+
+            form.appendChild(csrfInput);
             form.appendChild(codeInput);
             form.appendChild(explanationInput);
+            form.appendChild(languageInput);
             document.body.appendChild(form);
             form.submit();
         }

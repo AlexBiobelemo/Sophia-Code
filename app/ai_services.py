@@ -48,6 +48,40 @@ MODEL_TIERING_CONFIG = {
     }
 }
 
+# Lightweight heuristic code language detector (fast, dependency-free)
+def detect_code_language(code_content: str) -> str:
+    if not code_content:
+        return ""
+    sample = code_content.strip()[:2000].lower()
+    hints = [
+        ("python", ["def ", "import ", "self", "async def", "print("]),
+        ("javascript", ["function ", "console.log", "=>", "document.", "async function"]),
+        ("typescript", ["interface ", "implements", "enum ", ": string", ": number", "readonly "]),
+        ("java", ["public class", "system.out.println", "void main", "implements "]),
+        ("cpp", ["#include <", "std::", "using namespace std", "cout <<"]),
+        ("c", ["#include <", "printf(", "scanf("]),
+        ("csharp", ["using system", "namespace ", "console.writeline", "public class program"]),
+        ("go", ["package main", "fmt.", "func main(", "import ("]),
+        ("ruby", ["def ", "puts ", "end", "module ", "class "]),
+        ("rust", ["fn main()", "let mut", "println!", "use std::"]),
+        ("php", ["<?php", "echo ", "$_post", "$_get"]),
+        ("swift", ["import uikit", "let ", "var ", "func ", "class "]),
+        ("kotlin", ["fun main(", "val ", "var ", "println(", "object "]),
+        ("scala", ["object ", "def ", "val ", "var ", "println("]),
+        ("sql", ["select ", "from ", "where ", "insert into", "create table"]),
+        ("bash", ["#!/bin/bash", "echo ", "fi", "&&", "||"]),
+        ("powershell", ["write-host", "get-childitem", "$env:", "param("]),
+        ("html", ["<html", "<div", "<span", "<body", "<head"]),
+        ("css", ["{", "}", "color:", "display:", "flex", "grid"]),
+        ("json", ["{", "}", "\":", "\"["]),
+        ("yaml", [":", "- ", "true", "false"]),
+        ("markdown", ["#", "##", "**", "_", "`"]),
+    ]
+    for lang, markers in hints:
+        if any(m in sample for m in markers):
+            return lang
+    return ""
+
 
 def get_user_preferred_model():
     """Get the current user's preferred AI model."""
@@ -781,10 +815,12 @@ def stream_code_generation(prompt_text, session_id=None, user_api_key=None, user
                         }
 
         if code_content:
+            detected_language = detect_code_language(code_content)
             yield {
                 "type": "code_complete",
                 "content": code_content,
-                "status": "complete"
+                "status": "complete",
+                "language": detected_language
             }
         else:
             yield {
@@ -860,10 +896,13 @@ def chained_streaming_generation(prompt_text, session_id=None, code_model=None, 
     """Complete token-efficient chaining pipeline."""
     def _chain_generator():
         code_content = ""
+        language = ""
+        explanation_content = ""
         for chunk in stream_code_generation(prompt_text, session_id, user_api_key, user_use_own_key):
             yield chunk
             if chunk["type"] == "code_complete":
                 code_content = chunk["content"]
+                language = chunk.get("language") or language
                 break
             elif chunk["type"] == "error":
                 return
@@ -877,7 +916,18 @@ def chained_streaming_generation(prompt_text, session_id=None, code_model=None, 
             return
 
         for chunk in stream_code_explanation(code_content, session_id, prompt_text, user_api_key, user_use_own_key):
+            if chunk["type"] == "explanation_complete":
+                explanation_content = chunk["content"]
             yield chunk
+
+        if code_content and explanation_content:
+            yield {
+                "type": "pipeline_complete",
+                "code": code_content,
+                "explanation": explanation_content,
+                "language": language or detect_code_language(code_content),
+                "status": "complete"
+            }
 
     return _chain_generator()
 

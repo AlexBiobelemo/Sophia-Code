@@ -10,13 +10,13 @@
       <div class="card-body">
         <h5 class="card-title">Export All</h5>
         <p class="card-text">Download every snippet you own. You can choose the sort order.</p>
-        <div class="d-flex gap-2">
-          <select id="all-sort" class="form-select w-auto">
+        <div class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
+          <select id="all-sort" class="form-select w-100 w-sm-auto">
             <option value="date_desc">Newest First</option>
             <option value="date_asc">Oldest First</option>
             <option value="alpha">Alphabetical</option>
           </select>
-          <button id="download-all-btn" class="btn btn-primary">Download All</button>
+          <button id="download-all-btn" class="btn btn-primary w-100 w-sm-auto">Download All</button>
         </div>
       </div>
     </div>
@@ -39,13 +39,13 @@
           <input class="form-check-input" type="checkbox" value="1" id="include-sub">
           <label class="form-check-label" for="include-sub">Include sub-collections</label>
         </div>
-        <div class="d-flex gap-2">
-          <select id="col-sort" class="form-select w-auto">
+        <div class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
+          <select id="col-sort" class="form-select w-100 w-sm-auto">
             <option value="date_desc">Newest First</option>
             <option value="date_asc">Oldest First</option>
             <option value="alpha">Alphabetical</option>
           </select>
-          <button id="download-collections-btn" class="btn btn-success">Download Selected</button>
+          <button id="download-collections-btn" class="btn btn-success w-100 w-sm-auto">Download Selected</button>
         </div>
       </div>
     </div>
@@ -68,14 +68,14 @@
           <!-- Snippet checkboxes will be loaded here by JavaScript -->
           <p class="text-muted text-center">Loading snippets...</p>
         </div>
-        <div class="d-flex gap-2 mt-3">
-          <select id="individual-sort" class="form-select w-auto">
+        <div class="d-flex flex-column flex-sm-row gap-2 mt-3 align-items-stretch align-items-sm-center">
+          <select id="individual-sort" class="form-select w-100 w-sm-auto">
             <option value="date_desc">Newest First</option>
             <option value="date_asc">Oldest First</option>
             <option value="alpha">Alphabetical</option>
           </select>
-          <button id="download-selected-snippets-btn" class="btn btn-primary" disabled>Download Selected as ZIP</button>
-          <button id="download-selected-snippets-direct-btn" class="btn btn-success" disabled>Download Selected
+          <button id="download-selected-snippets-btn" class="btn btn-primary w-100 w-sm-auto" disabled>Download Selected as ZIP</button>
+          <button id="download-selected-snippets-direct-btn" class="btn btn-success w-100 w-sm-auto" disabled>Download Selected
             Directly</button>
         </div>
       </div>
