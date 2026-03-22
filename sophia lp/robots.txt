@@ -1,0 +1,58 @@
+# robots.txt for Sophia Code Landing Page
+# https://sophia-code-landing-page/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://sophia-code-landing-page/sitemap.xml
+
+# Crawl-delay for polite crawling (optional)
+Crawl-delay: 1
+
+# Allow all main pages
+Allow: /index.html
+Allow: /features.html
+Allow: /gallery.html
+Allow: /setup.html
+Allow: /portfolio.html
+Allow: /demo.html
+
+# Allow assets
+Allow: /assets/css/
+Allow: /assets/js/
+Allow: /assets/images/
+
+# Disallow landing page images folder (internal use)
+Disallow: /landing page images/
+
+# Common bot-specific rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 2
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+# Block image scrapers
+User-agent: *
+Disallow: /*.png$
+Disallow: /*.jpg$
+Disallow: /*.jpeg$
+# Except for social sharing
+Allow: /og-image.png
