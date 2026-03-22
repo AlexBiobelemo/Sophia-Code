@@ -182,61 +182,10 @@
     });
   }
 
-  function initBarba(lenis) {
-    if (!window.barba || prefersReduced) return;
-    if (!window.gsap) return;
-
-    let overlay = qs(".barba-overlay");
-    if (!overlay) {
-      overlay = document.createElement("div");
-      overlay.className = "barba-overlay";
-      document.body.appendChild(overlay);
-    }
-
-    function scrollTopFast() {
-      try {
-        if (lenis) lenis.scrollTo(0, { immediate: true });
-      } catch (_) {}
-      window.scrollTo(0, 0);
-    }
-
-    window.barba.init({
-      preventRunning: true,
-      timeout: 5000,
-      transitions: [
-        {
-          name: "fade-swipe",
-          async leave(data) {
-            await window.gsap.to(overlay, { opacity: 1, duration: 0.3, ease: "power2.inOut" });
-            await window.gsap.to(data.current.container, { opacity: 0, duration: 0.2, ease: "power2.in" });
-          },
-          async enter(data) {
-            scrollTopFast();
-            data.next.container.style.opacity = "0";
-            await window.gsap.to(data.next.container, { opacity: 1, duration: 0.3, ease: "power2.out" });
-            await window.gsap.to(overlay, { opacity: 0, duration: 0.4, ease: "power2.out", delay: 0.1 });
-          },
-        },
-      ],
-    });
-
-    try {
-      window.barba.hooks.afterEnter(() => {
-        updateActiveNav();
-        initGsapBase();
-        if (window.loadSiteComponents) {
-          window.loadSiteComponents();
-        }
-      });
-    } catch (_) {}
-  }
-
   function initAll() {
     initMobileMenu();
     updateActiveNav();
-    const lenis = initSmoothScroll();
     initGsapBase();
-    initBarba(lenis);
   }
 
   if (document.readyState === "loading") {
