@@ -65,27 +65,23 @@
   `;
 
   function updateActiveNav(page) {
-    console.log('Current page:', page);
-    
     document.querySelectorAll('.nav-link').forEach(link => {
       const href = link.getAttribute('href');
       link.classList.remove('is-active');
-      
+
       if (href && (href.startsWith('http') || href.startsWith('https'))) {
         return;
       }
-      
+
       if (href === page || href === './' + page) {
-        console.log('Match found for:', href);
         link.classList.add('is-active');
       }
     });
-    
+
     if (page === 'index.html' || page === '') {
       const homeLink = document.querySelector('.nav-link[href="./index.html"]');
       if (homeLink) {
         homeLink.classList.add('is-active');
-        console.log('Set home link active');
       }
     }
   }
@@ -93,9 +89,8 @@
   function loadComponents() {
     const headerPlaceholder = document.getElementById('site-header');
     const footerPlaceholder = document.getElementById('site-footer');
-    
+
     let currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    console.log('Loaded components for page:', currentPage);
 
     if (headerPlaceholder) {
       headerPlaceholder.innerHTML = headerHTML;
@@ -122,11 +117,7 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadComponents);
-  } else {
-    loadComponents();
-  }
+  loadComponents();
 
   window.loadSiteComponents = loadComponents;
 })();

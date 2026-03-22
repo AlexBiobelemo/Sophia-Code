@@ -35,24 +35,7 @@
   }
 
   function initSmoothScroll() {
-    if (prefersReduced) return null;
-    if (!window.Lenis) return null;
-
-    const lenis = new window.Lenis({
-      duration: 1.0,
-      smoothWheel: true,
-      smoothTouch: false,
-      wheelMultiplier: 0.9,
-      touchMultiplier: 2,
-      infinite: false,
-    });
-
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-    return lenis;
+    // Lenis smooth scroll not included
   }
 
   function initGsapBase() {

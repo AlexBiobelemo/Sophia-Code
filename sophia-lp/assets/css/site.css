@@ -20,7 +20,6 @@
 *{ box-sizing:border-box; }
 html {
   scroll-behavior: smooth;
-  contain: layout style paint;
 }
 body{
   margin:0;
@@ -69,8 +68,6 @@ a{ color:inherit; text-decoration:none; }
   backdrop-filter: blur(20px) saturate(180%);
   background: rgba(0,0,0,0.7);
   border-bottom: 1px solid rgba(255,255,255,0.08);
-  will-change: transform;
-  contain: layout style;
 }
 
 .header-wrap{
@@ -226,12 +223,9 @@ a{ color:inherit; text-decoration:none; }
   white-space:nowrap;
   font-weight: 600;
   font-size: 1.05rem;
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
-.btn:hover{ 
-  transform: translateY(-1px); 
+.btn:hover{
+  transform: translateY(-1px);
   border-color: var(--a);
   background: var(--bg2);
 }
@@ -286,7 +280,6 @@ a{ color:inherit; text-decoration:none; }
 .hero{
   padding: 40px 0 30px;
   position:relative;
-  contain: layout style;
 }
 .hero:before{
   content:"";
@@ -294,7 +287,6 @@ a{ color:inherit; text-decoration:none; }
   height: 420px;
   background: radial-gradient(600px 300px at 50% 0%, rgba(30,91,184,0.15), transparent 70%);
   pointer-events:none;
-  will-change: transform, opacity;
 }
 
 .hero-wrap{
@@ -400,7 +392,6 @@ a{ color:inherit; text-decoration:none; }
   display: flex;
   gap: 24px;
   padding: 14px 0;
-  will-change: transform;
 }
 .marquee-row{
   display: flex;
@@ -418,13 +409,11 @@ a{ color:inherit; text-decoration:none; }
 
 .section{
   padding: 54px 0;
-  contain: layout style;
 }
 .section-alt{
   background: linear-gradient(180deg, transparent, rgba(30,91,184,0.05), transparent);
   border-top:1px solid var(--line);
   border-bottom:1px solid var(--line);
-  contain: layout style;
 }
 .section-head{
   display:flex;
@@ -507,10 +496,6 @@ a{ color:inherit; text-decoration:none; }
   background: var(--bg1);
   padding: 32px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  contain: layout style;
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 .card-glow{
   position:relative;
