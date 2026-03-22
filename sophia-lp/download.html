@@ -16,39 +16,9 @@
 <body>
   <a class="skip-link" href="#content">Skip to content</a>
 
-  <header class="site-header">
-      <div class="wrap header-wrap">
-        <a class="brand" href="./index.html" aria-label="Sophia Code home">
-          <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
-          <span class="brand-text">Sophia Code</span>
-        </a>
-        <nav class="nav" aria-label="Primary">
-          <a class="nav-link" href="./index.html">Home</a>
-          <a class="nav-link" href="./features.html">Features</a>
-          <a class="nav-link" href="./portfolio.html">Case Study</a>
-          <a class="nav-link is-active" href="./download.html">Download</a>
-        </nav>
-        <div class="nav-cta">
-          <a class="btn btn-ghost" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
-          <a class="btn btn-primary" href="#download">
-            Download <span class="badge badge-mini">Windows only</span>
-          </a>
-        </div>
-        <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
-          <i class="bi bi-list"></i>
-        </button>
-      </div>
-      <div class="mobile-menu" hidden>
-        <div class="wrap mobile-menu-wrap">
-          <a class="nav-link" href="./index.html">Home</a>
-          <a class="nav-link" href="./features.html">Features</a>
-          <a class="nav-link" href="./portfolio.html">Case Study</a>
-          <a class="nav-link" href="https://sophia-code-wwhm.onrender.com" target="_blank" rel="noopener">Live demo</a>
-        </div>
-      </div>
-    </header>
+  <div id="site-header"></div>
 
-    <main id="content">
+  <main id="content">
       <section class="page-hero">
         <div class="wrap page-hero-wrap">
           <h1 class="page-title">Download Sophia Code</h1>
@@ -145,6 +115,7 @@
       </footer>
     </main>
 
+  <script src="./assets/js/components.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <script src="./assets/js/site.js"></script>
