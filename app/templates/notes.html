@@ -64,16 +64,6 @@
                     <a href="{{ url_for('main.view_note', note_id=note.id) }}" class="btn btn-primary btn-sm w-100">
                         <i class="bi bi-eye me-1"></i>Read More
                     </a>
-                    <button type="button" class="btn btn-outline-info btn-sm explain-note-btn" data-note-id="{{ note.id }}">
-                        <i class="bi bi-robot me-1"></i>Explain with AI
-                    </button>
-                    <div class="ai-note-explanation collapse mt-2" id="explanation-{{ note.id }}">
-                        <div class="small text-muted d-flex align-items-center gap-2 mb-2">
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="display:none;"></span>
-                            <span class="status-text">Ready to explain</span>
-                        </div>
-                        <div class="markdown-content explanation-body small"></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -120,51 +110,6 @@
     </div>
     {% endif %}
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        document.querySelectorAll('.explain-note-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const noteId = btn.getAttribute('data-note-id');
-                const container = document.getElementById(`explanation-${noteId}`);
-                if (!container) return;
-
-                const spinner = container.querySelector('.spinner-border');
-                const status = container.querySelector('.status-text');
-                const body = container.querySelector('.explanation-body');
-
-                container.classList.add('show');
-                if (spinner) spinner.style.display = 'inline-block';
-                if (status) status.textContent = 'Thinking...';
-                if (body) body.innerHTML = '';
-
-                try {
-                    const resp = await fetch(`/api/note/${noteId}/explain`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrfToken
-                        }
-                    });
-                    const data = await resp.json();
-                    if (!resp.ok) throw new Error(data.error || 'Failed to explain note');
-
-                    const safeHtml = window.DOMPurify ? window.DOMPurify.sanitize(window.marked ? marked.parse(data.explanation) : data.explanation) : data.explanation;
-                    if (body) body.innerHTML = safeHtml;
-                    if (status) status.textContent = 'Explained by AI';
-                    if (spinner) spinner.style.display = 'none';
-                    if (window.Prism) { try { Prism.highlightAllUnder(body); } catch (_) {} }
-                } catch (err) {
-                    if (body) body.innerHTML = `<div class=\"alert alert-danger\">${err.message}</div>`;
-                    if (status) status.textContent = 'Something went wrong';
-                    if (spinner) spinner.style.display = 'none';
-                    console.error('Explain note error', err);
-                }
-            });
-        });
-    });
-</script>
 
 <style>
     .notes-grid {

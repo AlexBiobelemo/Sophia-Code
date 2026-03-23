@@ -2201,9 +2201,11 @@
     // Expose BYOK helpers for inline handlers / other scripts
     window.saveBYOK = saveBYOK;
     window.loadBYOKState = loadBYOKState;
-    
+
     // Load BYOK state when page loads
     document.addEventListener('DOMContentLoaded', loadBYOKState);
+
+    {% block scripts %}{% endblock %}
 </body>
 
 </html>

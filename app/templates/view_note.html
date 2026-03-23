@@ -48,6 +48,7 @@
         const explanationContent = document.getElementById('ai-explanation-content');
         const closeExplanationBtn = document.getElementById('close-explanation-btn');
         const noteId = parseInt("{{ note.id }}");
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
         if (explainBtn) {
             explainBtn.addEventListener('click', async function () {
@@ -64,7 +65,8 @@
                     const response = await fetch(`/api/note/${noteId}/explain`, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
                         }
                     });
                     const data = await response.json();
