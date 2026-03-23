@@ -9,24 +9,6 @@
     return Array.from(root.querySelectorAll(sel));
   }
 
-  function initMobileMenu() {
-    const btn = qs(".menu-btn");
-    const menu = qs(".mobile-menu");
-    if (!btn || !menu) return;
-
-    const setOpen = (open) => {
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
-      if (open) menu.removeAttribute("hidden");
-      else menu.setAttribute("hidden", "");
-    };
-
-    setOpen(false);
-    btn.addEventListener("click", () => {
-      const open = btn.getAttribute("aria-expanded") === "true";
-      setOpen(!open);
-    });
-  }
-
   function updateActiveNav() {
     const path = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
     qsa(".nav-link").forEach((a) => a.classList.remove("is-active"));
@@ -166,7 +148,6 @@
   }
 
   function initAll() {
-    initMobileMenu();
     updateActiveNav();
     initGsapBase();
   }

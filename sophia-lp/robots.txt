@@ -1,4 +1,4 @@
-# robots.txt for Sophia Code Landing Page
+# robots.txt for Sophia Codex Landing Page
 # https://sophia-code-landing-page/
 
 User-agent: *

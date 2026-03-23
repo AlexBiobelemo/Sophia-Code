@@ -3,9 +3,9 @@
   const headerHTML = `
     <header class="site-header">
       <div class="wrap header-wrap">
-        <a class="brand" href="./index.html" aria-label="Sophia Code home">
+        <a class="brand" href="./index.html" aria-label="Sophia Codex home">
           <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
-          <span class="brand-text">Sophia Code</span>
+          <span class="brand-text">Sophia Codex</span>
         </a>
         <nav class="nav" aria-label="Primary">
           <a class="nav-link" href="./index.html">Home</a>
@@ -50,7 +50,7 @@
         <div class="footer-left">
           <div class="brand brand-footer">
             <span class="brand-mark" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
-            <span class="brand-text">Sophia Code</span>
+            <span class="brand-text">Sophia Codex</span>
           </div>
           <p class="fine">Built by Alex Alagoa Biobelemo.</p>
         </div>
@@ -96,20 +96,52 @@
       headerPlaceholder.innerHTML = headerHTML;
       updateActiveNav(currentPage);
 
-      const btn = document.querySelector('.menu-btn');
-      const menu = document.querySelector('.mobile-menu');
-      if (btn && menu) {
-        const setOpen = (open) => {
-          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-          if (open) menu.removeAttribute('hidden');
-          else menu.setAttribute('hidden', '');
-        };
-        setOpen(false);
-        btn.addEventListener('click', () => {
-          const open = btn.getAttribute('aria-expanded') === 'true';
-          setOpen(!open);
-        });
-      }
+      // Setup mobile menu toggle
+      setTimeout(() => {
+        const btn = document.querySelector('.menu-btn');
+        const menu = document.querySelector('.mobile-menu');
+        const icon = btn ? btn.querySelector('i') : null;
+        
+        if (btn && menu) {
+          const setOpen = (open) => {
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (open) {
+              menu.removeAttribute('hidden');
+              if (icon) {
+                icon.classList.remove('bi-list');
+                icon.classList.add('bi-x');
+              }
+            } else {
+              menu.setAttribute('hidden', '');
+              if (icon) {
+                icon.classList.remove('bi-x');
+                icon.classList.add('bi-list');
+              }
+            }
+          };
+          
+          setOpen(false);
+          
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = btn.getAttribute('aria-expanded') === 'true';
+            setOpen(!isOpen);
+          });
+          
+          // Close menu when clicking outside
+          document.addEventListener('click', function(e) {
+            if (!menu.contains(e.target) && !btn.contains(e.target)) {
+              const isOpen = btn.getAttribute('aria-expanded') === 'true';
+              if (isOpen) setOpen(false);
+            }
+          });
+          
+          // Close menu when clicking a link
+          menu.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', () => setOpen(false));
+          });
+        }
+      }, 0);
     }
 
     if (footerPlaceholder) {
