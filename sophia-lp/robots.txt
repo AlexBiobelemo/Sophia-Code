@@ -1,11 +1,11 @@
 # robots.txt for Sophia Codex Landing Page
-# https://sophia-code-landing-page/
+# https://sophiacodex.onrender.com/
 
 User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://sophia-code-landing-page/sitemap.xml
+Sitemap: https://sophiacodex.onrender.com/sitemap.xml
 
 # Crawl-delay for polite crawling (optional)
 Crawl-delay: 1

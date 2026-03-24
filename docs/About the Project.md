@@ -307,7 +307,7 @@ total_points = db.session.scalar(
 - Database Indexes on username, email, timestamp, user_id
 - Query Optimization database-level aggregations
 
-## What's next for Sophia Code
+## What's next for Sophia Codex
 
 ### Short-Term (v2.1)
 

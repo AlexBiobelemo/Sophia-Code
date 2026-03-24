@@ -1,65 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  
+
   <!-- Home Page -->
   <url>
-    <loc>https://sophia-code-landing-page/index.html</loc>
+    <loc>https://sophiacodex.onrender.com/index.html</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  
+
   <!-- Features Page -->
   <url>
-    <loc>https://sophia-code-landing-page/features.html</loc>
+    <loc>https://sophiacodex.onrender.com/product.html</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
-  
+
   <!-- Gallery Page -->
   <url>
-    <loc>https://sophia-code-landing-page/gallery.html</loc>
+    <loc>https://sophiacodex.onrender.com/gallery.html</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://sophia-code-landing-page/assets/images/sophia code (3).png</image:loc>
+      <image:loc>https://sophiacodex.onrender.com/assets/images/sophia codex (3).png</image:loc>
       <image:title>Dashboard Overview</image:title>
     </image:image>
     <image:image>
-      <image:loc>https://sophia-code-landing-page/assets/images/sophia code (4).png</image:loc>
+      <image:loc>https://sophiacodex.onrender.com/assets/images/sophia codex (4).png</image:loc>
       <image:title>Snippet Management</image:title>
     </image:image>
     <image:image>
-      <image:loc>https://sophia-code-landing-page/assets/images/sophia code (8).png</image:loc>
+      <image:loc>https://sophiacodex.onrender.com/assets/images/sophia codex (8).png</image:loc>
       <image:title>AI Code Generation</image:title>
     </image:image>
   </url>
-  
+
   <!-- Setup Guide Page -->
   <url>
-    <loc>https://sophia-code-landing-page/setup.html</loc>
+    <loc>https://sophiacodex.onrender.com/setup.html</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <!-- Case Study / Portfolio Page -->
   <url>
-    <loc>https://sophia-code-landing-page/portfolio.html</loc>
+    <loc>https://sophiacodex.onrender.com/portfolio.html</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-  
+
   <!-- Demo Page -->
   <url>
-    <loc>https://sophia-code-landing-page/demo.html</loc>
+    <loc>https://sophiacodex.onrender.com/demo.html</loc>
     <lastmod>2026-03-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  
+
 </urlset>
