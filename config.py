@@ -24,7 +24,13 @@ def _normalize_database_url(url: str) -> str:
 
 class Config:
     """Set Flask configuration variables."""
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'a-super-secret-key-you-should-change'
+
+    def _generate_secret_key():
+        """Generate a random secret key at import time."""
+        import secrets
+        return secrets.token_hex(32)
+
+    SECRET_KEY = os.environ.get('SECRET_KEY') or _generate_secret_key()
 
     _raw_db_url = os.environ.get('DATABASE_URL') or ('sqlite:///' + os.path.join(basedir, 'app.db'))
     SQLALCHEMY_DATABASE_URI = _normalize_database_url(_raw_db_url)
