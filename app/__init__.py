@@ -214,16 +214,13 @@ def create_app(config_class=Config):
 
     @app.after_request
     def _set_headers_and_log(response):
-        # Security headers
+        # Security headers (minimal, CSP can be tuned if needed)
         response.headers.setdefault('X-Content-Type-Options', 'nosniff')
         response.headers.setdefault('X-Frame-Options', 'DENY')
         response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
         response.headers.setdefault('X-XSS-Protection', '1; mode=block')
-        response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-        response.headers.setdefault('Cache-Control', 'no-store, no-cache, must-revalidate, private')
-        response.headers.setdefault('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-        # Strengthened CSP: remove 'unsafe-inline' from script-src, add upgrade-insecure-requests
-        response.headers.setdefault('Content-Security-Policy', "upgrade-insecure-requests; default-src 'self' data: https:; script-src 'self' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:;")
+        # Lightweight CSP tuned for app assets; adjust as needed if blocking
+        response.headers.setdefault('Content-Security-Policy', "default-src 'self' 'unsafe-inline' data: https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:;")
 
         # Request id and timing
         try:
